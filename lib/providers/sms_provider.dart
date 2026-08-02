@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:dio/dio.dart';
 
 import '../core/services/sms_service.dart';
 import '../core/utils/sms_parser.dart';
@@ -190,7 +191,11 @@ class SmsProvider extends ChangeNotifier {
         return false;
       }
     } catch (e) {
-      _errorMessage = 'Failed to connect to the server. Please check your internet connection.';
+      if (e is DioException) {
+        _errorMessage = e.response?.data["message"] ?? e.message ?? 'Failed to connect to the server.';
+      } else {
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      }
       _isImporting = false;
       notifyListeners();
       return false;
