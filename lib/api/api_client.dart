@@ -66,6 +66,7 @@ class ApiClient {
                     headers: requestOptions.headers,
                     contentType: requestOptions.contentType,
                     responseType: requestOptions.responseType,
+                    extra: requestOptions.extra,
                   ),
                 );
                 return handler.resolve(response);

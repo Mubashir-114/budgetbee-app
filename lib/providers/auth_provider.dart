@@ -47,15 +47,14 @@ class AuthProvider extends ChangeNotifier {
     } on DioException catch (e) {
       _errorMessage =
           e.response?.data["message"] ?? e.message ?? "Login failed";
+      _isLoading = false;
       notifyListeners();
       return false;
     } catch (e) {
       _errorMessage = e.toString();
-      notifyListeners();
-      return false;
-    } finally {
       _isLoading = false;
       notifyListeners();
+      return false;
     }
   }
 
@@ -87,15 +86,14 @@ class AuthProvider extends ChangeNotifier {
     } on DioException catch (e) {
       _errorMessage =
           e.response?.data["message"] ?? e.message ?? "Registration failed";
+      _isLoading = false;
       notifyListeners();
       return false;
     } catch (e) {
       _errorMessage = e.toString();
-      notifyListeners();
-      return false;
-    } finally {
       _isLoading = false;
       notifyListeners();
+      return false;
     }
   }
 
@@ -104,6 +102,8 @@ class AuthProvider extends ChangeNotifier {
     await CacheService.clearAll();
 
     _currentUser = null;
+    _isLoading = false;
+    _errorMessage = null;
 
     notifyListeners();
   }
