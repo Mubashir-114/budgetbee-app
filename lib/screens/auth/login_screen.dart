@@ -21,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -33,6 +34,10 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
+    setState(() {
+      _isLoading = true;
+    });
 
     final authProvider = context.read<AuthProvider>();
 
@@ -47,6 +52,9 @@ class _LoginScreenState extends State<LoginScreen> {
       CustomToast.showSuccess(context, "Welcome back! Login successful.");
       context.go("/dashboard");
     } else {
+      setState(() {
+        _isLoading = false;
+      });
       CustomToast.showError(
         context,
         authProvider.errorMessage ?? "Invalid credentials. Please try again.",
@@ -174,15 +182,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Action buttons
-                    Consumer<AuthProvider>(
-                      builder: (context, auth, child) {
-                        return AppButton(
-                          text: "SIGN IN",
-                          isLoading: auth.isLoading,
-                          onPressed: _login,
-                        );
-                      },
+                     AppButton(
+                      text: "SIGN IN",
+                      isLoading: _isLoading,
+                      onPressed: _login,
                     ),
                     AppDimensions.hMD,
                     Row(

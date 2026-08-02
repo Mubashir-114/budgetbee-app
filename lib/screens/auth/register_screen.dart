@@ -23,6 +23,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -43,6 +44,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+    });
+
     final authProvider = context.read<AuthProvider>();
 
     final success = await authProvider.register(
@@ -57,6 +62,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       CustomToast.showSuccess(context, "Registration Successful! Welcome!");
       context.go("/dashboard");
     } else {
+      setState(() {
+        _isLoading = false;
+      });
       CustomToast.showError(
         context,
         authProvider.errorMessage ?? "Registration Failed",
@@ -197,15 +205,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Buttons
-                    Consumer<AuthProvider>(
-                      builder: (context, auth, child) {
-                        return AppButton(
-                          text: "GET STARTED",
-                          isLoading: auth.isLoading,
-                          onPressed: _register,
-                        );
-                      },
+                    AppButton(
+                      text: "GET STARTED",
+                      isLoading: _isLoading,
+                      onPressed: _register,
                     ),
                     AppDimensions.hMD,
                     Row(

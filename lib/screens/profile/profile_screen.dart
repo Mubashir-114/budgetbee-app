@@ -27,6 +27,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Settings mock states
   bool _notificationsEnabled = true;
   String _selectedCurrency = 'USD (\$)';
+  
+  bool _isUpdatingProfile = false;
+  bool _isChangingPassword = false;
 
   @override
   void initState() {
@@ -49,15 +52,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _updateProfile() async {
     if (!_profileFormKey.currentState!.validate()) return;
 
+    setState(() {
+      _isUpdatingProfile = true;
+    });
+
     final provider = context.read<AuthProvider>();
     final success = await provider.updateProfile(
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
     );
 
-    if (success && mounted) {
+    if (!mounted) return;
+
+    setState(() {
+      _isUpdatingProfile = false;
+    });
+
+    if (success) {
       CustomToast.showSuccess(context, "Profile details updated successfully");
-    } else if (mounted) {
+    } else {
       CustomToast.showError(context, provider.errorMessage ?? "Failed to update profile");
     }
   }
@@ -65,18 +78,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _changePassword() async {
     if (!_passwordFormKey.currentState!.validate()) return;
 
+    setState(() {
+      _isChangingPassword = true;
+    });
+
     final provider = context.read<AuthProvider>();
     final success = await provider.changePassword(
       currentPassword: _currentPasswordController.text,
       newPassword: _newPasswordController.text,
     );
 
-    if (success && mounted) {
+    if (!mounted) return;
+
+    setState(() {
+      _isChangingPassword = false;
+    });
+
+    if (success) {
       _currentPasswordController.clear();
       _newPasswordController.clear();
       _confirmPasswordController.clear();
       CustomToast.showSuccess(context, "Password updated successfully");
-    } else if (mounted) {
+    } else {
       CustomToast.showError(context, provider.errorMessage ?? "Failed to update password");
     }
   }
@@ -241,8 +264,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: provider.isLoading ? null : _updateProfile,
-                          child: provider.isLoading
+                          onPressed: _isUpdatingProfile ? null : _updateProfile,
+                          child: _isUpdatingProfile
                               ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                               : const Text("UPDATE DETAILS"),
                         ),
@@ -307,8 +330,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: provider.isLoading ? null : _changePassword,
-                          child: provider.isLoading
+                          onPressed: _isChangingPassword ? null : _changePassword,
+                          child: _isChangingPassword
                               ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                               : const Text("CHANGE PASSWORD"),
                         ),
