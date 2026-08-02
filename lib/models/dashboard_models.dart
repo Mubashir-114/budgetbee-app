@@ -2,11 +2,15 @@ class DashboardSummary {
   final double totalIncome;
   final double totalExpense;
   final double balance;
+  final int smsImportedToday;
+  final int totalSmsImported;
 
   const DashboardSummary({
     required this.totalIncome,
     required this.totalExpense,
     required this.balance,
+    required this.smsImportedToday,
+    required this.totalSmsImported,
   });
 
   factory DashboardSummary.fromJson(Map<String, dynamic> json) {
@@ -14,6 +18,8 @@ class DashboardSummary {
       totalIncome: (json["totalIncome"] as num).toDouble(),
       totalExpense: (json["totalExpense"] as num).toDouble(),
       balance: (json["balance"] as num).toDouble(),
+      smsImportedToday: json["smsImportedToday"] as int? ?? 0,
+      totalSmsImported: json["totalSmsImported"] as int? ?? 0,
     );
   }
 
@@ -22,6 +28,8 @@ class DashboardSummary {
       "totalIncome": totalIncome,
       "totalExpense": totalExpense,
       "balance": balance,
+      "smsImportedToday": smsImportedToday,
+      "totalSmsImported": totalSmsImported,
     };
   }
 }

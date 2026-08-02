@@ -11,6 +11,7 @@ import '../screens/transactions/transactions_list_screen.dart';
 import '../screens/budgets/budgets_list_screen.dart';
 import '../screens/reports/reports_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/transactions/sms_import_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
@@ -60,6 +61,10 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/transactions',
           builder: (context, state) => const TransactionsListScreen(),
+        ),
+        GoRoute(
+          path: '/sms-import',
+          builder: (context, state) => const SmsImportScreen(),
         ),
         GoRoute(
           path: '/budgets',

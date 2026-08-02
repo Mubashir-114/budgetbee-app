@@ -11,6 +11,7 @@ import 'providers/dashboard_provider.dart';
 import 'providers/transaction_provider.dart';
 import 'providers/budget_provider.dart';
 import 'providers/report_provider.dart';
+import 'providers/sms_provider.dart';
 
 import 'core/services/cache_service.dart';
 import 'core/services/connectivity_service.dart';
@@ -38,6 +39,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (context) => TransactionProvider()),
         ChangeNotifierProvider(create: (context) => BudgetProvider()),
         ChangeNotifierProvider(create: (context) => ReportProvider()),
+        ChangeNotifierProvider(create: (context) => SmsProvider()),
       ],
       child: const PersonalFinanceApp(),
     ),

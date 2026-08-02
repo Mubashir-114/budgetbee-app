@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../api/api_client.dart';
 import '../models/api_response.dart';
 import '../models/transaction_model.dart';
+import '../core/utils/sms_parser.dart';
 
 class TransactionRepository {
   final Dio _dio = ApiClient.dio;
@@ -108,6 +109,53 @@ class TransactionRepository {
     return ApiResponse.fromJson(
       response.data,
       (_) {},
+    );
+  }
+
+  Future<ApiResponse<SmsImportResponse>> importSmsTransactions(
+    List<ParsedSmsTransaction> transactions,
+  ) async {
+    final response = await _dio.post(
+      "transactions/import-sms",
+      data: transactions.map((t) => t.toJson()).toList(),
+    );
+
+    final json = response.data as Map<String, dynamic>;
+    return ApiResponse<SmsImportResponse>(
+      success: json["success"] ?? false,
+      message: json["message"] ?? "",
+      data: SmsImportResponse.fromJson(json),
+    );
+  }
+
+  Future<ApiResponse<List<String>>> getImportedSmsHashes() async {
+    final response = await _dio.get("transactions/imported-hashes");
+    final json = response.data as Map<String, dynamic>;
+    final List<dynamic> data = json["data"] ?? [];
+    return ApiResponse<List<String>>(
+      success: json["success"] ?? false,
+      message: json["message"] ?? "",
+      data: data.map((item) => item.toString()).toList(),
+    );
+  }
+}
+
+class SmsImportResponse {
+  final int imported;
+  final int duplicates;
+  final int failed;
+
+  SmsImportResponse({
+    required this.imported,
+    required this.duplicates,
+    required this.failed,
+  });
+
+  factory SmsImportResponse.fromJson(Map<String, dynamic> json) {
+    return SmsImportResponse(
+      imported: json["imported"] ?? 0,
+      duplicates: json["duplicates"] ?? 0,
+      failed: json["failed"] ?? 0,
     );
   }
 }

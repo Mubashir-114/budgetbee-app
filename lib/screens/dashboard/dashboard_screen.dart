@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/dashboard_provider.dart';
+import '../../providers/sms_provider.dart';
 import '../../core/utils/category_utils.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
@@ -85,6 +86,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: isDark ? AppColors.textLight : AppColors.textDark,
+          ),
+        ),
+      ],
     );
   }
 
@@ -274,6 +300,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
     final dashboardProvider = context.watch<DashboardProvider>();
+    final smsProvider = context.watch<SmsProvider>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -453,6 +480,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                       ],
+                    ),
+                    AppDimensions.hMD,
+                    // SMS Sync Action & Stats Card
+                    Card(
+                      elevation: 0,
+                      color: isDark ? AppColors.surfaceDark : Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+                        side: BorderSide(
+                          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                          width: 1.0,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppDimensions.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.sms_rounded,
+                                      color: isDark ? AppColors.textLight : AppColors.textDark,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      "SMS Import Sync",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                ElevatedButton.icon(
+                                  onPressed: () => context.push('/sms-import'),
+                                  icon: const Icon(Icons.add_rounded, size: 16),
+                                  label: const Text(
+                                    "Import SMS",
+                                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Divider(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                _buildStatItem(
+                                  "Last Import",
+                                  smsProvider.lastImportTime != null
+                                      ? DateFormat('MMM dd, hh:mm a').format(smsProvider.lastImportTime!)
+                                      : "Never",
+                                  isDark,
+                                ),
+                                _buildStatItem(
+                                  "Imported Today",
+                                  "${dashboardProvider.summary?.smsImportedToday ?? 0}",
+                                  isDark,
+                                ),
+                                _buildStatItem(
+                                  "Total via SMS",
+                                  "${dashboardProvider.summary?.totalSmsImported ?? 0}",
+                                  isDark,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                     AppDimensions.hLG,
                     // Monthly Trend Chart Section
