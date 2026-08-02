@@ -7,6 +7,7 @@ import '../../providers/transaction_provider.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/report_provider.dart';
+import '../../providers/currency_provider.dart';
 import '../../models/transaction_model.dart';
 import '../../models/category_model.dart';
 import '../../core/utils/category_utils.dart';
@@ -26,7 +27,6 @@ class TransactionsListScreen extends StatefulWidget {
 class _TransactionsListScreenState extends State<TransactionsListScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
-  final NumberFormat _currencyFormat = NumberFormat.currency(symbol: '\$');
   Timer? _debounce;
 
   @override
@@ -383,7 +383,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      "${isExpense ? '-' : '+'}${_currencyFormat.format(tx.amount)}",
+                                      "${isExpense ? '-' : '+'}${context.watch<CurrencyProvider>().format(tx.amount)}",
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: isExpense ? AppColors.danger : AppColors.success,

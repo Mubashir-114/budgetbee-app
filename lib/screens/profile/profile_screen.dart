@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../providers/currency_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/widgets/custom_toast.dart';
@@ -26,7 +27,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // Settings mock states
   bool _notificationsEnabled = true;
-  String _selectedCurrency = 'USD (\$)';
   
   bool _isUpdatingProfile = false;
   bool _isChangingPassword = false;
@@ -383,9 +383,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text("Base Currency", style: TextStyle(fontSize: 14)),
-                      subtitle: Text("Current currency: $_selectedCurrency", style: const TextStyle(fontSize: 11)),
+                      subtitle: Consumer<CurrencyProvider>(
+                        builder: (context, currency, child) => Text(
+                          "Current currency: ${currency.selectedCurrencyString}",
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                      ),
                       trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                       onTap: () {
+                        final currencyProv = context.read<CurrencyProvider>();
                         showDialog(
                           context: context,
                           builder: (ctx) => AlertDialog(
@@ -393,15 +399,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
                             content: Column(
                               mainAxisSize: MainAxisSize.min,
-                              children: ['USD (\$)', 'EUR (€)', 'GBP (£)', 'INR (₹)']
+                              children: [
+                                {'label': 'USD (\$)', 'code': 'USD'},
+                                {'label': 'EUR (€)', 'code': 'EUR'},
+                                {'label': 'GBP (£)', 'code': 'GBP'},
+                                {'label': 'INR (₹)', 'code': 'INR'},
+                              ]
                                   .map((c) => ListTile(
-                                        title: Text(c),
+                                        title: Text(c['label']!),
+                                        trailing: currencyProv.currencyCode == c['code']
+                                            ? const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 18)
+                                            : null,
                                         onTap: () {
-                                          setState(() {
-                                            _selectedCurrency = c;
-                                          });
+                                          currencyProv.setCurrency(c['code']!);
                                           Navigator.pop(ctx);
-                                          CustomToast.showSuccess(context, "Currency updated to $c");
+                                          CustomToast.showSuccess(context, "Currency updated to ${c['label']}");
                                         },
                                       ))
                                   .toList(),

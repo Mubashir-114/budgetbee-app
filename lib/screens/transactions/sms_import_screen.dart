@@ -10,6 +10,7 @@ import '../../core/utils/category_utils.dart';
 import '../../providers/sms_provider.dart';
 import '../../providers/transaction_provider.dart';
 import '../../providers/dashboard_provider.dart';
+import '../../providers/currency_provider.dart';
 
 class SmsImportScreen extends StatefulWidget {
   const SmsImportScreen({super.key});
@@ -19,7 +20,6 @@ class SmsImportScreen extends StatefulWidget {
 }
 
 class _SmsImportScreenState extends State<SmsImportScreen> {
-  final NumberFormat _currencyFormat = NumberFormat.currency(symbol: '\$');
   final Set<String> _expandedHashes = {};
 
   @override
@@ -430,7 +430,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                                         ),
                                         const SizedBox(width: 8),
                                         Text(
-                                          "${isExpense ? '-' : '+'}${_currencyFormat.format(tx.amount)}",
+                                          "${isExpense ? '-' : '+'}${context.watch<CurrencyProvider>().format(tx.amount)}",
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 15,

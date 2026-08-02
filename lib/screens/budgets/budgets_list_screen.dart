@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../providers/budget_provider.dart';
 import '../../providers/report_provider.dart';
+import '../../providers/currency_provider.dart';
 import '../../models/budget_model.dart';
 import '../../models/category_model.dart';
 import '../../core/constants/app_colors.dart';
@@ -20,8 +21,6 @@ class BudgetsListScreen extends StatefulWidget {
 }
 
 class _BudgetsListScreenState extends State<BudgetsListScreen> {
-  final NumberFormat _currencyFormat = NumberFormat.currency(symbol: '\$');
-
   @override
   void initState() {
     super.initState();
@@ -318,7 +317,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          "Spent: ${_currencyFormat.format(status.spent)}",
+                                          "Spent: ${context.watch<CurrencyProvider>().format(status.spent)}",
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: isOver ? AppColors.danger : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
@@ -326,7 +325,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                                           ),
                                         ),
                                         Text(
-                                          "Limit: ${_currencyFormat.format(status.budget)}",
+                                          "Limit: ${context.watch<CurrencyProvider>().format(status.budget)}",
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
@@ -338,8 +337,8 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                                     const SizedBox(height: 4),
                                     Text(
                                       status.remaining >= 0
-                                          ? "Remaining: ${_currencyFormat.format(status.remaining)}"
-                                          : "Over by: ${_currencyFormat.format(status.remaining.abs())}",
+                                          ? "Remaining: ${context.watch<CurrencyProvider>().format(status.remaining)}"
+                                          : "Over by: ${context.watch<CurrencyProvider>().format(status.remaining.abs())}",
                                       style: TextStyle(
                                         color: status.remaining >= 0 ? AppColors.success : AppColors.danger,
                                         fontSize: 12,

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/sms_provider.dart';
+import '../../providers/currency_provider.dart';
 import '../../core/utils/category_utils.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
@@ -20,8 +21,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final NumberFormat _currencyFormat = NumberFormat.currency(symbol: '\$');
-
   @override
   void initState() {
     super.initState();
@@ -31,12 +30,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildSummaryCard({
+    required BuildContext context,
     required String title,
     required double amount,
     required Color color,
     required IconData icon,
     required bool isDark,
   }) {
+    final formattedAmount = context.watch<CurrencyProvider>().format(amount);
     return Card(
       elevation: 0,
       color: isDark ? AppColors.surfaceDark : Colors.white,
@@ -74,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _currencyFormat.format(amount),
+                    formattedAmount,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -180,7 +181,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 return touchedSpots.map((spot) {
                   final String type = spot.barIndex == 0 ? "Income" : "Expense";
                   return LineTooltipItem(
-                    "$type: ${_currencyFormat.format(spot.y)}",
+                    "$type: ${context.read<CurrencyProvider>().format(spot.y)}",
                     TextStyle(
                       color: isDark ? AppColors.textLight : AppColors.textDark,
                       fontWeight: FontWeight.bold,
@@ -441,8 +442,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 6),
-                                Text(
-                                  _currencyFormat.format(dashboardProvider.summary?.balance ?? 0.0),
+                                 Text(
+                                  context.watch<CurrencyProvider>().format(dashboardProvider.summary?.balance ?? 0.0),
                                   style: const TextStyle(
                                     fontSize: 32,
                                     fontWeight: FontWeight.bold,
@@ -462,6 +463,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Expanded(
                           child: _buildSummaryCard(
+                            context: context,
                             title: "Income",
                             amount: dashboardProvider.summary?.totalIncome ?? 0.0,
                             color: AppColors.success,
@@ -472,6 +474,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: _buildSummaryCard(
+                            context: context,
                             title: "Expense",
                             amount: dashboardProvider.summary?.totalExpense ?? 0.0,
                             color: AppColors.danger,
@@ -710,7 +713,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                   const SizedBox(width: 12),
                                   Text(
-                                    "${isExpense ? '-' : '+'}${_currencyFormat.format(tx.amount)}",
+                                    "${isExpense ? '-' : '+'}${context.watch<CurrencyProvider>().format(tx.amount)}",
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,

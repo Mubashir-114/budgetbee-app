@@ -115,8 +115,9 @@ class ReportProvider extends ChangeNotifier {
   bool _isPdfExporting = false;
   bool get isPdfExporting => _isPdfExporting;
 
-  Future<String?> exportPDF(String dateRangeStr) async {
+  Future<String?> exportPDF(String dateRangeStr, [String currencySymbol = '\$']) async {
     if (_summary == null) return null;
+
     try {
       _isPdfExporting = true;
       _errorMessage = null;
@@ -127,6 +128,7 @@ class ReportProvider extends ChangeNotifier {
         categoryReports: _categoryReports,
         cashflowReports: _cashflowReports,
         dateRangeStr: dateRangeStr,
+        currencySymbol: currencySymbol,
       );
 
       return path;

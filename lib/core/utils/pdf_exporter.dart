@@ -12,6 +12,7 @@ class PdfExporter {
     required List<CategoryReport> categoryReports,
     required List<CashflowReport> cashflowReports,
     required String dateRangeStr,
+    String currencySymbol = '\$',
   }) async {
     final pdf = pw.Document();
 
@@ -60,9 +61,9 @@ class PdfExporter {
               crossAxisCount: 2,
               childAspectRatio: 0.28,
               children: [
-                _buildSummaryBox("Total Income", "\$${summary.totalIncome.toStringAsFixed(2)}", PdfColor.fromHex("#10B981")),
-                _buildSummaryBox("Total Expense", "\$${summary.totalExpense.toStringAsFixed(2)}", PdfColor.fromHex("#F43F5E")),
-                _buildSummaryBox("Net Savings", "\$${summary.netBalance.toStringAsFixed(2)}", PdfColor.fromHex("#3B82F6")),
+                _buildSummaryBox("Total Income", "$currencySymbol${summary.totalIncome.toStringAsFixed(2)}", PdfColor.fromHex("#10B981")),
+                _buildSummaryBox("Total Expense", "$currencySymbol${summary.totalExpense.toStringAsFixed(2)}", PdfColor.fromHex("#F43F5E")),
+                _buildSummaryBox("Net Savings", "$currencySymbol${summary.netBalance.toStringAsFixed(2)}", PdfColor.fromHex("#3B82F6")),
                 _buildSummaryBox("Savings Rate", "${summary.savingsRate.toStringAsFixed(1)}%", PdfColor.fromHex("#F59E0B")),
               ],
             ),
@@ -75,9 +76,9 @@ class PdfExporter {
               headers: ["Category", "Budget Limit", "Spent Amount", "Remaining", "Usage %"],
               data: categoryReports.map((c) => [
                 c.category,
-                c.budget == 0 ? "No Limit" : "\$${c.budget.toStringAsFixed(2)}",
-                "\$${c.spent.toStringAsFixed(2)}",
-                c.budget == 0 ? "-" : "\$${c.remaining.toStringAsFixed(2)}",
+                c.budget == 0 ? "No Limit" : "$currencySymbol${c.budget.toStringAsFixed(2)}",
+                "$currencySymbol${c.spent.toStringAsFixed(2)}",
+                c.budget == 0 ? "-" : "$currencySymbol${c.remaining.toStringAsFixed(2)}",
                 c.budget == 0 ? "-" : "${c.percentage.toStringAsFixed(1)}%",
               ]).toList(),
               border: pw.TableBorder.all(color: PdfColor.fromHex("#E2E8F0"), width: 0.5),
@@ -104,8 +105,8 @@ class PdfExporter {
                 c.title,
                 c.category,
                 c.type.toUpperCase(),
-                "${c.type == 'expense' ? '-' : '+'}\$${c.amount.toStringAsFixed(2)}",
-                "\$${c.runningBalance.toStringAsFixed(2)}",
+                "${c.type == 'expense' ? '-' : '+'}$currencySymbol${c.amount.toStringAsFixed(2)}",
+                "$currencySymbol${c.runningBalance.toStringAsFixed(2)}",
               ]).toList(),
               border: pw.TableBorder.all(color: PdfColor.fromHex("#E2E8F0"), width: 0.5),
               headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white, fontSize: 9),

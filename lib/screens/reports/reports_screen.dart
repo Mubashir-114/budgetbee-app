@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../providers/report_provider.dart';
+import '../../providers/currency_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/widgets/skeleton_loader.dart';
@@ -81,7 +82,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
         ? "${DateFormat('yyyy-MM-dd').format(provider.selectedDateRange!.start)} to ${DateFormat('yyyy-MM-dd').format(provider.selectedDateRange!.end)}"
         : "All Time";
 
-    final path = await provider.exportPDF(dateRangeStr);
+    final path = await provider.exportPDF(dateRangeStr, context.read<CurrencyProvider>().currencySymbol);
 
     if (path != null && mounted) {
       await Clipboard.setData(ClipboardData(text: path));
@@ -172,7 +173,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             ),
             const SizedBox(height: 6),
             Text(
-              isPercent ? "${value.toStringAsFixed(1)}%" : _currencyFormat.format(value),
+              isPercent ? "${value.toStringAsFixed(1)}%" : context.watch<CurrencyProvider>().format(value),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -431,7 +432,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                         children: [
                           Text(r.category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                           Text(
-                            "${_currencyFormat.format(r.spent)} / ${_currencyFormat.format(r.budget)}",
+                            "${context.watch<CurrencyProvider>().format(r.spent)} / ${context.watch<CurrencyProvider>().format(r.budget)}",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
@@ -520,7 +521,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  "${isExpense ? '-' : '+'}${_currencyFormat.format(item.amount)}",
+                  "${isExpense ? '-' : '+'}${context.watch<CurrencyProvider>().format(item.amount)}",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: isExpense ? AppColors.danger : AppColors.success,
@@ -529,7 +530,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  "Balance: ${_currencyFormat.format(item.runningBalance)}",
+                  "Balance: ${context.watch<CurrencyProvider>().format(item.runningBalance)}",
                   style: const TextStyle(fontSize: 10, color: AppColors.textSecondaryLight),
                 ),
               ],

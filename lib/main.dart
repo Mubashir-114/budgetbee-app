@@ -12,6 +12,7 @@ import 'providers/transaction_provider.dart';
 import 'providers/budget_provider.dart';
 import 'providers/report_provider.dart';
 import 'providers/sms_provider.dart';
+import 'providers/currency_provider.dart';
 
 import 'core/services/cache_service.dart';
 import 'core/services/connectivity_service.dart';
@@ -35,6 +36,7 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: authProvider),
+        ChangeNotifierProvider(create: (context) => CurrencyProvider()),
         ChangeNotifierProvider(create: (context) => DashboardProvider()),
         ChangeNotifierProvider(create: (context) => TransactionProvider()),
         ChangeNotifierProvider(create: (context) => BudgetProvider()),
