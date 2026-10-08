@@ -17,6 +17,8 @@ class BudgetProvider extends ChangeNotifier {
 
   int _selectedMonth = DateTime.now().month;
   int _selectedYear = DateTime.now().year;
+  int _sessionGeneration = 0;
+  int _loadGeneration = 0;
 
   bool get isLoading => _isLoading;
   bool get isActionLoading => _isActionLoading;
@@ -28,6 +30,17 @@ class BudgetProvider extends ChangeNotifier {
   int get selectedMonth => _selectedMonth;
   int get selectedYear => _selectedYear;
 
+  void clearSession() {
+    _sessionGeneration++;
+    _loadGeneration++;
+    _isLoading = false;
+    _isActionLoading = false;
+    _errorMessage = null;
+    _budgets = [];
+    _budgetStatuses = [];
+    notifyListeners();
+  }
+
   void changeDate(int month, int year) {
     _selectedMonth = month;
     _selectedYear = year;
@@ -35,53 +48,95 @@ class BudgetProvider extends ChangeNotifier {
   }
 
   Future<void> loadBudgets() async {
+    final sessionGeneration = _sessionGeneration;
+    final loadGeneration = ++_loadGeneration;
     try {
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
 
       final response = await _repository.getBudgets();
+      if (sessionGeneration != _sessionGeneration ||
+          loadGeneration != _loadGeneration) {
+        return;
+      }
       _budgets = response.data;
     } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration ||
+          loadGeneration != _loadGeneration) {
+        return;
+      }
       _errorMessage = e.response?.data["message"] ?? e.message ?? "Failed to load budgets";
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration ||
+          loadGeneration != _loadGeneration) {
+        return;
+      }
       _errorMessage = e.toString();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (sessionGeneration == _sessionGeneration &&
+          loadGeneration == _loadGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> loadBudgetStatus() async {
-    final String cacheKey = "budget_status_${_selectedMonth}_$_selectedYear";
+    final sessionGeneration = _sessionGeneration;
+    final loadGeneration = ++_loadGeneration;
+    final month = _selectedMonth;
+    final year = _selectedYear;
+    final String cacheKey = 'budget_status_${month}_$year';
     try {
       _isLoading = true;
       _errorMessage = null;
 
       final cached = await CacheService.get(cacheKey);
+      if (sessionGeneration != _sessionGeneration ||
+          loadGeneration != _loadGeneration) {
+        return;
+      }
       if (cached != null) {
         try {
           _budgetStatuses = (cached as List).map((i) => BudgetStatusModel.fromJson(i)).toList();
           notifyListeners();
-        } catch (_) {}
+        } catch (_) {
+          await CacheService.remove(cacheKey);
+        }
       } else {
         notifyListeners();
       }
 
       final response = await _repository.getBudgetStatus(
-        month: _selectedMonth,
-        year: _selectedYear,
+        month: month,
+        year: year,
       );
+      if (sessionGeneration != _sessionGeneration ||
+          loadGeneration != _loadGeneration) {
+        return;
+      }
       _budgetStatuses = response.data;
 
       await CacheService.save(cacheKey, _budgetStatuses.map((b) => b.toJson()).toList());
     } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration ||
+          loadGeneration != _loadGeneration) {
+        return;
+      }
       _errorMessage = e.response?.data["message"] ?? e.message ?? "Failed to load budget status";
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration ||
+          loadGeneration != _loadGeneration) {
+        return;
+      }
       _errorMessage = e.toString();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (sessionGeneration == _sessionGeneration &&
+          loadGeneration == _loadGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -91,6 +146,7 @@ class BudgetProvider extends ChangeNotifier {
     required int month,
     required int year,
   }) async {
+    final sessionGeneration = _sessionGeneration;
     try {
       _isActionLoading = true;
       _errorMessage = null;
@@ -103,18 +159,23 @@ class BudgetProvider extends ChangeNotifier {
         year: year,
       );
 
+      if (sessionGeneration != _sessionGeneration) return false;
       await loadBudgetStatus();
       await loadBudgets();
       return true;
     } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
       _errorMessage = e.response?.data["message"] ?? e.message ?? "Failed to add budget";
       return false;
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
       _errorMessage = e.toString();
       return false;
     } finally {
-      _isActionLoading = false;
-      notifyListeners();
+      if (sessionGeneration == _sessionGeneration) {
+        _isActionLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -125,6 +186,7 @@ class BudgetProvider extends ChangeNotifier {
     required int month,
     required int year,
   }) async {
+    final sessionGeneration = _sessionGeneration;
     try {
       _isActionLoading = true;
       _errorMessage = null;
@@ -138,22 +200,28 @@ class BudgetProvider extends ChangeNotifier {
         year: year,
       );
 
+      if (sessionGeneration != _sessionGeneration) return false;
       await loadBudgetStatus();
       await loadBudgets();
       return true;
     } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
       _errorMessage = e.response?.data["message"] ?? e.message ?? "Failed to update budget";
       return false;
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
       _errorMessage = e.toString();
       return false;
     } finally {
-      _isActionLoading = false;
-      notifyListeners();
+      if (sessionGeneration == _sessionGeneration) {
+        _isActionLoading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<bool> deleteBudget(int id) async {
+    final sessionGeneration = _sessionGeneration;
     try {
       _isActionLoading = true;
       _errorMessage = null;
@@ -161,18 +229,23 @@ class BudgetProvider extends ChangeNotifier {
 
       await _repository.removeBudget(id);
 
+      if (sessionGeneration != _sessionGeneration) return false;
       await loadBudgetStatus();
       await loadBudgets();
       return true;
     } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
       _errorMessage = e.response?.data["message"] ?? e.message ?? "Failed to delete budget";
       return false;
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
       _errorMessage = e.toString();
       return false;
     } finally {
-      _isActionLoading = false;
-      notifyListeners();
+      if (sessionGeneration == _sessionGeneration) {
+        _isActionLoading = false;
+        notifyListeners();
+      }
     }
   }
 }
