@@ -5,7 +5,9 @@ import '../models/api_response.dart';
 import '../models/auth_response.dart';
 
 class AuthRepository {
-  final Dio _dio = ApiClient.dio;
+  AuthRepository({Dio? dio}) : _dio = dio ?? ApiClient.dio;
+
+  final Dio _dio;
 
   Future<ApiResponse<AuthResponse>> login({
     required String email,
@@ -17,6 +19,7 @@ class AuthRepository {
         "email": email,
         "password": password,
       },
+      options: Options(extra: const {'skipAuth': true}),
     );
 
     return ApiResponse.fromJson(
@@ -37,6 +40,7 @@ class AuthRepository {
         "email": email,
         "password": password,
       },
+      options: Options(extra: const {'skipAuth': true}),
     );
 
     return ApiResponse.fromJson(
@@ -45,12 +49,12 @@ class AuthRepository {
     );
   }
 
-  Future<ApiResponse<AuthResponse>> getProfile() async {
+  Future<ApiResponse<ProfileResponse>> getProfile() async {
     final response = await _dio.get("auth/me");
 
     return ApiResponse.fromJson(
       response.data,
-      (json) => AuthResponse.fromJson(json),
+      (json) => ProfileResponse.fromJson(json),
     );
   }
 }
