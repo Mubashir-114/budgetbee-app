@@ -7,11 +7,27 @@ import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
 
 class AuthProvider extends ChangeNotifier {
-  final AuthRepository _repository = AuthRepository();
+  AuthProvider({
+    this.onSessionReset,
+    AuthRepository? repository,
+    Future<String?> Function()? tokenReader,
+    Future<void> Function(String token)? tokenWriter,
+    Future<void> Function()? tokenRemover,
+  }) : _repository = repository ?? AuthRepository(),
+       _tokenReader = tokenReader ?? TokenService.getToken,
+       _tokenWriter = tokenWriter ?? TokenService.saveToken,
+       _tokenRemover = tokenRemover ?? TokenService.removeToken;
+
+  final VoidCallback? onSessionReset;
+  final AuthRepository _repository;
+  final Future<String?> Function() _tokenReader;
+  final Future<void> Function(String token) _tokenWriter;
+  final Future<void> Function() _tokenRemover;
 
   bool _isLoading = false;
   String? _errorMessage;
   UserModel? _currentUser;
+  int _sessionGeneration = 0;
 
   bool get isLoading => _isLoading;
 
@@ -21,10 +37,8 @@ class AuthProvider extends ChangeNotifier {
 
   bool get isLoggedIn => _currentUser != null;
 
-  Future<bool> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<bool> login({required String email, required String password}) async {
+    final generation = ++_sessionGeneration;
     try {
       _isLoading = true;
       _errorMessage = null;
@@ -35,9 +49,15 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
 
-      await TokenService.saveToken(
-        response.data.token,
-      );
+      if (generation != _sessionGeneration) return false;
+      if (!await _prepareSession(
+        response.data.user.id,
+        generation: generation,
+      )) {
+        return false;
+      }
+      await _tokenWriter(response.data.token);
+      if (generation != _sessionGeneration) return false;
 
       _currentUser = response.data.user;
 
@@ -45,17 +65,21 @@ class AuthProvider extends ChangeNotifier {
 
       return true;
     } on DioException catch (e) {
+      if (generation != _sessionGeneration) return false;
       _errorMessage =
           e.response?.data["message"] ?? e.message ?? "Login failed";
       notifyListeners();
       return false;
     } catch (e) {
+      if (generation != _sessionGeneration) return false;
       _errorMessage = e.toString();
       notifyListeners();
       return false;
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (generation == _sessionGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -64,6 +88,7 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
+    final generation = ++_sessionGeneration;
     try {
       _isLoading = true;
       _errorMessage = null;
@@ -75,9 +100,15 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
 
-      await TokenService.saveToken(
-        response.data.token,
-      );
+      if (generation != _sessionGeneration) return false;
+      if (!await _prepareSession(
+        response.data.user.id,
+        generation: generation,
+      )) {
+        return false;
+      }
+      await _tokenWriter(response.data.token);
+      if (generation != _sessionGeneration) return false;
 
       _currentUser = response.data.user;
 
@@ -85,48 +116,88 @@ class AuthProvider extends ChangeNotifier {
 
       return true;
     } on DioException catch (e) {
+      if (generation != _sessionGeneration) return false;
       _errorMessage =
           e.response?.data["message"] ?? e.message ?? "Registration failed";
       notifyListeners();
       return false;
     } catch (e) {
+      if (generation != _sessionGeneration) return false;
       _errorMessage = e.toString();
       notifyListeners();
       return false;
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (generation == _sessionGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> logout() async {
-    await TokenService.removeToken();
-    await CacheService.clearAll();
-
+    final generation = ++_sessionGeneration;
+    CacheService.setUserId(null);
+    onSessionReset?.call();
     _currentUser = null;
     _isLoading = false;
     _errorMessage = null;
-
     notifyListeners();
+
+    try {
+      await _tokenRemover();
+    } finally {
+      if (generation == _sessionGeneration) {
+        await CacheService.clearAll();
+      }
+    }
   }
 
   Future<bool> loadCurrentUser() async {
+    final generation = _sessionGeneration;
+    String? token;
     try {
-      final token = await TokenService.getToken();
+      token = await _tokenReader();
 
-      if (token == null) {
+      if (generation != _sessionGeneration || token == null || token.isEmpty) {
         return false;
       }
 
       final response = await _repository.getProfile();
+      if (generation != _sessionGeneration || await _tokenReader() != token) {
+        return false;
+      }
+      if (!await _prepareSession(
+        response.data.user.id,
+        generation: generation,
+      )) {
+        return false;
+      }
 
       _currentUser = response.data.user;
+      _errorMessage = null;
 
       notifyListeners();
 
       return true;
+    } on DioException catch (e) {
+      if (generation != _sessionGeneration) return false;
+      if (e.response?.statusCode == 401) {
+        if (token != null && await _tokenReader() == token) {
+          await logout();
+        }
+      } else {
+        _errorMessage =
+            e.response?.data["message"] ??
+            e.message ??
+            "Unable to restore session";
+        notifyListeners();
+      }
+      return false;
     } catch (_) {
-      await logout();
+      if (generation == _sessionGeneration) {
+        _errorMessage = "Unable to restore session";
+        notifyListeners();
+      }
       return false;
     }
   }
@@ -135,50 +206,30 @@ class AuthProvider extends ChangeNotifier {
     required String name,
     required String email,
   }) async {
-    try {
-      _isLoading = true;
-      _errorMessage = null;
-      notifyListeners();
-
-      // Simulate network latency since API route doesn't exist
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (_currentUser != null) {
-        _currentUser = _currentUser!.copyWith(name: name, email: email);
-      }
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
-      return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+    _errorMessage = 'Profile updates are not supported by the current backend.';
+    notifyListeners();
+    return false;
   }
 
   Future<bool> changePassword({
     required String currentPassword,
     required String newPassword,
   }) async {
-    try {
-      _isLoading = true;
-      _errorMessage = null;
-      notifyListeners();
+    _errorMessage =
+        'Password changes are not supported by the current backend.';
+    notifyListeners();
+    return false;
+  }
 
-      // Simulate network latency since API route doesn't exist
-      await Future.delayed(const Duration(seconds: 1));
-
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _errorMessage = e.toString();
-      notifyListeners();
-      return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+  Future<bool> _prepareSession(int userId, {required int generation}) async {
+    if (generation != _sessionGeneration) return false;
+    if (CacheService.userId != null && CacheService.userId != userId) {
+      await CacheService.clearAll();
+      if (generation != _sessionGeneration) return false;
+      onSessionReset?.call();
     }
+    if (generation != _sessionGeneration) return false;
+    CacheService.setUserId(userId);
+    return true;
   }
 }

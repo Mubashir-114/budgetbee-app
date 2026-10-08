@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 
 import '../core/constants/api_constants.dart';
 import '../core/services/token_service.dart';
@@ -8,84 +8,91 @@ class ApiClient {
 
   static void Function()? onUnauthorized;
 
-  static final Dio dio = Dio(
-    BaseOptions(
-      baseUrl: ApiConstants.baseUrl,
-      connectTimeout: ApiConstants.connectTimeout,
-      receiveTimeout: ApiConstants.receiveTimeout,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    ),
-  )
-    ..interceptors.add(
+  static final Dio dio = createDio();
+
+  static Dio createDio({
+    Future<String?> Function()? tokenProvider,
+    Future<void> Function()? tokenRemover,
+  }) {
+    final client = Dio(
+      BaseOptions(
+        baseUrl: ApiConstants.baseUrl,
+        connectTimeout: ApiConstants.connectTimeout,
+        receiveTimeout: ApiConstants.receiveTimeout,
+        headers: const {'Content-Type': 'application/json'},
+      ),
+    );
+
+    client.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await TokenService.getToken();
-
-          if (token != null) {
-            options.headers["Authorization"] = "Bearer $token";
+          if (options.extra['skipAuth'] == true) {
+            options.headers.remove('Authorization');
+            handler.next(options);
+            return;
           }
 
+          final token = await (tokenProvider ?? TokenService.getToken)();
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
           handler.next(options);
         },
-        onError: (DioException error, handler) async {
-          // Global 401 Unauthorized check
-          if (error.response?.statusCode == 401) {
-            await TokenService.removeToken();
-            if (onUnauthorized != null) {
-              onUnauthorized!();
-            }
+        onError: (error, handler) async {
+          final authorization = error.requestOptions.headers['Authorization'];
+          final currentToken =
+              error.response?.statusCode == 401 && authorization != null
+              ? await (tokenProvider ?? TokenService.getToken)()
+              : null;
+          if (error.response?.statusCode == 401 &&
+              currentToken != null &&
+              currentToken.isNotEmpty &&
+              authorization == 'Bearer $currentToken') {
+            await (tokenRemover ?? TokenService.removeToken)();
+            onUnauthorized?.call();
           }
 
-          // Progressive retry logic for Network Timeout or Render Cold Start
-          final isTimeout = error.type == DioExceptionType.connectionTimeout ||
+          final requestOptions = error.requestOptions;
+          final retryCount = requestOptions.extra['retries'] is int
+              ? requestOptions.extra['retries'] as int
+              : 0;
+          final isTransientFailure =
+              error.type == DioExceptionType.connectionTimeout ||
               error.type == DioExceptionType.receiveTimeout ||
-              error.type == DioExceptionType.sendTimeout;
-          
-          final isConnectionError = error.type == DioExceptionType.connectionError;
+              error.type == DioExceptionType.sendTimeout ||
+              error.type == DioExceptionType.connectionError;
+          final isSafeMethod = const {
+            'GET',
+            'HEAD',
+            'OPTIONS',
+          }.contains(requestOptions.method.toUpperCase());
 
-          if (isTimeout || isConnectionError) {
-            final requestOptions = error.requestOptions;
-            int retries = requestOptions.extra['retries'] ?? 0;
+          if (isTransientFailure &&
+              isSafeMethod &&
+              retryCount < 3 &&
+              requestOptions.cancelToken?.isCancelled != true) {
+            requestOptions.extra['retries'] = retryCount + 1;
+            await Future<void>.delayed(Duration(seconds: 1 << retryCount));
 
-            if (retries < 3) {
-              requestOptions.extra['retries'] = retries + 1;
-              
-              // Exponential backoff: 2s, 4s, 6s
-              final delaySeconds = (retries + 1) * 2;
-              await Future.delayed(Duration(seconds: delaySeconds));
+            if (requestOptions.cancelToken?.isCancelled == true) {
+              handler.next(requestOptions.cancelToken!.cancelError ?? error);
+              return;
+            }
 
-              try {
-                final response = await dio.request(
-                  requestOptions.path,
-                  data: requestOptions.data,
-                  queryParameters: requestOptions.queryParameters,
-                  options: Options(
-                    method: requestOptions.method,
-                    headers: requestOptions.headers,
-                    contentType: requestOptions.contentType,
-                    responseType: requestOptions.responseType,
-                    extra: requestOptions.extra,
-                  ),
-                );
-                return handler.resolve(response);
-              } catch (retryError) {
-                if (retryError is DioException) {
-                  error = retryError;
-                }
-              }
+            try {
+              final response = await client.fetch<dynamic>(requestOptions);
+              handler.resolve(response);
+              return;
+            } on DioException catch (retryError) {
+              error = retryError;
             }
           }
 
           handler.next(error);
         },
       ),
-    )
-    ..interceptors.add(
-      LogInterceptor(
-        requestBody: true,
-        responseBody: true,
-      ),
     );
+
+    return client;
+  }
 }

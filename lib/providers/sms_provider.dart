@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
 
+import '../core/services/cache_service.dart';
 import '../core/services/sms_service.dart';
 import '../core/utils/sms_parser.dart';
 import '../repositories/transaction_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SmsProvider extends ChangeNotifier {
-  final SmsService _smsService = SmsService();
-  final TransactionRepository _repository = TransactionRepository();
+  SmsProvider({
+    SmsService? smsService,
+    TransactionRepository? repository,
+  })  : _smsService = smsService ?? SmsService(),
+        _repository = repository ?? TransactionRepository();
+
+  final SmsService _smsService;
+  final TransactionRepository _repository;
 
   bool _isScanning = false;
   bool _isImporting = false;
@@ -21,18 +28,35 @@ class SmsProvider extends ChangeNotifier {
   PermissionStatus? _permissionStatus;
   SmsImportResponse? _importResponse;
   DateTime? _lastImportTime;
+  int _sessionGeneration = 0;
 
-  SmsProvider() {
-    loadLastImportTime();
+  void clearSession() {
+    _sessionGeneration++;
+    _isScanning = false;
+    _isImporting = false;
+    _errorMessage = null;
+    _transactions = [];
+    _archivedTransactions = [];
+    _selectedHashes.clear();
+    _permissionStatus = null;
+    _importResponse = null;
+    _lastImportTime = null;
+    notifyListeners();
   }
 
   Future<void> loadLastImportTime() async {
+    final sessionGeneration = _sessionGeneration;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final timeStr = prefs.getString('last_sms_import_time');
+      final timeStr = prefs.getString(
+        CacheService.userScopedKey('last_sms_import_time'),
+      );
       if (timeStr != null) {
-        _lastImportTime = DateTime.parse(timeStr);
-        notifyListeners();
+        final lastImportTime = DateTime.parse(timeStr);
+        if (sessionGeneration == _sessionGeneration) {
+          _lastImportTime = lastImportTime;
+          notifyListeners();
+        }
       }
     } catch (_) {}
   }
@@ -54,22 +78,28 @@ class SmsProvider extends ChangeNotifier {
 
   /// Check permissions and scan for financial transactions in the device SMS inbox.
   Future<void> scanSms() async {
+    if (_isScanning || _isImporting) return;
+    final sessionGeneration = _sessionGeneration;
     _isScanning = true;
     _errorMessage = null;
     _importResponse = null;
     notifyListeners();
 
     try {
+      await loadLastImportTime();
+      if (sessionGeneration != _sessionGeneration) return;
+
       // 1. Check and request SMS permission
       final status = await _smsService.getPermissionStatus();
+      if (sessionGeneration != _sessionGeneration) return;
       _permissionStatus = status;
 
       if (!status.isGranted) {
         final requestStatus = await _smsService.requestPermission();
+        if (sessionGeneration != _sessionGeneration) return;
         _permissionStatus = requestStatus;
         
         if (!requestStatus.isGranted) {
-          _isScanning = false;
           if (requestStatus.isPermanentlyDenied) {
             _errorMessage = 'SMS permission permanently denied. Please enable it in system settings.';
           } else {
@@ -82,10 +112,19 @@ class SmsProvider extends ChangeNotifier {
 
       // 2. Fetch already imported SMS hashes from the backend
       final hashResponse = await _repository.getImportedSmsHashes();
-      final importedSet = Set<String>.from(hashResponse.success ? hashResponse.data : []);
+      if (sessionGeneration != _sessionGeneration) return;
+      if (!hashResponse.success) {
+        throw Exception(
+          hashResponse.message.isEmpty
+              ? 'Could not check previously imported SMS transactions.'
+              : hashResponse.message,
+        );
+      }
+      final importedSet = Set<String>.from(hashResponse.data);
 
       // 3. Query and parse SMS inbox
       final parsedList = await _smsService.readAndParseSms();
+      if (sessionGeneration != _sessionGeneration) return;
 
       // 4. Split into new and archived transactions
       _transactions = [];
@@ -104,13 +143,16 @@ class SmsProvider extends ChangeNotifier {
         _selectedHashes.add(tx.smsHash);
       }
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return;
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       _transactions = [];
       _archivedTransactions = [];
       _selectedHashes.clear();
     } finally {
-      _isScanning = false;
-      notifyListeners();
+      if (sessionGeneration == _sessionGeneration) {
+        _isScanning = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -143,6 +185,7 @@ class SmsProvider extends ChangeNotifier {
 
   /// Upload the selected transactions to the backend
   Future<bool> importSelectedTransactions() async {
+    if (_isScanning || _isImporting) return false;
     if (_selectedHashes.isEmpty) {
       _errorMessage = 'No transactions selected for import.';
       notifyListeners();
@@ -150,6 +193,7 @@ class SmsProvider extends ChangeNotifier {
     }
 
     _isImporting = true;
+    final sessionGeneration = _sessionGeneration;
     _errorMessage = null;
     notifyListeners();
 
@@ -160,6 +204,7 @@ class SmsProvider extends ChangeNotifier {
 
     try {
       final response = await _repository.importSmsTransactions(selectedTxs);
+      if (sessionGeneration != _sessionGeneration) return false;
 
       if (response.success) {
         _importResponse = response.data;
@@ -168,37 +213,40 @@ class SmsProvider extends ChangeNotifier {
         _lastImportTime = DateTime.now();
         try {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('last_sms_import_time', _lastImportTime!.toIso8601String());
+          await prefs.setString(
+            CacheService.userScopedKey('last_sms_import_time'),
+            _lastImportTime!.toIso8601String(),
+          );
         } catch (_) {}
 
-        // Add successfully imported transactions to the archived list
-        final importedTxs = _transactions
-            .where((tx) => _selectedHashes.contains(tx.smsHash))
-            .toList();
-        _archivedTransactions.addAll(importedTxs);
-
-        // Remove successfully processed/skipped transactions from the list
-        _transactions.removeWhere((tx) => _selectedHashes.contains(tx.smsHash));
-        _selectedHashes.clear();
-        
-        _isImporting = false;
-        notifyListeners();
+        if (response.data.failed == 0) {
+          final importedTxs = _transactions
+              .where((tx) => _selectedHashes.contains(tx.smsHash))
+              .toList();
+          _archivedTransactions.addAll(importedTxs);
+          _transactions.removeWhere(
+            (tx) => _selectedHashes.contains(tx.smsHash),
+          );
+          _selectedHashes.clear();
+        }
         return true;
       } else {
         _errorMessage = response.message;
-        _isImporting = false;
-        notifyListeners();
         return false;
       }
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
       if (e is DioException) {
         _errorMessage = e.response?.data["message"] ?? e.message ?? 'Failed to connect to the server.';
       } else {
         _errorMessage = e.toString().replaceAll('Exception: ', '');
       }
-      _isImporting = false;
-      notifyListeners();
       return false;
+    } finally {
+      if (sessionGeneration == _sessionGeneration) {
+        _isImporting = false;
+        notifyListeners();
+      }
     }
   }
 }

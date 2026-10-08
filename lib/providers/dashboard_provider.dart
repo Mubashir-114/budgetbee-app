@@ -16,6 +16,7 @@ class DashboardProvider extends ChangeNotifier {
   List<MonthlySummary> _monthlySummaries = [];
   List<CategorySummary> _categorySummaries = [];
   List<TransactionModel> _recentTransactions = [];
+  int _sessionGeneration = 0;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -25,13 +26,27 @@ class DashboardProvider extends ChangeNotifier {
   List<CategorySummary> get categorySummaries => _categorySummaries;
   List<TransactionModel> get recentTransactions => _recentTransactions;
 
+  void clearSession() {
+    _sessionGeneration++;
+    _isLoading = false;
+    _errorMessage = null;
+    _summary = null;
+    _monthlySummaries = [];
+    _categorySummaries = [];
+    _recentTransactions = [];
+    notifyListeners();
+  }
+
   Future<void> loadDashboardData() async {
+    final generation = _sessionGeneration;
     try {
       _isLoading = true;
       _errorMessage = null;
+      notifyListeners();
 
       // Try loading from local cache first
-      final cached = await CacheService.get("dashboard_cache");
+      final cached = await CacheService.get('dashboard_cache');
+      if (generation != _sessionGeneration) return;
       if (cached != null) {
         try {
           _summary = DashboardSummary.fromJson(cached["summary"]);
@@ -40,7 +55,7 @@ class DashboardProvider extends ChangeNotifier {
           _recentTransactions = (cached["recent"] as List).map((i) => TransactionModel.fromJson(i)).toList();
           notifyListeners();
         } catch (_) {
-          // Ignore corrupted cache
+          await CacheService.remove('dashboard_cache');
         }
       } else {
         notifyListeners();
@@ -53,6 +68,7 @@ class DashboardProvider extends ChangeNotifier {
         _repository.getCategorySummary(),
         _repository.getRecentTransactions(),
       ]);
+      if (generation != _sessionGeneration) return;
 
       _summary = responses[0].data as DashboardSummary;
       _monthlySummaries = responses[1].data as List<MonthlySummary>;
@@ -69,12 +85,16 @@ class DashboardProvider extends ChangeNotifier {
 
       _errorMessage = null;
     } on DioException catch (e) {
+      if (generation != _sessionGeneration) return;
       _errorMessage = e.response?.data["message"] ?? e.message ?? "Failed to load dashboard data";
     } catch (e) {
+      if (generation != _sessionGeneration) return;
       _errorMessage = e.toString();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (generation == _sessionGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 }

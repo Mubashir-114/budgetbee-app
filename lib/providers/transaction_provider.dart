@@ -16,6 +16,9 @@ class TransactionProvider extends ChangeNotifier {
   int _totalTransactions = 0;
   int _currentPage = 1;
   final int _limit = 10;
+  bool _isLoadingMore = false;
+  int _sessionGeneration = 0;
+  int _loadGeneration = 0;
 
   // Filter States
   String? _selectedType; // null, "income", "expense"
@@ -27,6 +30,7 @@ class TransactionProvider extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   bool get isActionLoading => _isActionLoading;
+  bool get isLoadingMore => _isLoadingMore;
   String? get errorMessage => _errorMessage;
 
   List<TransactionModel> get transactions => _transactions;
@@ -42,6 +46,25 @@ class TransactionProvider extends ChangeNotifier {
   DateTimeRange? get selectedDateRange => _selectedDateRange;
   String get sortBy => _sortBy;
   String get sortOrder => _sortOrder;
+
+  void clearSession() {
+    _sessionGeneration++;
+    _loadGeneration++;
+    _isLoading = false;
+    _isLoadingMore = false;
+    _isActionLoading = false;
+    _errorMessage = null;
+    _transactions = [];
+    _totalTransactions = 0;
+    _currentPage = 1;
+    _selectedType = null;
+    _selectedCategoryId = null;
+    _searchQuery = null;
+    _selectedDateRange = null;
+    _sortBy = 'transaction_date';
+    _sortOrder = 'desc';
+    notifyListeners();
+  }
 
   // Setters for Filters (requires refresh)
   void setType(String? type) {
@@ -87,19 +110,49 @@ class TransactionProvider extends ChangeNotifier {
   }
 
   Future<void> loadTransactions({bool loadMore = false}) async {
-    if (loadMore && !hasMore) return;
+    if (loadMore && (!hasMore || _isLoadingMore || _isLoading)) return;
 
-    final String cacheKey = "transactions_${_selectedType ?? 'all'}_${_selectedCategoryId ?? 'all'}_${_searchQuery ?? 'none'}_${_sortBy}_$_sortOrder";
+    final sessionGeneration = _sessionGeneration;
+    final loadGeneration = ++_loadGeneration;
+    final page = loadMore ? _currentPage + 1 : 1;
+    final type = _selectedType;
+    final categoryId = _selectedCategoryId;
+    final searchQuery = _searchQuery;
+    final dateRange = _selectedDateRange;
+    final sortBy = _sortBy;
+    final sortOrder = _sortOrder;
+    final fromDate = dateRange == null
+        ? null
+        : dateRange.start.toIso8601String().split('T')[0];
+    final toDate = dateRange == null
+        ? null
+        : dateRange.end.toIso8601String().split('T')[0];
+    final cacheKey = [
+      'transactions',
+      type ?? 'all',
+      categoryId?.toString() ?? 'all',
+      Uri.encodeComponent(searchQuery ?? ''),
+      fromDate ?? 'none',
+      toDate ?? 'none',
+      sortBy,
+      sortOrder,
+      _limit,
+    ].join('_');
 
     try {
       if (loadMore) {
-        _currentPage++;
+        _isLoadingMore = true;
       } else {
         _currentPage = 1;
         _isLoading = true;
+        _isLoadingMore = false;
 
         // Try loading from local cache first
         final cachedData = await CacheService.get(cacheKey);
+        if (sessionGeneration != _sessionGeneration ||
+            loadGeneration != _loadGeneration) {
+          return;
+        }
         if (cachedData != null) {
           try {
             final List<dynamic> transactionsList = cachedData["transactions"];
@@ -107,31 +160,28 @@ class TransactionProvider extends ChangeNotifier {
             _totalTransactions = cachedData["total"] ?? _transactions.length;
             notifyListeners();
           } catch (_) {
-            // Ignore corrupted cache
+            await CacheService.remove(cacheKey);
           }
         }
       }
       _errorMessage = null;
       notifyListeners();
 
-      String? fromDate;
-      String? toDate;
-      if (_selectedDateRange != null) {
-        fromDate = _selectedDateRange!.start.toIso8601String().split('T')[0];
-        toDate = _selectedDateRange!.end.toIso8601String().split('T')[0];
-      }
-
       final response = await _repository.getTransactions(
-        type: _selectedType,
-        categoryId: _selectedCategoryId,
-        search: _searchQuery,
+        type: type,
+        categoryId: categoryId,
+        search: searchQuery,
         from: fromDate,
         to: toDate,
-        sort: _sortBy,
-        order: _sortOrder,
-        page: _currentPage,
+        sort: sortBy,
+        order: sortOrder,
+        page: page,
         limit: _limit,
       );
+      if (sessionGeneration != _sessionGeneration ||
+          loadGeneration != _loadGeneration) {
+        return;
+      }
 
       if (loadMore) {
         _transactions.addAll(response.data.transactions);
@@ -144,15 +194,28 @@ class TransactionProvider extends ChangeNotifier {
           "total": response.data.total,
         });
       }
+      _currentPage = page;
       _totalTransactions = response.data.total;
       _errorMessage = null;
     } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration ||
+          loadGeneration != _loadGeneration) {
+        return;
+      }
       _errorMessage = e.response?.data["message"] ?? e.message ?? "Failed to load transactions";
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration ||
+          loadGeneration != _loadGeneration) {
+        return;
+      }
       _errorMessage = e.toString();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (sessionGeneration == _sessionGeneration &&
+          loadGeneration == _loadGeneration) {
+        _isLoading = false;
+        _isLoadingMore = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -164,6 +227,7 @@ class TransactionProvider extends ChangeNotifier {
     required String transactionDate,
     String? note,
   }) async {
+    final sessionGeneration = _sessionGeneration;
     try {
       _isActionLoading = true;
       _errorMessage = null;
@@ -178,18 +242,23 @@ class TransactionProvider extends ChangeNotifier {
         note: note,
       );
 
+      if (sessionGeneration != _sessionGeneration) return false;
       // Refresh list
       await loadTransactions();
       return true;
     } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
       _errorMessage = e.response?.data["message"] ?? e.message ?? "Failed to add transaction";
       return false;
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
       _errorMessage = e.toString();
       return false;
     } finally {
-      _isActionLoading = false;
-      notifyListeners();
+      if (sessionGeneration == _sessionGeneration) {
+        _isActionLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -202,6 +271,7 @@ class TransactionProvider extends ChangeNotifier {
     required String transactionDate,
     String? note,
   }) async {
+    final sessionGeneration = _sessionGeneration;
     try {
       _isActionLoading = true;
       _errorMessage = null;
@@ -217,22 +287,28 @@ class TransactionProvider extends ChangeNotifier {
         note: note,
       );
 
+      if (sessionGeneration != _sessionGeneration) return false;
       // Refresh list
       await loadTransactions();
       return true;
     } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
       _errorMessage = e.response?.data["message"] ?? e.message ?? "Failed to update transaction";
       return false;
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
       _errorMessage = e.toString();
       return false;
     } finally {
-      _isActionLoading = false;
-      notifyListeners();
+      if (sessionGeneration == _sessionGeneration) {
+        _isActionLoading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<bool> deleteTransaction(int id) async {
+    final sessionGeneration = _sessionGeneration;
     try {
       _isActionLoading = true;
       _errorMessage = null;
@@ -240,18 +316,23 @@ class TransactionProvider extends ChangeNotifier {
 
       await _repository.removeTransaction(id);
 
+      if (sessionGeneration != _sessionGeneration) return false;
       // Refresh list
       await loadTransactions();
       return true;
     } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
       _errorMessage = e.response?.data["message"] ?? e.message ?? "Failed to delete transaction";
       return false;
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
       _errorMessage = e.toString();
       return false;
     } finally {
-      _isActionLoading = false;
-      notifyListeners();
+      if (sessionGeneration == _sessionGeneration) {
+        _isActionLoading = false;
+        notifyListeners();
+      }
     }
   }
 }

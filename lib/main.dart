@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 import 'core/theme/app_theme.dart';
 import 'routes/app_router.dart';
-
 import 'package:provider/provider.dart';
-
 import 'providers/auth_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/transaction_provider.dart';
@@ -13,7 +9,6 @@ import 'providers/budget_provider.dart';
 import 'providers/report_provider.dart';
 import 'providers/sms_provider.dart';
 import 'providers/currency_provider.dart';
-
 import 'core/services/cache_service.dart';
 import 'core/services/connectivity_service.dart';
 import 'api/api_client.dart';
@@ -21,15 +16,26 @@ import 'api/api_client.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load();
   await CacheService.initialize();
   ConnectivityService.initialize();
 
-  final authProvider = AuthProvider();
+  final dashboardProvider = DashboardProvider();
+  final transactionProvider = TransactionProvider();
+  final budgetProvider = BudgetProvider();
+  final reportProvider = ReportProvider();
+  final smsProvider = SmsProvider();
+  final authProvider = AuthProvider(
+    onSessionReset: () {
+      dashboardProvider.clearSession();
+      transactionProvider.clearSession();
+      budgetProvider.clearSession();
+      reportProvider.clearSession();
+      smsProvider.clearSession();
+    },
+  );
 
   ApiClient.onUnauthorized = () {
-    authProvider.logout();
-    appRouter.go('/login');
+    authProvider.logout().whenComplete(() => appRouter.go('/login'));
   };
 
   runApp(
@@ -37,11 +43,11 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider(create: (context) => CurrencyProvider()),
-        ChangeNotifierProvider(create: (context) => DashboardProvider()),
-        ChangeNotifierProvider(create: (context) => TransactionProvider()),
-        ChangeNotifierProvider(create: (context) => BudgetProvider()),
-        ChangeNotifierProvider(create: (context) => ReportProvider()),
-        ChangeNotifierProvider(create: (context) => SmsProvider()),
+        ChangeNotifierProvider.value(value: dashboardProvider),
+        ChangeNotifierProvider.value(value: transactionProvider),
+        ChangeNotifierProvider.value(value: budgetProvider),
+        ChangeNotifierProvider.value(value: reportProvider),
+        ChangeNotifierProvider.value(value: smsProvider),
       ],
       child: const PersonalFinanceApp(),
     ),

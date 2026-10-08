@@ -62,7 +62,8 @@ class _SplashScreenState extends State<SplashScreen> {
     _statusTimer = Timer(const Duration(seconds: 4), () {
       if (mounted) {
         setState(() {
-          _statusMessage = "Waking up server instance (Render cold starts may take up to a minute)...";
+          _statusMessage =
+              "Waking up server instance (Render cold starts may take up to a minute)...";
         });
       }
     });
@@ -78,12 +79,14 @@ class _SplashScreenState extends State<SplashScreen> {
         context.go("/dashboard");
       } else {
         final tokenAfter = await TokenService.getToken();
+        if (!mounted) return;
         if (tokenAfter == null) {
           context.go("/login");
         } else {
           setState(() {
             _showRetry = true;
-            _statusMessage = "Unable to connect to server. Check your connection or try again.";
+            _statusMessage =
+                "Unable to connect to server. Check your connection or try again.";
           });
         }
       }
@@ -139,7 +142,9 @@ class _SplashScreenState extends State<SplashScreen> {
                             ),
                           ],
                           border: Border.all(
-                            color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                            color: isDark
+                                ? AppColors.dividerDark
+                                : AppColors.dividerLight,
                             width: 1.0,
                           ),
                         ),
@@ -154,7 +159,9 @@ class _SplashScreenState extends State<SplashScreen> {
                         "Personal Finance",
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.textLight : AppColors.textDark,
+                          color: isDark
+                              ? AppColors.textLight
+                              : AppColors.textDark,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -162,7 +169,9 @@ class _SplashScreenState extends State<SplashScreen> {
                       Text(
                         "Manage your money smarter",
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -183,7 +192,9 @@ class _SplashScreenState extends State<SplashScreen> {
                             child: LinearProgressIndicator(
                               minHeight: 4,
                               backgroundColor: Colors.transparent,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
+                              ),
                             ),
                           ),
                         ),
@@ -191,10 +202,18 @@ class _SplashScreenState extends State<SplashScreen> {
                         OutlinedButton.icon(
                           onPressed: _verifySession,
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.primary, width: 1.5),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            side: const BorderSide(
+                              color: AppColors.primary,
+                              width: 1.5,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                              borderRadius: BorderRadius.circular(
+                                AppDimensions.radiusMD,
+                              ),
                             ),
                           ),
                           icon: const Icon(Icons.refresh_rounded, size: 18),
@@ -211,7 +230,9 @@ class _SplashScreenState extends State<SplashScreen> {
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                             color: isDark
-                                ? AppColors.textSecondaryDark.withValues(alpha: 0.8)
+                                ? AppColors.textSecondaryDark.withValues(
+                                    alpha: 0.8,
+                                  )
                                 : AppColors.textSecondaryLight,
                           ),
                         ),

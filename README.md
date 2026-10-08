@@ -28,7 +28,7 @@ FinTrack is designed to be sleek, intuitive, and highly functional. Here are the
 | **💰 Smarter Budgets** | Establish budget limits per category and track your spending progress with real-time indicators. | ✅ Done |
 | **🏷️ Category Management** | Classify transaction streams using colorful categories tailored to your lifestyle. | ✅ Done |
 | **📈 Visual Reports** | Analyze cash flow and category breakdown using dynamic charts powered by `fl_chart`. | ✅ Done |
-| **🔌 Offline Support** | Automatically monitors network connectivity and prevents data state desynchronization. | ✅ Done |
+| **🔌 Connectivity Awareness** | Monitors network connectivity and displays cached data where available; financial writes require a connection. | ✅ Done |
 
 ---
 
@@ -97,13 +97,10 @@ Before running the application, make sure you have:
     flutter pub get
     ```
 
-3.  **Configure environment variables**:
-    Create a `.env` file in the root of the `frontend` folder (this file is gitignored for security) and add your backend's API base URL:
-    ```ini
-    BASE_URL=https://your-api-endpoint.com/api/
-    ```
+3.  **Configure the API base URL** (optional):
+    Pass `BASE_URL` at build or run time with `--dart-define`; it defaults to the hosted API:
     > [!TIP]
-    > If you're testing locally with an Android Emulator, use `http://10.0.2.2:5000/api/` as the host IP.
+    > For an Android Emulator, run `flutter run --dart-define=BASE_URL=http://10.0.2.2:5000/api/`.
 
 4.  **Run the application**:
     ```bash
@@ -119,15 +116,17 @@ Before running the application, make sure you have:
 *   **Networking:** `dio` (with auth interceptors)
 *   **Charts:** `fl_chart`
 *   **Storage:** `flutter_secure_storage` & `shared_preferences`
-*   **Environment Config:** `flutter_dotenv`
+*   **Environment Config:** Dart compile-time `BASE_URL` define
 *   **Connectivity:** `connectivity_plus`
+
+The currency selector only changes the displayed currency symbol and formatting. It does not convert transaction, budget, or report amounts; use the currency in which the backend records those amounts. Actual multi-currency support requires a product decision about source currency, exchange rates, and historical conversion.
 
 ---
 
 ## 🔒 Security & Best Practices
 
 *   Sensitive credentials like JWT tokens are kept out of shared storage and stored securely using `flutter_secure_storage` which utilizes Keychain (iOS) and Keystore (Android).
-*   All API variables are environment-managed using `flutter_dotenv`.
+*   The API base URL can be configured without bundling a local `.env` file or credentials.
 *   A custom `.gitignore` prevents tracking local keys, configurations, and environment secrets.
 
 ---

@@ -197,7 +197,9 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                           itemBuilder: (context, index) {
                             final status = provider.budgetStatuses[index];
                             final isOver = status.status == "over_budget";
-                            final progress = (status.spent / status.budget).clamp(0.0, 1.0);
+                            final progress = status.budget <= 0
+                                ? 0.0
+                                : (status.spent / status.budget).clamp(0.0, 1.0);
 
                             return Card(
                               elevation: 0,
@@ -265,11 +267,12 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                                                           onPressed: () async {
                                                             Navigator.pop(ctx);
                                                             final success = await provider.deleteBudget(status.budgetId);
-                                                            if (success && mounted) {
-                                                              context.read<ReportProvider>().loadAllReports();
-                                                              CustomToast.showSuccess(context, "Budget limit deleted successfully");
-                                                            } else if (mounted) {
-                                                              CustomToast.showError(context, provider.errorMessage ?? "Failed to delete budget");
+                                                            if (!mounted) return;
+                                                            if (success) {
+                                                              this.context.read<ReportProvider>().loadAllReports();
+                                                              CustomToast.showSuccess(this.context, "Budget limit deleted successfully");
+                                                            } else {
+                                                              CustomToast.showError(this.context, provider.errorMessage ?? "Failed to delete budget");
                                                             }
                                                           },
                                                           child: const Text("DELETE", style: TextStyle(color: AppColors.danger)),
@@ -447,6 +450,7 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
   Widget build(BuildContext context) {
     final isEditing = widget.status != null;
     final provider = context.watch<BudgetProvider>();
+    final currencyProvider = context.watch<CurrencyProvider>();
     final expenseCategories = CategoryModel.getExpenseCategories();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -486,7 +490,10 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _amountController,
-                decoration: const InputDecoration(labelText: "Limit Amount (\$)", prefixText: "\$ "),
+                decoration: InputDecoration(
+                  labelText: 'Limit Amount (${currencyProvider.currencyCode})',
+                  prefixText: '${currencyProvider.currencySymbol} ',
+                ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) return "Amount is required";

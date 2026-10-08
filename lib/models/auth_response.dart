@@ -33,3 +33,15 @@ class AuthResponse {
     );
   }
 }
+
+class ProfileResponse {
+  final UserModel user;
+
+  const ProfileResponse({required this.user});
+
+  factory ProfileResponse.fromJson(Map<String, dynamic> json) {
+    return ProfileResponse(
+      user: UserModel.fromJson(json["user"]),
+    );
+  }
+}
