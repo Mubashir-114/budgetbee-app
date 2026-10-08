@@ -21,9 +21,9 @@ class ReportsScreen extends StatefulWidget {
   State<ReportsScreen> createState() => _ReportsScreenState();
 }
 
-class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProviderStateMixin {
+class _ReportsScreenState extends State<ReportsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final NumberFormat _currencyFormat = NumberFormat.currency(symbol: '\$');
 
   @override
   void initState() {
@@ -60,19 +60,29 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     if (csv != null && mounted) {
       try {
         final outputDir = await getApplicationDocumentsDirectory();
-        final file = File("${outputDir.path}/finance_report_${DateTime.now().millisecondsSinceEpoch}.csv");
+        if (!mounted) return;
+        final file = File(
+          "${outputDir.path}/finance_report_${DateTime.now().millisecondsSinceEpoch}.csv",
+        );
         await file.writeAsString(csv);
+        if (!mounted) return;
         await Clipboard.setData(ClipboardData(text: file.path));
+        if (!mounted) return;
         CustomToast.showSuccess(
           context,
           "CSV Report saved to:\n${file.path}\n(Path copied to clipboard!)",
         );
       } catch (_) {
+        if (!mounted) return;
         await Clipboard.setData(ClipboardData(text: csv));
+        if (!mounted) return;
         CustomToast.showSuccess(context, "CSV report copied to clipboard!");
       }
     } else if (mounted) {
-      CustomToast.showError(context, provider.errorMessage ?? "Failed to export CSV");
+      CustomToast.showError(
+        context,
+        provider.errorMessage ?? "Failed to export CSV",
+      );
     }
   }
 
@@ -82,16 +92,23 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
         ? "${DateFormat('yyyy-MM-dd').format(provider.selectedDateRange!.start)} to ${DateFormat('yyyy-MM-dd').format(provider.selectedDateRange!.end)}"
         : "All Time";
 
-    final path = await provider.exportPDF(dateRangeStr, context.read<CurrencyProvider>().currencySymbol);
+    final path = await provider.exportPDF(
+      dateRangeStr,
+      context.read<CurrencyProvider>().currencySymbol,
+    );
 
     if (path != null && mounted) {
       await Clipboard.setData(ClipboardData(text: path));
+      if (!mounted) return;
       CustomToast.showSuccess(
         context,
         "PDF Report generated successfully at:\n$path\n(Path copied to clipboard!)",
       );
     } else if (mounted) {
-      CustomToast.showError(context, provider.errorMessage ?? "Failed to export PDF");
+      CustomToast.showError(
+        context,
+        provider.errorMessage ?? "Failed to export PDF",
+      );
     }
   }
 
@@ -120,16 +137,41 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             crossAxisSpacing: 12,
             childAspectRatio: isTablet ? 1.5 : 1.35,
             children: [
-              _buildStatCard("Total Income", summary.totalIncome, AppColors.success, isDark),
-              _buildStatCard("Total Expense", summary.totalExpense, AppColors.danger, isDark),
-              _buildStatCard("Net Savings", summary.netBalance, AppColors.info, isDark),
-              _buildStatCard("Savings Rate", summary.savingsRate, AppColors.warning, isDark, isPercent: true),
+              _buildStatCard(
+                "Total Income",
+                summary.totalIncome,
+                AppColors.success,
+                isDark,
+              ),
+              _buildStatCard(
+                "Total Expense",
+                summary.totalExpense,
+                AppColors.danger,
+                isDark,
+              ),
+              _buildStatCard(
+                "Net Savings",
+                summary.netBalance,
+                AppColors.info,
+                isDark,
+              ),
+              _buildStatCard(
+                "Savings Rate",
+                summary.savingsRate,
+                AppColors.warning,
+                isDark,
+                isPercent: true,
+              ),
             ],
           ),
           const SizedBox(height: 24),
           const Text(
             "Monthly Trends",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: -0.2),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.2,
+            ),
           ),
           const SizedBox(height: 10),
           Card(
@@ -137,7 +179,9 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             color: isDark ? AppColors.surfaceDark : Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-              side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.dividerLight),
+              side: BorderSide(
+                color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+              ),
             ),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -149,13 +193,21 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     );
   }
 
-  Widget _buildStatCard(String title, double value, Color color, bool isDark, {bool isPercent = false}) {
+  Widget _buildStatCard(
+    String title,
+    double value,
+    Color color,
+    bool isDark, {
+    bool isPercent = false,
+  }) {
     return Card(
       elevation: 0,
       color: isDark ? AppColors.surfaceDark : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-        side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.dividerLight),
+        side: BorderSide(
+          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14.0),
@@ -173,7 +225,9 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             ),
             const SizedBox(height: 6),
             Text(
-              isPercent ? "${value.toStringAsFixed(1)}%" : context.watch<CurrencyProvider>().format(value),
+              isPercent
+                  ? "${value.toStringAsFixed(1)}%"
+                  : context.watch<CurrencyProvider>().format(value),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -192,7 +246,12 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     if (trends.isEmpty) {
       return const SizedBox(
         height: 180,
-        child: Center(child: Text("No trend metrics to plot", style: TextStyle(color: AppColors.textSecondaryLight))),
+        child: Center(
+          child: Text(
+            "No trend metrics to plot",
+            style: TextStyle(color: AppColors.textSecondaryLight),
+          ),
+        ),
       );
     }
 
@@ -210,11 +269,12 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           alignment: BarChartAlignment.spaceEvenly,
           barTouchData: BarTouchData(
             touchTooltipData: BarTouchTooltipData(
-              getTooltipColor: (_) => isDark ? AppColors.cardDark : AppColors.surfaceLight,
+              getTooltipColor: (_) =>
+                  isDark ? AppColors.cardDark : AppColors.surfaceLight,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 final String type = rodIndex == 0 ? "Income" : "Expense";
                 return BarTooltipItem(
-                  "$type: ${_currencyFormat.format(rod.toY)}",
+                  "$type: ${context.read<CurrencyProvider>().format(rod.toY)}",
                   TextStyle(
                     color: isDark ? AppColors.textLight : AppColors.textDark,
                     fontWeight: FontWeight.bold,
@@ -239,7 +299,9 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     );
@@ -248,9 +310,15 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                 },
               ),
             ),
-            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
           ),
           gridData: const FlGridData(show: false),
           borderData: FlBorderData(show: false),
@@ -259,8 +327,18 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             return BarChartGroupData(
               x: index,
               barRods: [
-                BarChartRodData(toY: trend.income, color: AppColors.success, width: 7, borderRadius: BorderRadius.circular(4)),
-                BarChartRodData(toY: trend.expense, color: AppColors.danger, width: 7, borderRadius: BorderRadius.circular(4)),
+                BarChartRodData(
+                  toY: trend.income,
+                  color: AppColors.success,
+                  width: 7,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                BarChartRodData(
+                  toY: trend.expense,
+                  color: AppColors.danger,
+                  width: 7,
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ],
             );
           }),
@@ -279,7 +357,10 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
       );
     }
 
-    final double totalExpense = reports.fold(0.0, (sum, item) => sum + item.spent);
+    final double totalExpense = reports.fold(
+      0.0,
+      (sum, item) => sum + item.spent,
+    );
     final List<PieChartSectionData> sections = [];
     final colors = [
       AppColors.primary,
@@ -297,14 +378,20 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     for (int i = 0; i < reports.length; i++) {
       final r = reports[i];
       if (r.spent <= 0) continue;
-      final percentage = totalExpense > 0 ? (r.spent / totalExpense) * 100 : 0.0;
+      final percentage = totalExpense > 0
+          ? (r.spent / totalExpense) * 100
+          : 0.0;
       sections.add(
         PieChartSectionData(
           color: colors[i % colors.length],
           value: r.spent,
           title: '${percentage.toStringAsFixed(0)}%',
           radius: 35,
-          titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+          titleStyle: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
       );
     }
@@ -314,7 +401,14 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Expense Allocations", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: -0.2)),
+          const Text(
+            "Expense Allocations",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.2,
+            ),
+          ),
           AppDimensions.hSM,
           if (sections.isNotEmpty)
             Card(
@@ -322,7 +416,11 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
               color: isDark ? AppColors.surfaceDark : Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-                side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.dividerLight),
+                side: BorderSide(
+                  color: isDark
+                      ? AppColors.dividerDark
+                      : AppColors.dividerLight,
+                ),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -370,7 +468,9 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark ? AppColors.textLight : AppColors.textDark,
+                                      color: isDark
+                                          ? AppColors.textLight
+                                          : AppColors.textDark,
                                     ),
                                   ),
                                 ),
@@ -390,20 +490,34 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
               color: isDark ? AppColors.surfaceDark : Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-                side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.dividerLight),
+                side: BorderSide(
+                  color: isDark
+                      ? AppColors.dividerDark
+                      : AppColors.dividerLight,
+                ),
               ),
               child: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 40.0),
                 child: Center(
                   child: Text(
                     "No expenses recorded to build allocations.",
-                    style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
+                    style: TextStyle(
+                      color: AppColors.textSecondaryLight,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ),
             ),
           const SizedBox(height: 24),
-          const Text("Budget Tracking Status", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: -0.2)),
+          const Text(
+            "Budget Tracking Status",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.2,
+            ),
+          ),
           AppDimensions.hSM,
           ListView.builder(
             shrinkWrap: true,
@@ -411,7 +525,9 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             itemCount: reports.length,
             itemBuilder: (context, index) {
               final r = reports[index];
-              final progress = (r.spent / (r.budget == 0 ? 1 : r.budget)).clamp(0.0, 1.0);
+              final progress = r.budget <= 0
+                  ? 0.0
+                  : (r.spent / r.budget).clamp(0.0, 1.0);
               final isOver = r.spent > r.budget && r.budget > 0;
 
               return Card(
@@ -420,7 +536,11 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                 margin: const EdgeInsets.only(bottom: 8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-                  side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.dividerLight),
+                  side: BorderSide(
+                    color: isDark
+                        ? AppColors.dividerDark
+                        : AppColors.dividerLight,
+                  ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(14.0),
@@ -430,13 +550,23 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(r.category, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          Text(
+                            r.category,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
                           Text(
                             "${context.watch<CurrencyProvider>().format(r.spent)} / ${context.watch<CurrencyProvider>().format(r.budget)}",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
-                              color: isOver ? AppColors.danger : (isDark ? AppColors.textLight : AppColors.textDark),
+                              color: isOver
+                                  ? AppColors.danger
+                                  : (isDark
+                                        ? AppColors.textLight
+                                        : AppColors.textDark),
                             ),
                           ),
                         ],
@@ -447,7 +577,9 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                         child: LinearProgressIndicator(
                           value: progress,
                           color: isOver ? AppColors.danger : AppColors.success,
-                          backgroundColor: isDark ? AppColors.dividerDark : Colors.grey.shade100,
+                          backgroundColor: isDark
+                              ? AppColors.dividerDark
+                              : Colors.grey.shade100,
                           minHeight: 6,
                         ),
                       ),
@@ -456,8 +588,8 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                         r.budget == 0
                             ? "No budget allocated"
                             : isOver
-                                ? "Over budget limit by ${_currencyFormat.format(r.spent - r.budget)}"
-                                : "Remaining budget limit: ${_currencyFormat.format(r.remaining)}",
+                            ? "Over budget limit by ${context.read<CurrencyProvider>().format(r.spent - r.budget)}"
+                            : "Remaining budget limit: ${context.read<CurrencyProvider>().format(r.remaining)}",
                         style: TextStyle(
                           fontSize: 12,
                           color: isOver ? AppColors.danger : AppColors.success,
@@ -486,7 +618,10 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md, vertical: AppDimensions.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.md,
+        vertical: AppDimensions.sm,
+      ),
       itemCount: reports.length,
       itemBuilder: (context, index) {
         final item = reports[index];
@@ -498,23 +633,38 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           color: isDark ? AppColors.surfaceDark : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-            side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.dividerLight),
+            side: BorderSide(
+              color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+            ),
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 4,
+            ),
             leading: CircleAvatar(
-              backgroundColor: isExpense ? AppColors.danger.withValues(alpha: 0.1) : AppColors.success.withValues(alpha: 0.1),
+              backgroundColor: isExpense
+                  ? AppColors.danger.withValues(alpha: 0.1)
+                  : AppColors.success.withValues(alpha: 0.1),
               radius: 18,
               child: Icon(
-                isExpense ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                isExpense
+                    ? Icons.arrow_upward_rounded
+                    : Icons.arrow_downward_rounded,
                 color: isExpense ? AppColors.danger : AppColors.success,
                 size: 16,
               ),
             ),
-            title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            title: Text(
+              item.title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
             subtitle: Text(
               "${item.category} • ${item.date}",
-              style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondaryLight,
+              ),
             ),
             trailing: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -531,7 +681,10 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
                 const SizedBox(height: 2),
                 Text(
                   "Balance: ${context.watch<CurrencyProvider>().format(item.runningBalance)}",
-                  style: const TextStyle(fontSize: 10, color: AppColors.textSecondaryLight),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textSecondaryLight,
+                  ),
                 ),
               ],
             ),
@@ -550,18 +703,27 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkScaffold : AppColors.scaffold,
       appBar: AppBar(
-        title: const Text("Reports", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Reports",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
             icon: Icon(
               Icons.date_range_rounded,
-              color: provider.selectedDateRange != null ? AppColors.primary : null,
+              color: provider.selectedDateRange != null
+                  ? AppColors.primary
+                  : null,
             ),
             onPressed: _selectDateRange,
           ),
           PopupMenuButton<String>(
             icon: provider.isExporting || provider.isPdfExporting
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Icon(Icons.download_rounded),
             color: isDark ? AppColors.surfaceDark : Colors.white,
             onSelected: (action) {
@@ -575,7 +737,11 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
               const PopupMenuItem(
                 value: 'pdf',
                 child: ListTile(
-                  leading: Icon(Icons.picture_as_pdf_rounded, color: AppColors.danger, size: 20),
+                  leading: Icon(
+                    Icons.picture_as_pdf_rounded,
+                    color: AppColors.danger,
+                    size: 20,
+                  ),
                   title: Text('Export PDF', style: TextStyle(fontSize: 14)),
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -583,7 +749,11 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
               const PopupMenuItem(
                 value: 'csv',
                 child: ListTile(
-                  leading: Icon(Icons.grid_on_rounded, color: AppColors.success, size: 20),
+                  leading: Icon(
+                    Icons.grid_on_rounded,
+                    color: AppColors.success,
+                    size: 20,
+                  ),
                   title: Text('Export CSV', style: TextStyle(fontSize: 14)),
                   contentPadding: EdgeInsets.zero,
                 ),
@@ -595,10 +765,15 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppColors.primary,
-          unselectedLabelColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+          unselectedLabelColor: isDark
+              ? AppColors.textSecondaryDark
+              : AppColors.textSecondaryLight,
           indicatorColor: AppColors.primary,
           indicatorWeight: 3.0,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
           tabs: const [
             Tab(text: "Trends"),
             Tab(text: "Categories"),
