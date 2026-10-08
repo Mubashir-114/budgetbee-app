@@ -382,11 +382,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const Divider(height: 1),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text("Base Currency", style: TextStyle(fontSize: 14)),
+                      title: const Text("Display Currency", style: TextStyle(fontSize: 14)),
                       subtitle: Consumer<CurrencyProvider>(
-                        builder: (context, currency, child) => Text(
-                          "Current currency: ${currency.selectedCurrencyString}",
-                          style: const TextStyle(fontSize: 11),
+                        builder: (context, currency, child) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Current currency: ${currency.selectedCurrencyString}',
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                            const Text(
+                              'Changes the symbol only; amounts are not converted.',
+                              style: TextStyle(fontSize: 11),
+                            ),
+                          ],
                         ),
                       ),
                       trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
@@ -395,7 +404,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         showDialog(
                           context: context,
                           builder: (ctx) => AlertDialog(
-                            title: const Text("Select Base Currency"),
+                            title: const Text("Select Display Currency"),
                             backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
                             content: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -467,9 +476,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onPressed: () async {
                             Navigator.pop(ctx);
                             await provider.logout();
-                            if (mounted) {
-                              context.go("/login");
-                            }
+                            if (!context.mounted) return;
+                            context.go("/login");
                           },
                           child: const Text("LOGOUT", style: TextStyle(color: AppColors.danger)),
                         ),
