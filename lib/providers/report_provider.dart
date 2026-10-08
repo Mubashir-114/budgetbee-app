@@ -20,6 +20,8 @@ class ReportProvider extends ChangeNotifier {
 
   // Date filters
   DateTimeRange? _selectedDateRange;
+  int _sessionGeneration = 0;
+  int _loadGeneration = 0;
 
   bool get isLoading => _isLoading;
   bool get isExporting => _isExporting;
@@ -33,6 +35,22 @@ class ReportProvider extends ChangeNotifier {
 
   DateTimeRange? get selectedDateRange => _selectedDateRange;
 
+  void clearSession() {
+    _sessionGeneration++;
+    _loadGeneration++;
+    _isLoading = false;
+    _isExporting = false;
+    _isPdfExporting = false;
+    _errorMessage = null;
+    _summary = null;
+    _monthlyReports = [];
+    _categoryReports = [];
+    _trendsReports = [];
+    _cashflowReports = [];
+    _selectedDateRange = null;
+    notifyListeners();
+  }
+
   void setDateRange(DateTimeRange? range) {
     _selectedDateRange = range;
     loadAllReports();
@@ -44,6 +62,9 @@ class ReportProvider extends ChangeNotifier {
   }
 
   Future<void> loadAllReports() async {
+    final sessionGeneration = _sessionGeneration;
+    final loadGeneration = ++_loadGeneration;
+    final dateRange = _selectedDateRange;
     try {
       _isLoading = true;
       _errorMessage = null;
@@ -51,9 +72,9 @@ class ReportProvider extends ChangeNotifier {
 
       String? fromDate;
       String? toDate;
-      if (_selectedDateRange != null) {
-        fromDate = _selectedDateRange!.start.toIso8601String().split('T')[0];
-        toDate = _selectedDateRange!.end.toIso8601String().split('T')[0];
+      if (dateRange != null) {
+        fromDate = dateRange.start.toIso8601String().split('T')[0];
+        toDate = dateRange.end.toIso8601String().split('T')[0];
       }
 
       final responses = await Future.wait([
@@ -63,6 +84,10 @@ class ReportProvider extends ChangeNotifier {
         _repository.getTrends(from: fromDate, to: toDate),
         _repository.getCashflow(from: fromDate, to: toDate),
       ]);
+      if (sessionGeneration != _sessionGeneration ||
+          loadGeneration != _loadGeneration) {
+        return;
+      }
 
       _summary = responses[0].data as ReportSummary;
       _monthlyReports = responses[1].data as List<MonthlyReport>;
@@ -72,16 +97,29 @@ class ReportProvider extends ChangeNotifier {
 
       _errorMessage = null;
     } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration ||
+          loadGeneration != _loadGeneration) {
+        return;
+      }
       _errorMessage = e.response?.data["message"] ?? e.message ?? "Failed to load reports";
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration ||
+          loadGeneration != _loadGeneration) {
+        return;
+      }
       _errorMessage = e.toString();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (sessionGeneration == _sessionGeneration &&
+          loadGeneration == _loadGeneration) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<String?> exportCSV() async {
+    final sessionGeneration = _sessionGeneration;
+    final dateRange = _selectedDateRange;
     try {
       _isExporting = true;
       _errorMessage = null;
@@ -89,9 +127,9 @@ class ReportProvider extends ChangeNotifier {
 
       String? fromDate;
       String? toDate;
-      if (_selectedDateRange != null) {
-        fromDate = _selectedDateRange!.start.toIso8601String().split('T')[0];
-        toDate = _selectedDateRange!.end.toIso8601String().split('T')[0];
+      if (dateRange != null) {
+        fromDate = dateRange.start.toIso8601String().split('T')[0];
+        toDate = dateRange.end.toIso8601String().split('T')[0];
       }
 
       final csvContent = await _repository.exportReportCsv(
@@ -99,16 +137,20 @@ class ReportProvider extends ChangeNotifier {
         to: toDate,
       );
 
-      return csvContent;
+      return sessionGeneration == _sessionGeneration ? csvContent : null;
     } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration) return null;
       _errorMessage = e.response?.data["message"] ?? e.message ?? "Failed to export report";
       return null;
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return null;
       _errorMessage = e.toString();
       return null;
     } finally {
-      _isExporting = false;
-      notifyListeners();
+      if (sessionGeneration == _sessionGeneration) {
+        _isExporting = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -118,6 +160,7 @@ class ReportProvider extends ChangeNotifier {
   Future<String?> exportPDF(String dateRangeStr, [String currencySymbol = '\$']) async {
     if (_summary == null) return null;
 
+    final sessionGeneration = _sessionGeneration;
     try {
       _isPdfExporting = true;
       _errorMessage = null;
@@ -131,13 +174,16 @@ class ReportProvider extends ChangeNotifier {
         currencySymbol: currencySymbol,
       );
 
-      return path;
+      return sessionGeneration == _sessionGeneration ? path : null;
     } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return null;
       _errorMessage = e.toString();
       return null;
     } finally {
-      _isPdfExporting = false;
-      notifyListeners();
+      if (sessionGeneration == _sessionGeneration) {
+        _isPdfExporting = false;
+        notifyListeners();
+      }
     }
   }
 }
