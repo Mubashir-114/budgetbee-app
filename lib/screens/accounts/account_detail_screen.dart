@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../models/account_model.dart';
+import '../../models/account_balance_model.dart';
+import '../../models/account_activity_model.dart';
 import '../../providers/account_provider.dart';
 import 'widgets/account_icon.dart';
 import 'widgets/money_text.dart';
@@ -20,7 +22,10 @@ class AccountDetailScreen extends StatefulWidget {
 
 class _AccountDetailScreenState extends State<AccountDetailScreen> {
   AccountModel? _account;
+  AccountBalanceModel? _balance;
+  List<AccountActivityModel> _activities = [];
   bool _isLoading = true;
+  bool _loadingLedger = false;
   String? _error;
 
   @override
@@ -34,7 +39,6 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
       _isLoading = true;
       _error = null;
     });
-    // Try to find in the provider list first (cache hit)
     final provider = context.read<AccountProvider>();
     final cached = provider.accounts.where((a) => a.id == widget.accountId).firstOrNull;
     if (cached != null) {
@@ -42,9 +46,9 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
         _account = cached;
         _isLoading = false;
       });
+      _loadLedgerData();
       return;
     }
-    // Fetch from repository
     try {
       await provider.loadAccounts();
       if (!mounted) return;
@@ -61,6 +65,7 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
           _account = response;
           _isLoading = false;
         });
+        _loadLedgerData();
       }
     } catch (e) {
       if (!mounted) return;
@@ -69,6 +74,155 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _loadLedgerData() async {
+    setState(() => _loadingLedger = true);
+    final provider = context.read<AccountProvider>();
+    final balFuture = provider.getAccountBalance(widget.accountId);
+    final actFuture = provider.getAccountActivity(widget.accountId);
+    final results = await Future.wait([balFuture, actFuture]);
+    if (!mounted) return;
+    setState(() {
+      _balance = results[0] as AccountBalanceModel?;
+      _activities = (results[1] as AccountActivityListResponse?)?.activities ?? [];
+      _loadingLedger = false;
+    });
+  }
+
+  Future<void> _showAdjustBalanceDialog() async {
+    final formKey = GlobalKey<FormState>();
+    final amountController = TextEditingController();
+    final reasonController = TextEditingController();
+    bool isCredit = true;
+    final adjustDate = DateTime.now();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Adjust Balance'),
+              content: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Record an auditable correction or reconciliation entry.',
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ChoiceChip(
+                              label: const Text('+ Inflow'),
+                              selected: isCredit,
+                              onSelected: (val) => setDialogState(() => isCredit = true),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ChoiceChip(
+                              label: const Text('- Outflow'),
+                              selected: !isCredit,
+                              onSelected: (val) => setDialogState(() => isCredit = false),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: amountController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(
+                          labelText: 'Amount (${_account?.currencyCode ?? 'INR'})',
+                          hintText: '0.00',
+                          border: const OutlineInputBorder(),
+                        ),
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) return 'Enter amount';
+                          final n = double.tryParse(val.trim());
+                          if (n == null || n <= 0) return 'Enter valid positive number';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: reasonController,
+                        decoration: const InputDecoration(
+                          labelText: 'Reason / Memo',
+                          hintText: 'e.g. Reconciliation discrepancy',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (val) {
+                          if (val == null || val.trim().isEmpty) return 'Reason is required';
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    if (formKey.currentState?.validate() ?? false) {
+                      Navigator.pop(ctx, true);
+                    }
+                  },
+                  child: const Text('Apply'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == true && mounted) {
+      final sign = isCredit ? '' : '-';
+      final formattedAmount = '$sign${amountController.text.trim()}';
+      final clientKey = 'adj_${DateTime.now().millisecondsSinceEpoch}_${widget.accountId}';
+      final dateStr = adjustDate.toIso8601String().substring(0, 10);
+
+      final provider = context.read<AccountProvider>();
+      final ok = await provider.createAdjustment(
+        widget.accountId,
+        amount: formattedAmount,
+        reason: reasonController.text.trim(),
+        adjustmentDate: dateStr,
+        clientAdjustmentKey: clientKey,
+      );
+
+      if (!mounted) return;
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Balance adjusted successfully'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        _loadAccount();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(provider.actionError ?? 'Adjustment failed'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
+    amountController.dispose();
+    reasonController.dispose();
   }
 
   Future<void> _setDefault() async {
@@ -213,8 +367,42 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header card
-            _HeaderCard(account: account, accentColor: accentColor, isDark: isDark),
+            _HeaderCard(
+              account: account,
+              currentBalance: _balance?.currentBalance,
+              availableCredit: _balance?.availableCredit,
+              accentColor: accentColor,
+              isDark: isDark,
+            ),
             const SizedBox(height: 16),
+
+            // Quick Actions
+            if (account.isActive) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      icon: const Icon(Icons.swap_horiz_rounded),
+                      label: const Text('Transfer'),
+                      onPressed: () {
+                        context
+                            .push('/accounts/transfer?sourceId=${account.id}')
+                            .then((_) => _loadAccount());
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.tune_rounded),
+                      label: const Text('Adjust Balance'),
+                      onPressed: _showAdjustBalanceDialog,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // Metadata card
             _InfoCard(
@@ -253,12 +441,50 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
               isDark: isDark,
               children: [
                 _MoneyRow(
+                  label: 'Current Ledger Balance',
+                  decimalString: _balance?.currentBalance ?? account.openingAmount,
+                  currencyCode: account.currencyCode,
+                  isDark: isDark,
+                ),
+                _MoneyRow(
                   label: 'Opening Amount',
                   decimalString: account.openingAmount,
                   currencyCode: account.currencyCode,
-                  note: isCredit ? 'Immutable — contact support to change' : null,
+                  note: isCredit ? 'Immutable' : null,
                   isDark: isDark,
                 ),
+                if (_balance != null) ...[
+                  _MoneyRow(
+                    label: 'Total Inflow (Income)',
+                    decimalString: _balance!.totalIncome,
+                    currencyCode: account.currencyCode,
+                    isDark: isDark,
+                  ),
+                  _MoneyRow(
+                    label: 'Total Outflow (Expenses)',
+                    decimalString: _balance!.totalExpense,
+                    currencyCode: account.currencyCode,
+                    isDark: isDark,
+                  ),
+                  _MoneyRow(
+                    label: 'Transfers In',
+                    decimalString: _balance!.transfersIn,
+                    currencyCode: account.currencyCode,
+                    isDark: isDark,
+                  ),
+                  _MoneyRow(
+                    label: 'Transfers Out',
+                    decimalString: _balance!.transfersOut,
+                    currencyCode: account.currencyCode,
+                    isDark: isDark,
+                  ),
+                  _MoneyRow(
+                    label: 'Net Adjustments',
+                    decimalString: _balance!.totalAdjustments,
+                    currencyCode: account.currencyCode,
+                    isDark: isDark,
+                  ),
+                ],
                 if (account.creditLimit != null)
                   _MoneyRow(
                     label: 'Credit Limit',
@@ -267,9 +493,24 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                     note: 'Immutable',
                     isDark: isDark,
                   ),
+                if (_balance?.availableCredit != null)
+                  _MoneyRow(
+                    label: 'Available Credit',
+                    decimalString: _balance!.availableCredit!,
+                    currencyCode: account.currencyCode,
+                    isDark: isDark,
+                  ),
               ],
             ),
+            const SizedBox(height: 16),
 
+            // Activity Feed
+            _ActivityFeedCard(
+              activities: _activities,
+              currencyCode: account.currencyCode,
+              isLoading: _loadingLedger,
+              isDark: isDark,
+            ),
             const SizedBox(height: 24),
 
             // Archive button
@@ -332,11 +573,15 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
 
 class _HeaderCard extends StatelessWidget {
   final AccountModel account;
+  final String? currentBalance;
+  final String? availableCredit;
   final Color accentColor;
   final bool isDark;
 
   const _HeaderCard({
     required this.account,
+    this.currentBalance,
+    this.availableCredit,
     required this.accentColor,
     required this.isDark,
   });
@@ -421,7 +666,7 @@ class _HeaderCard extends StatelessWidget {
           const Divider(height: 1),
           const SizedBox(height: 16),
           Text(
-            'Opening Amount',
+            'Current Balance',
             style: theme.textTheme.bodySmall?.copyWith(
               color:
                   isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
@@ -430,13 +675,35 @@ class _HeaderCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           MoneyText(
-            decimalString: account.openingAmount,
+            decimalString: currentBalance ?? account.openingAmount,
             currencyCode: account.currencyCode,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.w800,
               color: accentColor,
             ),
           ),
+          if (availableCredit != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Text(
+                  'Available Credit: ',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                  ),
+                ),
+                Text(
+                  '${account.currencyCode} $availableCredit',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -587,3 +854,130 @@ class _MoneyRow extends StatelessWidget {
     );
   }
 }
+
+class _ActivityFeedCard extends StatelessWidget {
+  final List<AccountActivityModel> activities;
+  final String currencyCode;
+  final bool isLoading;
+  final bool isDark;
+
+  const _ActivityFeedCard({
+    required this.activities,
+    required this.currencyCode,
+    required this.isLoading,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.cardDark : AppColors.cardLight,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+        border: Border.all(
+          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Account Activity',
+                  style: theme.textTheme.titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                if (isLoading)
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+              ],
+            ),
+          ),
+          const Divider(height: 24, indent: 16, endIndent: 16),
+          if (activities.isEmpty && !isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              child: Center(
+                child: Text(
+                  'No activity recorded for this account',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondaryLight,
+                  ),
+                ),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: activities.length,
+              separatorBuilder: (_, _) =>
+                  const Divider(height: 1, indent: 56),
+              itemBuilder: (context, index) {
+                final item = activities[index];
+                final isPositive = item.isIncomeOrInflow;
+                final color =
+                    isPositive ? AppColors.success : AppColors.danger;
+                final sign = isPositive ? '+' : '-';
+
+                IconData icon;
+                if (item.activityType == 'transfer') {
+                  icon = Icons.swap_horiz_rounded;
+                } else if (item.activityType == 'adjustment') {
+                  icon = Icons.tune_rounded;
+                } else if (item.type == 'income') {
+                  icon = Icons.arrow_downward_rounded;
+                } else {
+                  icon = Icons.arrow_upward_rounded;
+                }
+
+                return ListTile(
+                  dense: true,
+                  leading: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: color.withValues(alpha: 0.12),
+                    child: Icon(icon, size: 18, color: color),
+                  ),
+                  title: Text(
+                    item.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${item.date}${item.note != null && item.note!.isNotEmpty ? ' • ${item.note}' : ''}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                  trailing: Text(
+                    '$sign$currencyCode ${item.amount}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                      fontSize: 13,
+                    ),
+                  ),
+                );
+              },
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+

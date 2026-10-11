@@ -1,8 +1,12 @@
 import 'package:dio/dio.dart';
 
 import '../api/api_client.dart';
+import '../models/account_activity_model.dart';
+import '../models/account_adjustment_model.dart';
+import '../models/account_balance_model.dart';
 import '../models/account_model.dart';
 import '../models/api_response.dart';
+import '../models/transfer_model.dart';
 
 /// Repository for all `/api/accounts` operations.
 ///
@@ -137,6 +141,115 @@ class AccountRepository {
       (data) => AccountModel.fromJson(
         (data as Map<String, dynamic>)['account'] as Map<String, dynamic>,
       ),
+    );
+  }
+
+  // ── Exact Ledger Balance ──────────────────────────────────────────────────
+
+  Future<ApiResponse<AccountBalanceModel>> getAccountBalance(
+    int id, {
+    CancelToken? cancelToken,
+  }) async {
+    final response = await _dio.get(
+      'accounts/$id/balance',
+      cancelToken: cancelToken,
+    );
+    return ApiResponse.fromJson(
+      response.data as Map<String, dynamic>,
+      (data) => AccountBalanceModel.fromJson(
+        (data as Map<String, dynamic>)['balance'] as Map<String, dynamic>,
+      ),
+    );
+  }
+
+  // ── Account Activity Feed ─────────────────────────────────────────────────
+
+  Future<ApiResponse<AccountActivityListResponse>> getAccountActivity(
+    int id, {
+    int page = 1,
+    int limit = 20,
+    CancelToken? cancelToken,
+  }) async {
+    final response = await _dio.get(
+      'accounts/$id/activity',
+      queryParameters: {'page': page, 'limit': limit},
+      cancelToken: cancelToken,
+    );
+    return ApiResponse.fromJson(
+      response.data as Map<String, dynamic>,
+      (data) => AccountActivityListResponse.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  // ── Balance Adjustment ───────────────────────────────────────────────────
+
+  Future<ApiResponse<AccountAdjustmentModel>> createAdjustment(
+    int id, {
+    required String amount,
+    required String reason,
+    required String adjustmentDate,
+    required String clientAdjustmentKey,
+  }) async {
+    final body = <String, dynamic>{
+      'amount': amount,
+      'reason': reason,
+      'adjustmentDate': adjustmentDate,
+      'clientAdjustmentKey': clientAdjustmentKey,
+    };
+    final response = await _dio.post('accounts/$id/adjustments', data: body);
+    return ApiResponse.fromJson(
+      response.data as Map<String, dynamic>,
+      (data) => AccountAdjustmentModel.fromJson(
+        (data as Map<String, dynamic>)['adjustment'] as Map<String, dynamic>,
+      ),
+    );
+  }
+
+  // ── Atomic Transfers ──────────────────────────────────────────────────────
+
+  Future<ApiResponse<TransferModel>> createTransfer({
+    required int sourceAccountId,
+    required int destinationAccountId,
+    required String amount,
+    required String transferDate,
+    String? note,
+    required String clientTransferKey,
+  }) async {
+    final body = <String, dynamic>{
+      'sourceAccountId': sourceAccountId,
+      'destinationAccountId': destinationAccountId,
+      'amount': amount,
+      'transferDate': transferDate,
+      'clientTransferKey': clientTransferKey,
+    };
+    if (note != null) body['note'] = note;
+
+    final response = await _dio.post('transfers', data: body);
+    return ApiResponse.fromJson(
+      response.data as Map<String, dynamic>,
+      (data) => TransferModel.fromJson(
+        (data as Map<String, dynamic>)['transfer'] as Map<String, dynamic>,
+      ),
+    );
+  }
+
+  Future<ApiResponse<TransferListResponse>> getTransfers({
+    int? accountId,
+    int page = 1,
+    int limit = 20,
+    CancelToken? cancelToken,
+  }) async {
+    final params = <String, dynamic>{'page': page, 'limit': limit};
+    if (accountId != null) params['accountId'] = accountId;
+
+    final response = await _dio.get(
+      'transfers',
+      queryParameters: params,
+      cancelToken: cancelToken,
+    );
+    return ApiResponse.fromJson(
+      response.data as Map<String, dynamic>,
+      (data) => TransferListResponse.fromJson(data as Map<String, dynamic>),
     );
   }
 }

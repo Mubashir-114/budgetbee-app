@@ -54,6 +54,11 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
         title: const Text('Accounts & Wallets'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.swap_horiz_rounded),
+            tooltip: 'Transfer',
+            onPressed: () => context.push('/accounts/transfer'),
+          ),
+          IconButton(
             icon: const Icon(Icons.add_rounded),
             tooltip: 'Add Account',
             onPressed: () => context.push('/accounts/add'),

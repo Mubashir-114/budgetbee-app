@@ -16,6 +16,7 @@ import '../screens/accounts/accounts_list_screen.dart';
 import '../screens/accounts/add_account_screen.dart';
 import '../screens/accounts/account_detail_screen.dart';
 import '../screens/accounts/edit_account_screen.dart';
+import '../screens/transfers/transfer_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
@@ -89,6 +90,13 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/accounts/add',
           builder: (context, state) => const AddAccountScreen(),
+        ),
+        GoRoute(
+          path: '/accounts/transfer',
+          builder: (context, state) {
+            final sourceId = int.tryParse(state.uri.queryParameters['sourceId'] ?? '');
+            return TransferScreen(initialSourceAccountId: sourceId);
+          },
         ),
         GoRoute(
           path: '/accounts/:id',

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 
+import '../models/account_activity_model.dart';
+import '../models/account_balance_model.dart';
 import '../models/account_model.dart';
+import '../models/transfer_model.dart';
 import '../repositories/account_repository.dart';
 import '../core/services/cache_service.dart';
 
@@ -344,6 +347,145 @@ class AccountProvider extends ChangeNotifier {
     _actionStatus = AccountActionStatus.idle;
     _actionError = null;
     notifyListeners();
+  }
+
+  // ── Exact Ledger Balance ──────────────────────────────────────────────────
+
+  Future<AccountBalanceModel?> getAccountBalance(int id) async {
+    try {
+      final response = await _repository.getAccountBalance(id);
+      return response.data;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ── Account Activity ──────────────────────────────────────────────────────
+
+  Future<AccountActivityListResponse?> getAccountActivity(
+    int id, {
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _repository.getAccountActivity(
+        id,
+        page: page,
+        limit: limit,
+      );
+      return response.data;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ── Balance Adjustment ────────────────────────────────────────────────────
+
+  Future<bool> createAdjustment(
+    int id, {
+    required String amount,
+    required String reason,
+    required String adjustmentDate,
+    required String clientAdjustmentKey,
+  }) async {
+    final sessionGeneration = _sessionGeneration;
+    try {
+      _actionStatus = AccountActionStatus.loading;
+      _actionError = null;
+      notifyListeners();
+
+      await _repository.createAdjustment(
+        id,
+        amount: amount,
+        reason: reason,
+        adjustmentDate: adjustmentDate,
+        clientAdjustmentKey: clientAdjustmentKey,
+      );
+
+      if (sessionGeneration != _sessionGeneration) return false;
+      _actionStatus = AccountActionStatus.success;
+      await refresh();
+      return true;
+    } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
+      _actionStatus = AccountActionStatus.error;
+      _actionError =
+          (e.response?.data as Map?)?['message'] as String? ??
+          e.message ??
+          'Failed to record balance adjustment';
+      notifyListeners();
+      return false;
+    } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
+      _actionStatus = AccountActionStatus.error;
+      _actionError = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ── Atomic Transfers ──────────────────────────────────────────────────────
+
+  Future<bool> createTransfer({
+    required int sourceAccountId,
+    required int destinationAccountId,
+    required String amount,
+    required String transferDate,
+    String? note,
+    required String clientTransferKey,
+  }) async {
+    final sessionGeneration = _sessionGeneration;
+    try {
+      _actionStatus = AccountActionStatus.loading;
+      _actionError = null;
+      notifyListeners();
+
+      await _repository.createTransfer(
+        sourceAccountId: sourceAccountId,
+        destinationAccountId: destinationAccountId,
+        amount: amount,
+        transferDate: transferDate,
+        note: note,
+        clientTransferKey: clientTransferKey,
+      );
+
+      if (sessionGeneration != _sessionGeneration) return false;
+      _actionStatus = AccountActionStatus.success;
+      await refresh();
+      return true;
+    } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
+      _actionStatus = AccountActionStatus.error;
+      _actionError =
+          (e.response?.data as Map?)?['message'] as String? ??
+          e.message ??
+          'Failed to complete transfer';
+      notifyListeners();
+      return false;
+    } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
+      _actionStatus = AccountActionStatus.error;
+      _actionError = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<TransferListResponse?> getTransfers({
+    int? accountId,
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _repository.getTransfers(
+        accountId: accountId,
+        page: page,
+        limit: limit,
+      );
+      return response.data;
+    } catch (_) {
+      return null;
+    }
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────
