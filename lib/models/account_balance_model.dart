@@ -1,3 +1,5 @@
+import 'credit_card_models.dart';
+
 class AccountBalanceModel {
   final int accountId;
   final String displayName;
@@ -13,6 +15,10 @@ class AccountBalanceModel {
   final String totalAdjustments;
   final String? creditLimit;
   final String? availableCredit;
+  final String? outstandingDebt;
+  final String? creditBalance;
+  final String? utilizationPercentage;
+  final CreditCardBillingModel? billingInfo;
 
   const AccountBalanceModel({
     required this.accountId,
@@ -29,6 +35,10 @@ class AccountBalanceModel {
     required this.totalAdjustments,
     this.creditLimit,
     this.availableCredit,
+    this.outstandingDebt,
+    this.creditBalance,
+    this.utilizationPercentage,
+    this.billingInfo,
   });
 
   bool get isCreditCard => type == 'credit_card';
@@ -49,6 +59,13 @@ class AccountBalanceModel {
       totalAdjustments: json['totalAdjustments'] as String? ?? '0.00',
       creditLimit: json['creditLimit'] as String?,
       availableCredit: json['availableCredit'] as String?,
+      outstandingDebt: json['outstandingDebt'] as String?,
+      creditBalance: json['creditBalance'] as String?,
+      utilizationPercentage: json['utilizationPercentage'] as String?,
+      billingInfo: json['billingInfo'] != null
+          ? CreditCardBillingModel.fromJson(
+              json['billingInfo'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -68,6 +85,10 @@ class AccountBalanceModel {
       'totalAdjustments': totalAdjustments,
       'creditLimit': creditLimit,
       'availableCredit': availableCredit,
+      'outstandingDebt': outstandingDebt,
+      'creditBalance': creditBalance,
+      'utilizationPercentage': utilizationPercentage,
+      'billingInfo': billingInfo?.toJson(),
     };
   }
 }

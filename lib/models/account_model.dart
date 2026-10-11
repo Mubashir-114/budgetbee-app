@@ -19,6 +19,8 @@ class AccountModel {
   final String status; // "active" | "archived"
   final String? createdAt;
   final String? updatedAt;
+  final int? statementClosingDay;
+  final int? paymentDueDay;
 
   const AccountModel({
     required this.id,
@@ -34,6 +36,8 @@ class AccountModel {
     required this.status,
     this.createdAt,
     this.updatedAt,
+    this.statementClosingDay,
+    this.paymentDueDay,
   });
 
   bool get isAsset => type != 'credit_card';
@@ -55,6 +59,8 @@ class AccountModel {
       status: json['status'] as String? ?? 'active',
       createdAt: json['createdAt'] as String?,
       updatedAt: json['updatedAt'] as String?,
+      statementClosingDay: json['statementClosingDay'] as int?,
+      paymentDueDay: json['paymentDueDay'] as int?,
     );
   }
 
@@ -73,6 +79,8 @@ class AccountModel {
       'status': status,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
+      'statementClosingDay': statementClosingDay,
+      'paymentDueDay': paymentDueDay,
     };
   }
 
@@ -90,6 +98,8 @@ class AccountModel {
     String? status,
     String? createdAt,
     String? updatedAt,
+    int? statementClosingDay,
+    int? paymentDueDay,
   }) {
     return AccountModel(
       id: id ?? this.id,
@@ -105,6 +115,8 @@ class AccountModel {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      statementClosingDay: statementClosingDay ?? this.statementClosingDay,
+      paymentDueDay: paymentDueDay ?? this.paymentDueDay,
     );
   }
 }

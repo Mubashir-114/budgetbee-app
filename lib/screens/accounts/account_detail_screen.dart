@@ -7,9 +7,12 @@ import '../../core/constants/app_dimensions.dart';
 import '../../models/account_model.dart';
 import '../../models/account_balance_model.dart';
 import '../../models/account_activity_model.dart';
+import '../../models/credit_card_models.dart';
+import '../../models/transfer_model.dart';
 import '../../providers/account_provider.dart';
 import 'widgets/account_icon.dart';
 import 'widgets/money_text.dart';
+import 'widgets/credit_card_components.dart';
 
 class AccountDetailScreen extends StatefulWidget {
   final int accountId;
@@ -23,6 +26,8 @@ class AccountDetailScreen extends StatefulWidget {
 class _AccountDetailScreenState extends State<AccountDetailScreen> {
   AccountModel? _account;
   AccountBalanceModel? _balance;
+  CreditCardDetailsModel? _cardDetails;
+  List<TransferModel> _cardPayments = [];
   List<AccountActivityModel> _activities = [];
   bool _isLoading = true;
   bool _loadingLedger = false;
@@ -79,15 +84,73 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
   Future<void> _loadLedgerData() async {
     setState(() => _loadingLedger = true);
     final provider = context.read<AccountProvider>();
+    final isCredit = _account?.type == 'credit_card';
+
     final balFuture = provider.getAccountBalance(widget.accountId);
     final actFuture = provider.getAccountActivity(widget.accountId);
-    final results = await Future.wait([balFuture, actFuture]);
+    final cardDetailsFuture = isCredit
+        ? provider.getCreditCardDetails(widget.accountId)
+        : Future.value(null);
+    final cardPaymentsFuture = isCredit
+        ? provider.getCreditCardPayments(widget.accountId)
+        : Future.value(null);
+
+    final results = await Future.wait([
+      balFuture,
+      actFuture,
+      cardDetailsFuture,
+      cardPaymentsFuture,
+    ]);
     if (!mounted) return;
     setState(() {
       _balance = results[0] as AccountBalanceModel?;
       _activities = (results[1] as AccountActivityListResponse?)?.activities ?? [];
+      _cardDetails = results[2] as CreditCardDetailsModel?;
+      _cardPayments = (results[3] as CreditCardPaymentListResponse?)?.payments ?? [];
       _loadingLedger = false;
     });
+  }
+
+  Future<void> _showRepayDialog() async {
+    if (_account == null) return;
+    final debt = _cardDetails?.outstandingDebt ??
+        _balance?.outstandingDebt ??
+        '0.00';
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => CreditCardRepaymentDialog(
+        cardId: widget.accountId,
+        cardName: _account!.displayName,
+        outstandingDebt: debt,
+        currencyCode: _account!.currencyCode,
+      ),
+    );
+    if (result == true && mounted) {
+      _loadLedgerData();
+      context.read<AccountProvider>().loadAccounts();
+    }
+  }
+
+  Future<void> _showEditBillingDialog() async {
+    if (_account == null) return;
+    final closingDay = _cardDetails?.statementClosingDay ??
+        _account!.statementClosingDay ??
+        _balance?.billingInfo?.statementClosingDay;
+    final dueDay = _cardDetails?.paymentDueDay ??
+        _account!.paymentDueDay ??
+        _balance?.billingInfo?.paymentDueDay;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => CreditCardBillingDialog(
+        cardId: widget.accountId,
+        currentClosingDay: closingDay,
+        currentDueDay: dueDay,
+      ),
+    );
+    if (result == true && mounted) {
+      _loadAccount();
+    }
   }
 
   Future<void> _showAdjustBalanceDialog() async {
@@ -316,6 +379,8 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
               onSelected: (value) {
                 if (value == 'edit') {
                   context.push('/accounts/${account.id}/edit').then((_) => _loadAccount());
+                } else if (value == 'billing') {
+                  _showEditBillingDialog();
                 } else if (value == 'default') {
                   _setDefault();
                 } else if (value == 'archive') {
@@ -333,6 +398,17 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                     ],
                   ),
                 ),
+                if (isCredit)
+                  const PopupMenuItem(
+                    value: 'billing',
+                    child: Row(
+                      children: [
+                        Icon(Icons.calendar_month_rounded, size: 18),
+                        SizedBox(width: 12),
+                        Text('Billing Cycle'),
+                      ],
+                    ),
+                  ),
                 if (!isCredit && !account.isDefault)
                   const PopupMenuItem(
                     value: 'default',
@@ -378,131 +454,211 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
 
             // Quick Actions
             if (account.isActive) ...[
-              Row(
+              if (isCredit) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        icon: const Icon(Icons.payment_rounded),
+                        label: const Text('Pay Credit Card'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.success,
+                        ),
+                        onPressed: _showRepayDialog,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.tune_rounded),
+                        label: const Text('Adjust Balance'),
+                        onPressed: _showAdjustBalanceDialog,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ] else ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        icon: const Icon(Icons.swap_horiz_rounded),
+                        label: const Text('Transfer'),
+                        onPressed: () {
+                          context
+                              .push('/accounts/transfer?sourceId=${account.id}')
+                              .then((_) => _loadAccount());
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.tune_rounded),
+                        label: const Text('Adjust Balance'),
+                        onPressed: _showAdjustBalanceDialog,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            ],
+
+            if (isCredit) ...[
+              // Credit Card Summary
+              CreditCardSummaryCard(
+                outstandingDebt: _cardDetails?.outstandingDebt ??
+                    _balance?.outstandingDebt ??
+                    '0.00',
+                creditLimit: _cardDetails?.creditLimit ??
+                    account.creditLimit ??
+                    '0.00',
+                availableCredit: _cardDetails?.availableCredit ??
+                    _balance?.availableCredit ??
+                    '0.00',
+                creditBalance: _cardDetails?.creditBalance ??
+                    _balance?.creditBalance ??
+                    '0.00',
+                utilizationPercentage:
+                    _cardDetails?.utilizationPercentage ??
+                        _balance?.utilizationPercentage ??
+                        '0.00%',
+                currencyCode: account.currencyCode,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 16),
+
+              // Billing & Due Dates Card
+              CreditCardBillingCard(
+                billing: _cardDetails?.billingInfo ??
+                    _balance?.billingInfo ??
+                    const CreditCardBillingModel(),
+                onEditBilling: _showEditBillingDialog,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 16),
+
+              // Account Details Metadata
+              _InfoCard(
+                title: 'Card Details',
+                isDark: isDark,
                 children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      icon: const Icon(Icons.swap_horiz_rounded),
-                      label: const Text('Transfer'),
-                      onPressed: () {
-                        context
-                            .push('/accounts/transfer?sourceId=${account.id}')
-                            .then((_) => _loadAccount());
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      icon: const Icon(Icons.tune_rounded),
-                      label: const Text('Adjust Balance'),
-                      onPressed: _showAdjustBalanceDialog,
-                    ),
+                  _InfoRow(label: 'Type', value: _typeLabel(account.type)),
+                  _InfoRow(label: 'Subtype', value: _subtypeLabel(account.subtype)),
+                  _InfoRow(label: 'Currency', value: account.currencyCode),
+                  if (account.institutionName != null)
+                    _InfoRow(
+                        label: 'Card Issuer', value: account.institutionName!),
+                  if (account.maskedLast4 != null)
+                    _InfoRow(
+                        label: 'Card Number',
+                        value: '•••• ${account.maskedLast4}'),
+                  _InfoRow(
+                    label: 'Status',
+                    value: account.status[0].toUpperCase() +
+                        account.status.substring(1),
+                    valueColor:
+                        account.isActive ? AppColors.success : AppColors.danger,
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-            ],
 
-            // Metadata card
-            _InfoCard(
-              title: 'Account Details',
-              isDark: isDark,
-              children: [
-                _InfoRow(label: 'Type', value: _typeLabel(account.type)),
-                _InfoRow(label: 'Subtype', value: _subtypeLabel(account.subtype)),
-                _InfoRow(label: 'Currency', value: account.currencyCode),
-                if (account.institutionName != null)
+              // Repayment History Card
+              CreditCardRepaymentHistoryCard(
+                payments: _cardPayments,
+                currencyCode: account.currencyCode,
+                isLoading: _loadingLedger,
+                isDark: isDark,
+              ),
+              const SizedBox(height: 16),
+            ] else ...[
+              // Metadata card for non-credit accounts
+              _InfoCard(
+                title: 'Account Details',
+                isDark: isDark,
+                children: [
+                  _InfoRow(label: 'Type', value: _typeLabel(account.type)),
+                  _InfoRow(label: 'Subtype', value: _subtypeLabel(account.subtype)),
+                  _InfoRow(label: 'Currency', value: account.currencyCode),
+                  if (account.institutionName != null)
+                    _InfoRow(
+                        label: 'Institution', value: account.institutionName!),
+                  if (account.maskedLast4 != null)
+                    _InfoRow(
+                        label: 'Account No.',
+                        value: '••••${account.maskedLast4}'),
                   _InfoRow(
-                      label: 'Institution', value: account.institutionName!),
-                if (account.maskedLast4 != null)
+                    label: 'Status',
+                    value: account.status[0].toUpperCase() +
+                        account.status.substring(1),
+                    valueColor:
+                        account.isActive ? AppColors.success : AppColors.danger,
+                  ),
                   _InfoRow(
-                      label: 'Account No.',
-                      value: '••••${account.maskedLast4}'),
-                _InfoRow(
-                  label: 'Status',
-                  value: account.status[0].toUpperCase() +
-                      account.status.substring(1),
-                  valueColor:
-                      account.isActive ? AppColors.success : AppColors.danger,
-                ),
-                _InfoRow(
-                  label: 'Default Account',
-                  value: account.isDefault ? 'Yes' : 'No',
-                  valueColor: account.isDefault ? AppColors.primary : null,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Financial card
-            _InfoCard(
-              title: 'Financial Info',
-              isDark: isDark,
-              children: [
-                _MoneyRow(
-                  label: 'Current Ledger Balance',
-                  decimalString: _balance?.currentBalance ?? account.openingAmount,
-                  currencyCode: account.currencyCode,
-                  isDark: isDark,
-                ),
-                _MoneyRow(
-                  label: 'Opening Amount',
-                  decimalString: account.openingAmount,
-                  currencyCode: account.currencyCode,
-                  note: isCredit ? 'Immutable' : null,
-                  isDark: isDark,
-                ),
-                if (_balance != null) ...[
-                  _MoneyRow(
-                    label: 'Total Inflow (Income)',
-                    decimalString: _balance!.totalIncome,
-                    currencyCode: account.currencyCode,
-                    isDark: isDark,
-                  ),
-                  _MoneyRow(
-                    label: 'Total Outflow (Expenses)',
-                    decimalString: _balance!.totalExpense,
-                    currencyCode: account.currencyCode,
-                    isDark: isDark,
-                  ),
-                  _MoneyRow(
-                    label: 'Transfers In',
-                    decimalString: _balance!.transfersIn,
-                    currencyCode: account.currencyCode,
-                    isDark: isDark,
-                  ),
-                  _MoneyRow(
-                    label: 'Transfers Out',
-                    decimalString: _balance!.transfersOut,
-                    currencyCode: account.currencyCode,
-                    isDark: isDark,
-                  ),
-                  _MoneyRow(
-                    label: 'Net Adjustments',
-                    decimalString: _balance!.totalAdjustments,
-                    currencyCode: account.currencyCode,
-                    isDark: isDark,
+                    label: 'Default Account',
+                    value: account.isDefault ? 'Yes' : 'No',
+                    valueColor: account.isDefault ? AppColors.primary : null,
                   ),
                 ],
-                if (account.creditLimit != null)
+              ),
+              const SizedBox(height: 16),
+
+              // Financial card for non-credit accounts
+              _InfoCard(
+                title: 'Financial Info',
+                isDark: isDark,
+                children: [
                   _MoneyRow(
-                    label: 'Credit Limit',
-                    decimalString: account.creditLimit!,
+                    label: 'Current Ledger Balance',
+                    decimalString: _balance?.currentBalance ?? account.openingAmount,
                     currencyCode: account.currencyCode,
-                    note: 'Immutable',
                     isDark: isDark,
                   ),
-                if (_balance?.availableCredit != null)
                   _MoneyRow(
-                    label: 'Available Credit',
-                    decimalString: _balance!.availableCredit!,
+                    label: 'Opening Amount',
+                    decimalString: account.openingAmount,
                     currencyCode: account.currencyCode,
                     isDark: isDark,
                   ),
-              ],
-            ),
-            const SizedBox(height: 16),
+                  if (_balance != null) ...[
+                    _MoneyRow(
+                      label: 'Total Inflow (Income)',
+                      decimalString: _balance!.totalIncome,
+                      currencyCode: account.currencyCode,
+                      isDark: isDark,
+                    ),
+                    _MoneyRow(
+                      label: 'Total Outflow (Expenses)',
+                      decimalString: _balance!.totalExpense,
+                      currencyCode: account.currencyCode,
+                      isDark: isDark,
+                    ),
+                    _MoneyRow(
+                      label: 'Transfers In',
+                      decimalString: _balance!.transfersIn,
+                      currencyCode: account.currencyCode,
+                      isDark: isDark,
+                    ),
+                    _MoneyRow(
+                      label: 'Transfers Out',
+                      decimalString: _balance!.transfersOut,
+                      currencyCode: account.currencyCode,
+                      isDark: isDark,
+                    ),
+                    _MoneyRow(
+                      label: 'Net Adjustments',
+                      decimalString: _balance!.totalAdjustments,
+                      currencyCode: account.currencyCode,
+                      isDark: isDark,
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // Activity Feed
             _ActivityFeedCard(
@@ -666,7 +822,7 @@ class _HeaderCard extends StatelessWidget {
           const Divider(height: 1),
           const SizedBox(height: 16),
           Text(
-            'Current Balance',
+            account.type == 'credit_card' ? 'Outstanding Debt' : 'Current Balance',
             style: theme.textTheme.bodySmall?.copyWith(
               color:
                   isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
@@ -798,14 +954,12 @@ class _MoneyRow extends StatelessWidget {
   final String label;
   final String decimalString;
   final String currencyCode;
-  final String? note;
   final bool isDark;
 
   const _MoneyRow({
     required this.label,
     required this.decimalString,
     required this.currencyCode,
-    this.note,
     required this.isDark,
   });
 
@@ -829,17 +983,6 @@ class _MoneyRow extends StatelessWidget {
                         : AppColors.textSecondaryLight,
                   ),
                 ),
-                if (note != null)
-                  Text(
-                    note!,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontSize: 10,
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
               ],
             ),
           ),

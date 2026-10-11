@@ -6,6 +6,7 @@ import '../models/account_adjustment_model.dart';
 import '../models/account_balance_model.dart';
 import '../models/account_model.dart';
 import '../models/api_response.dart';
+import '../models/credit_card_models.dart';
 import '../models/transfer_model.dart';
 
 /// Repository for all `/api/accounts` operations.
@@ -250,6 +251,83 @@ class AccountRepository {
     return ApiResponse.fromJson(
       response.data as Map<String, dynamic>,
       (data) => TransferListResponse.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  // ── Credit Card Operations ────────────────────────────────────────────────
+
+  Future<ApiResponse<CreditCardDetailsModel>> getCreditCardDetails(
+    int cardId, {
+    CancelToken? cancelToken,
+  }) async {
+    final response = await _dio.get(
+      'accounts/$cardId/credit-card',
+      cancelToken: cancelToken,
+    );
+    return ApiResponse.fromJson(
+      response.data as Map<String, dynamic>,
+      (data) => CreditCardDetailsModel.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<ApiResponse<AccountModel>> updateBillingSettings(
+    int cardId, {
+    int? statementClosingDay,
+    int? paymentDueDay,
+  }) async {
+    final body = <String, dynamic>{
+      'statementClosingDay': statementClosingDay,
+      'paymentDueDay': paymentDueDay,
+    };
+    final response = await _dio.put('accounts/$cardId/billing', data: body);
+    return ApiResponse.fromJson(
+      response.data as Map<String, dynamic>,
+      (data) => AccountModel.fromJson(
+        (data as Map<String, dynamic>)['account'] as Map<String, dynamic>,
+      ),
+    );
+  }
+
+  Future<ApiResponse<CreditCardRepaymentResult>> repayCreditCard(
+    int cardId, {
+    required int sourceAccountId,
+    required String amount,
+    required String paymentDate,
+    String? note,
+    required String clientPaymentKey,
+  }) async {
+    final body = <String, dynamic>{
+      'sourceAccountId': sourceAccountId,
+      'amount': amount,
+      'paymentDate': paymentDate,
+      'clientPaymentKey': clientPaymentKey,
+    };
+    if (note != null && note.trim().isNotEmpty) {
+      body['note'] = note.trim();
+    }
+
+    final response = await _dio.post('accounts/$cardId/repay', data: body);
+    return ApiResponse.fromJson(
+      response.data as Map<String, dynamic>,
+      (data) => CreditCardRepaymentResult.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<ApiResponse<CreditCardPaymentListResponse>> getCreditCardPayments(
+    int cardId, {
+    int page = 1,
+    int limit = 20,
+    CancelToken? cancelToken,
+  }) async {
+    final params = <String, dynamic>{'page': page, 'limit': limit};
+    final response = await _dio.get(
+      'accounts/$cardId/payments',
+      queryParameters: params,
+      cancelToken: cancelToken,
+    );
+    return ApiResponse.fromJson(
+      response.data as Map<String, dynamic>,
+      (data) => CreditCardPaymentListResponse.fromJson(data as Map<String, dynamic>),
     );
   }
 }

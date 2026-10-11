@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/api/api_client.dart';
+import 'package:frontend/core/constants/api_constants.dart';
 import 'package:frontend/repositories/auth_repository.dart';
 
 class _FailingAdapter implements HttpClientAdapter {
@@ -314,5 +315,11 @@ void main() {
 
     expect(adapter.requestCount, 2);
     client.close(force: true);
+  });
+
+  test('ApiConstants resolves local backend URL in debug mode', () {
+    expect(ApiConstants.baseUrl, isNotEmpty);
+    expect(ApiConstants.baseUrl.endsWith('/api/'), isTrue);
+    expect(ApiConstants.baseUrl, isNot(contains('onrender.com')));
   });
 }

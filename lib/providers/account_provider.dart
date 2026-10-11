@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../models/account_activity_model.dart';
 import '../models/account_balance_model.dart';
 import '../models/account_model.dart';
+import '../models/credit_card_models.dart';
 import '../models/transfer_model.dart';
 import '../repositories/account_repository.dart';
 import '../core/services/cache_service.dart';
@@ -479,6 +480,118 @@ class AccountProvider extends ChangeNotifier {
     try {
       final response = await _repository.getTransfers(
         accountId: accountId,
+        page: page,
+        limit: limit,
+      );
+      return response.data;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ── Credit Card Management ───────────────────────────────────────────────
+
+  Future<CreditCardDetailsModel?> getCreditCardDetails(int cardId) async {
+    try {
+      final response = await _repository.getCreditCardDetails(cardId);
+      return response.data;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> updateBillingSettings(
+    int cardId, {
+    int? statementClosingDay,
+    int? paymentDueDay,
+  }) async {
+    final sessionGeneration = _sessionGeneration;
+    try {
+      _actionStatus = AccountActionStatus.loading;
+      _actionError = null;
+      notifyListeners();
+
+      await _repository.updateBillingSettings(
+        cardId,
+        statementClosingDay: statementClosingDay,
+        paymentDueDay: paymentDueDay,
+      );
+
+      if (sessionGeneration != _sessionGeneration) return false;
+      _actionStatus = AccountActionStatus.success;
+      await refresh();
+      return true;
+    } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
+      _actionStatus = AccountActionStatus.error;
+      _actionError =
+          (e.response?.data as Map?)?['message'] as String? ??
+          e.message ??
+          'Failed to update billing settings';
+      notifyListeners();
+      return false;
+    } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return false;
+      _actionStatus = AccountActionStatus.error;
+      _actionError = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<CreditCardRepaymentResult?> repayCreditCard({
+    required int cardId,
+    required int sourceAccountId,
+    required String amount,
+    required String paymentDate,
+    String? note,
+    required String clientPaymentKey,
+  }) async {
+    final sessionGeneration = _sessionGeneration;
+    try {
+      _actionStatus = AccountActionStatus.loading;
+      _actionError = null;
+      notifyListeners();
+
+      final response = await _repository.repayCreditCard(
+        cardId,
+        sourceAccountId: sourceAccountId,
+        amount: amount,
+        paymentDate: paymentDate,
+        note: note,
+        clientPaymentKey: clientPaymentKey,
+      );
+
+      if (sessionGeneration != _sessionGeneration) return null;
+      _actionStatus = AccountActionStatus.success;
+      await refresh();
+      return response.data;
+    } on DioException catch (e) {
+      if (sessionGeneration != _sessionGeneration) return null;
+      _actionStatus = AccountActionStatus.error;
+      _actionError =
+          (e.response?.data as Map?)?['message'] as String? ??
+          e.message ??
+          'Failed to complete credit card repayment';
+      notifyListeners();
+      return null;
+    } catch (e) {
+      if (sessionGeneration != _sessionGeneration) return null;
+      _actionStatus = AccountActionStatus.error;
+      _actionError = e.toString();
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<CreditCardPaymentListResponse?> getCreditCardPayments(
+    int cardId, {
+    int page = 1,
+    int limit = 20,
+  }) async {
+    try {
+      final response = await _repository.getCreditCardPayments(
+        cardId,
         page: page,
         limit: limit,
       );
