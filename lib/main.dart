@@ -9,6 +9,7 @@ import 'providers/budget_provider.dart';
 import 'providers/report_provider.dart';
 import 'providers/sms_provider.dart';
 import 'providers/currency_provider.dart';
+import 'providers/account_provider.dart';
 import 'core/services/cache_service.dart';
 import 'core/services/connectivity_service.dart';
 import 'api/api_client.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
   final budgetProvider = BudgetProvider();
   final reportProvider = ReportProvider();
   final smsProvider = SmsProvider();
+  final accountProvider = AccountProvider();
   final authProvider = AuthProvider(
     onSessionReset: () {
       dashboardProvider.clearSession();
@@ -31,6 +33,7 @@ Future<void> main() async {
       budgetProvider.clearSession();
       reportProvider.clearSession();
       smsProvider.clearSession();
+      accountProvider.clearSession();
     },
   );
 
@@ -48,6 +51,7 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: budgetProvider),
         ChangeNotifierProvider.value(value: reportProvider),
         ChangeNotifierProvider.value(value: smsProvider),
+        ChangeNotifierProvider.value(value: accountProvider),
       ],
       child: const PersonalFinanceApp(),
     ),

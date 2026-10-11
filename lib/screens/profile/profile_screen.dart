@@ -363,6 +363,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: -0.2),
                       ),
                     ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary),
+                      title: const Text("Accounts & Wallets", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                      subtitle: const Text("Manage bank accounts, credit cards and cash wallets", style: TextStyle(fontSize: 11)),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                      onTap: () => context.push('/accounts'),
+                    ),
+                    const Divider(height: 1),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text("Push Notifications", style: TextStyle(fontSize: 14)),

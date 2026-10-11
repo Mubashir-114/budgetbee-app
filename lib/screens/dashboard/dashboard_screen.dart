@@ -348,6 +348,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Accounts & Wallets',
+            icon: Icon(
+              Icons.account_balance_rounded,
+              color: isDark ? AppColors.textLight : AppColors.textDark,
+            ),
+            onPressed: () => context.push('/accounts'),
+          ),
+          IconButton(
+            tooltip: 'Refresh Dashboard',
             icon: Icon(
               Icons.sync_rounded,
               color: isDark ? AppColors.textLight : AppColors.textDark,

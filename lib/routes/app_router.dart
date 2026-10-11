@@ -12,6 +12,10 @@ import '../screens/budgets/budgets_list_screen.dart';
 import '../screens/reports/reports_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/transactions/sms_import_screen.dart';
+import '../screens/accounts/accounts_list_screen.dart';
+import '../screens/accounts/add_account_screen.dart';
+import '../screens/accounts/account_detail_screen.dart';
+import '../screens/accounts/edit_account_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
@@ -77,6 +81,28 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/profile',
           builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: '/accounts',
+          builder: (context, state) => const AccountsListScreen(),
+        ),
+        GoRoute(
+          path: '/accounts/add',
+          builder: (context, state) => const AddAccountScreen(),
+        ),
+        GoRoute(
+          path: '/accounts/:id',
+          builder: (context, state) {
+            final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+            return AccountDetailScreen(accountId: id);
+          },
+        ),
+        GoRoute(
+          path: '/accounts/:id/edit',
+          builder: (context, state) {
+            final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+            return EditAccountScreen(accountId: id);
+          },
         ),
       ],
     ),
