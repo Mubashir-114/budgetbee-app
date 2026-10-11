@@ -61,6 +61,24 @@ class CacheService {
     }
   }
 
+  static Future<void> clearBudgetCaches() async {
+    try {
+      if (_prefs == null) await initialize();
+      final userPrefix = _cacheKey('');
+      final keys = _prefs!.getKeys().where((key) {
+        return key.startsWith('${userPrefix}budget_') ||
+            key.startsWith('budget_') ||
+            key.contains('budget_status_') ||
+            key.contains('budget_progress_');
+      }).toList();
+      for (final key in keys) {
+        await _prefs!.remove(key);
+      }
+    } catch (_) {
+      // Fail silently
+    }
+  }
+
   static Future<void> clearAll() async {
     try {
       if (_prefs == null) await initialize();

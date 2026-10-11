@@ -244,6 +244,7 @@ class TransactionProvider extends ChangeNotifier {
 
       if (sessionGeneration != _sessionGeneration) return false;
       await CacheService.remove('dashboard_cache');
+      await CacheService.clearBudgetCaches();
       // Refresh list
       await loadTransactions();
       return true;
@@ -290,6 +291,7 @@ class TransactionProvider extends ChangeNotifier {
 
       if (sessionGeneration != _sessionGeneration) return false;
       await CacheService.remove('dashboard_cache');
+      await CacheService.clearBudgetCaches();
       // Refresh list
       await loadTransactions();
       return true;
@@ -320,6 +322,7 @@ class TransactionProvider extends ChangeNotifier {
 
       if (sessionGeneration != _sessionGeneration) return false;
       await CacheService.remove('dashboard_cache');
+      await CacheService.clearBudgetCaches();
       // Refresh list
       await loadTransactions();
       return true;

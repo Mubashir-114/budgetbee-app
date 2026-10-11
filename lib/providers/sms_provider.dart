@@ -257,6 +257,7 @@ class SmsProvider extends ChangeNotifier {
         _detectedTransactions.removeWhere((t) => t.id == id);
         _selectedDetectedIds.remove(id);
         await CacheService.remove('dashboard_cache');
+        await CacheService.clearBudgetCaches();
         notifyListeners();
         return true;
       } else {
@@ -346,6 +347,7 @@ class SmsProvider extends ChangeNotifier {
         _detectedTransactions.removeWhere((t) => _selectedDetectedIds.contains(t.id));
         _selectedDetectedIds.clear();
         await CacheService.remove('dashboard_cache');
+        await CacheService.clearBudgetCaches();
         notifyListeners();
         return true;
       } else {
@@ -534,6 +536,7 @@ class SmsProvider extends ChangeNotifier {
       if (response.success) {
         _importResponse = response.data;
         await CacheService.remove('dashboard_cache');
+        await CacheService.clearBudgetCaches();
 
         // Save last import time
         _lastImportTime = DateTime.now();
