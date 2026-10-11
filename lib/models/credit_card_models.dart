@@ -93,24 +93,32 @@ class CreditCardDetailsModel {
   });
 
   factory CreditCardDetailsModel.fromJson(Map<String, dynamic> json) {
+    final account = json['account'] is Map<String, dynamic>
+        ? json['account'] as Map<String, dynamic>
+        : null;
+    final balance = json['balance'] is Map<String, dynamic>
+        ? json['balance'] as Map<String, dynamic>
+        : null;
+    final rawBilling = json['billingInfo'] ?? json['billing'];
+
     return CreditCardDetailsModel(
-      accountId: json['accountId'] as int,
-      displayName: json['displayName'] as String? ?? '',
-      institutionName: json['institutionName'] as String?,
-      maskedLast4: json['maskedLast4'] as String?,
-      currencyCode: json['currencyCode'] as String? ?? 'INR',
-      creditLimit: json['creditLimit'] as String? ?? '0.00',
-      outstandingDebt: json['outstandingDebt'] as String? ?? '0.00',
-      availableCredit: json['availableCredit'] as String? ?? '0.00',
-      creditBalance: json['creditBalance'] as String? ?? '0.00',
-      utilizationPercentage: json['utilizationPercentage'] as String? ?? '0.00',
-      statementClosingDay: json['statementClosingDay'] as int?,
-      paymentDueDay: json['paymentDueDay'] as int?,
-      billingInfo: json['billingInfo'] != null
+      accountId: (account?['id'] ?? json['accountId']) as int? ?? 0,
+      displayName: (account?['displayName'] ?? json['displayName']) as String? ?? '',
+      institutionName: (account?['institutionName'] ?? json['institutionName']) as String?,
+      maskedLast4: (account?['maskedLast4'] ?? json['maskedLast4']) as String?,
+      currencyCode: (account?['currencyCode'] ?? json['currencyCode']) as String? ?? 'INR',
+      creditLimit: (balance?['creditLimit'] ?? json['creditLimit']) as String? ?? '0.00',
+      outstandingDebt: (balance?['outstandingDebt'] ?? json['outstandingDebt']) as String? ?? '0.00',
+      availableCredit: (balance?['availableCredit'] ?? json['availableCredit']) as String? ?? '0.00',
+      creditBalance: (balance?['creditBalance'] ?? json['creditBalance']) as String? ?? '0.00',
+      utilizationPercentage: (balance?['utilizationPercentage'] ?? json['utilizationPercentage']) as String? ?? '0.00',
+      statementClosingDay: (account?['statementClosingDay'] ?? json['statementClosingDay']) as int?,
+      paymentDueDay: (account?['paymentDueDay'] ?? json['paymentDueDay']) as int?,
+      billingInfo: rawBilling != null
           ? CreditCardBillingModel.fromJson(
-              json['billingInfo'] as Map<String, dynamic>)
+              rawBilling as Map<String, dynamic>)
           : const CreditCardBillingModel(),
-      status: json['status'] as String? ?? 'active',
+      status: (account?['status'] ?? json['status']) as String? ?? 'active',
     );
   }
 

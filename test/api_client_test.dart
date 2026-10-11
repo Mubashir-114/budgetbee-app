@@ -322,4 +322,19 @@ void main() {
     expect(ApiConstants.baseUrl.endsWith('/api/'), isTrue);
     expect(ApiConstants.baseUrl, isNot(contains('onrender.com')));
   });
+
+  test('Flutter client successfully queries local backend API', () async {
+    final dio = Dio(BaseOptions(
+      baseUrl: 'http://127.0.0.1:5000/',
+      connectTimeout: const Duration(seconds: 5),
+    ));
+    try {
+      final res = await dio.get<Map<String, dynamic>>('health');
+      expect(res.statusCode, 200);
+      expect(res.data?['success'], isTrue);
+      expect(res.data?['data']?['database'], 'healthy');
+    } finally {
+      dio.close(force: true);
+    }
+  });
 }
