@@ -172,6 +172,7 @@ class AccountProvider extends ChangeNotifier {
 
   Future<void> refresh() async {
     await CacheService.remove('accounts_active_page1');
+    await CacheService.remove('dashboard_cache');
     await loadAccounts();
   }
 

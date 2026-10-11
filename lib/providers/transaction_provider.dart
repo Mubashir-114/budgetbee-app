@@ -243,6 +243,7 @@ class TransactionProvider extends ChangeNotifier {
       );
 
       if (sessionGeneration != _sessionGeneration) return false;
+      await CacheService.remove('dashboard_cache');
       // Refresh list
       await loadTransactions();
       return true;
@@ -288,6 +289,7 @@ class TransactionProvider extends ChangeNotifier {
       );
 
       if (sessionGeneration != _sessionGeneration) return false;
+      await CacheService.remove('dashboard_cache');
       // Refresh list
       await loadTransactions();
       return true;
@@ -317,6 +319,7 @@ class TransactionProvider extends ChangeNotifier {
       await _repository.removeTransaction(id);
 
       if (sessionGeneration != _sessionGeneration) return false;
+      await CacheService.remove('dashboard_cache');
       // Refresh list
       await loadTransactions();
       return true;
