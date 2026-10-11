@@ -12,18 +12,19 @@ class AccountCard extends StatelessWidget {
   final AccountModel account;
   final VoidCallback onTap;
 
-  const AccountCard({
-    super.key,
-    required this.account,
-    required this.onTap,
-  });
+  const AccountCard({super.key, required this.account, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final isCredit = account.type == 'credit_card';
-    final accentColor = isCredit ? AppColors.danger : AppColors.primary;
+    final accentColor = switch (account.type) {
+      'credit_card' => AppColors.danger,
+      'cash' => AppColors.gold,
+      'wallet' => AppColors.info,
+      _ => AppColors.primary,
+    };
 
     return Material(
       color: Colors.transparent,
@@ -32,7 +33,14 @@ class AccountCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
         child: Container(
           decoration: BoxDecoration(
-            color: isDark ? AppColors.cardDark : AppColors.cardLight,
+            gradient: LinearGradient(
+              colors: [
+                accentColor.withValues(alpha: isDark ? .13 : .07),
+                isDark ? AppColors.cardDark : AppColors.cardLight,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
             border: Border.all(
               color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
@@ -41,9 +49,9 @@ class AccountCard extends StatelessWidget {
                 ? null
                 : [
                     BoxShadow(
-                      color: accentColor.withValues(alpha: 0.06),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                      color: accentColor.withValues(alpha: 0.10),
+                      blurRadius: 18,
+                      offset: const Offset(0, 7),
                     ),
                   ],
           ),
@@ -75,8 +83,7 @@ class AccountCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (account.isDefault)
-                            _DefaultBadge(),
+                          if (account.isDefault) _DefaultBadge(),
                         ],
                       ),
                       const SizedBox(height: 3),
@@ -191,8 +198,9 @@ class _SubtitleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+    final color = isDark
+        ? AppColors.textSecondaryDark
+        : AppColors.textSecondaryLight;
     return Text(
       _subtitle,
       style: TextStyle(fontSize: 12, color: color),

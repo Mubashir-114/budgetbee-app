@@ -13,6 +13,7 @@ import '../../core/constants/app_dimensions.dart';
 import '../../core/widgets/skeleton_loader.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/custom_toast.dart';
+import '../../core/widgets/animated_progress_bar.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -572,16 +573,14 @@ class _ReportsScreenState extends State<ReportsScreen>
                         ],
                       ),
                       const SizedBox(height: 10),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          color: isOver ? AppColors.danger : AppColors.success,
-                          backgroundColor: isDark
-                              ? AppColors.dividerDark
-                              : Colors.grey.shade100,
-                          minHeight: 6,
-                        ),
+                      AnimatedProgressBar(
+                        value: progress,
+                        color: isOver ? AppColors.danger : AppColors.success,
+                        backgroundColor: isDark
+                            ? AppColors.dividerDark
+                            : Colors.grey.shade100,
+                        height: 7,
+                        semanticLabel: '${r.category} budget used',
                       ),
                       const SizedBox(height: 8),
                       Text(

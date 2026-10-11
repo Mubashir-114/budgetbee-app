@@ -11,6 +11,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/widgets/skeleton_loader.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/animated_progress_bar.dart';
 import '../../core/widgets/custom_toast.dart';
 
 class BudgetsListScreen extends StatefulWidget {
@@ -439,14 +440,12 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: progressVal,
-                backgroundColor: isDark ? AppColors.dividerDark : Colors.grey.shade200,
-                color: statusColor,
-                minHeight: 10,
-              ),
+            AnimatedProgressBar(
+              value: progressVal,
+              backgroundColor: isDark ? AppColors.dividerDark : Colors.grey.shade200,
+              color: statusColor,
+              height: 10,
+              semanticLabel: 'Overall budget used',
             ),
             const SizedBox(height: 12),
             Row(
@@ -674,14 +673,12 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
             ),
             if (targetNum > 0) ...[
               const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: (netSavingsNum / targetNum).clamp(0.0, 1.0),
-                  backgroundColor: isDark ? AppColors.dividerDark : Colors.grey.shade200,
-                  color: savings.isTargetAchieved ? AppColors.success : AppColors.primary,
-                  minHeight: 6,
-                ),
+              AnimatedProgressBar(
+                value: (netSavingsNum / targetNum).clamp(0.0, 1.0),
+                backgroundColor: isDark ? AppColors.dividerDark : Colors.grey.shade200,
+                color: savings.isTargetAchieved ? AppColors.success : AppColors.primary,
+                height: 7,
+                semanticLabel: 'Savings target achieved',
               ),
               const SizedBox(height: 4),
               Text(
@@ -822,14 +819,12 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: isDark ? AppColors.dividerDark : Colors.grey.shade100,
-                color: color,
-                minHeight: 6,
-              ),
+            AnimatedProgressBar(
+              value: progress,
+              backgroundColor: isDark ? AppColors.dividerDark : Colors.grey.shade100,
+              color: color,
+              height: 7,
+              semanticLabel: '${b.category} budget used',
             ),
             const SizedBox(height: 10),
             Row(

@@ -1,31 +1,55 @@
 import 'package:flutter/material.dart';
 
+/// Midnight Aurora semantic palette shared by every financial surface.
 class AppColors {
   AppColors._();
 
-  // Primary Theme Colors
-  static const Color primary = Color(0xFF4F46E5); // Indigo-600 (Modern Fintech Violet)
-  static const Color secondary = Color(0xFF06B6D4); // Cyan-500 (Clean Accent Neon)
+  static const Color primary = Color(0xFF806BFF);
+  static const Color primaryDeep = Color(0xFF5D48DC);
+  static const Color secondary = Color(0xFF69E3CE);
+  static const Color gold = Color(0xFFFFCB78);
 
-  // Status Colors
-  static const Color success = Color(0xFF10B981); // Emerald-500
-  static const Color danger = Color(0xFFF43F5E); // Rose-500
-  static const Color warning = Color(0xFFF59E0B); // Amber-500
-  static const Color info = Color(0xFF3B82F6); // Blue-500
+  static const Color success = Color(0xFF45D6A6);
+  static const Color income = success;
+  static const Color danger = Color(0xFFFF708A);
+  static const Color expense = danger;
+  static const Color warning = Color(0xFFFFCB78);
+  static const Color info = Color(0xFF6EB7FF);
+  static const Color transfer = Color(0xFF8FA3C8);
+  static const Color savings = secondary;
 
-  // Light Theme Neutrals
-  static const Color scaffold = Color(0xFFF8FAFC); // Slate-50
-  static const Color surfaceLight = Color(0xFFFFFFFF); // Pure White
+  static const Color scaffold = Color(0xFFF7F5F2);
+  static const Color surfaceLight = Color(0xFFFFFDFC);
   static const Color cardLight = Color(0xFFFFFFFF);
-  static const Color dividerLight = Color(0xFFE2E8F0); // Slate-200
-  static const Color textDark = Color(0xFF0F172A); // Slate-900
-  static const Color textSecondaryLight = Color(0xFF64748B); // Slate-500
+  static const Color dividerLight = Color(0xFFE5E2EA);
+  static const Color textDark = Color(0xFF171B32);
+  static const Color textSecondaryLight = Color(0xFF686D82);
 
-  // Dark Theme Neutrals
-  static const Color darkScaffold = Color(0xFF030712); // Gray-950 (Extremely Premium Deep Dark)
-  static const Color surfaceDark = Color(0xFF0B0F19); // Gray-900 / Navy Slate
-  static const Color cardDark = Color(0xFF0F172A); // Slate-900
-  static const Color dividerDark = Color(0xFF1E293B); // Slate-800
-  static const Color textLight = Color(0xFFF8FAFC); // Slate-50
-  static const Color textSecondaryDark = Color(0xFF94A3B8); // Slate-400
+  static const Color darkScaffold = Color(0xFF101427);
+  static const Color surfaceDark = Color(0xFF171C32);
+  static const Color cardDark = Color(0xFF1B2139);
+  static const Color elevatedDark = Color(0xFF242B48);
+  static const Color dividerDark = Color(0xFF303854);
+  static const Color textLight = Color(0xFFF8F9FF);
+  static const Color textSecondaryDark = Color(0xFFB7BDD5);
+
+  static const LinearGradient auroraGradient = LinearGradient(
+    colors: [primary, Color(0xFF9A72F8), secondary],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient midnightGradient = LinearGradient(
+    colors: [Color(0xFF20294B), Color(0xFF171C32), Color(0xFF11162A)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static LinearGradient pageGradient(Brightness brightness) => LinearGradient(
+    colors: brightness == Brightness.dark
+        ? const [Color(0xFF151A32), darkScaffold]
+        : const [Color(0xFFF0ECFF), scaffold],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
 }

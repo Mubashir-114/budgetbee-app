@@ -167,19 +167,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               if (isOnline) return const SizedBox.shrink();
               return Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-                color: AppColors.danger,
+                padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 12),
+                color: AppColors.danger.withValues(alpha: .94),
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(Icons.wifi_off_rounded, color: Colors.white, size: 14),
                     SizedBox(width: 8),
-                    Text(
-                      "Offline: some previously loaded data may be shown. Changes need a connection.",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        "Offline · Showing saved data. Changes need a connection.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -202,7 +205,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 ],
               ),
               child: NavigationBar(
-                height: 64,
+                height: 68,
                 elevation: 0,
                 backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
                 selectedIndex: selectedIndex,
@@ -219,7 +222,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       Icons.grid_view_rounded,
                       color: AppColors.primary,
                     ),
-                    label: 'Dashboard',
+                    label: 'Home',
                   ),
                   NavigationDestination(
                     icon: Icon(
@@ -230,7 +233,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       Icons.receipt_long_rounded,
                       color: AppColors.primary,
                     ),
-                    label: 'Transactions',
+                    label: 'Activity',
                   ),
                   NavigationDestination(
                     icon: Icon(

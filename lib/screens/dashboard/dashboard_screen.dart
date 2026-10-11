@@ -109,11 +109,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Card(
       elevation: 0,
-      color: isDark ? AppColors.surfaceDark : Colors.white,
+      color: isDark ? AppColors.elevatedDark : const Color(0xFFF0ECFF),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
         side: BorderSide(
-          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+          color: AppColors.primary.withValues(alpha: .32),
         ),
       ),
       child: Padding(
@@ -136,7 +136,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: AppColors.secondary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
                   ),
                   child: const Text(
@@ -144,7 +144,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
+                      color: AppColors.secondary,
                     ),
                   ),
                 ),
@@ -154,8 +154,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             MoneyText(
               decimalString: netWorth,
               style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
+                fontSize: 30,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1,
                 color: isDark ? AppColors.textLight : AppColors.textDark,
               ),
             ),

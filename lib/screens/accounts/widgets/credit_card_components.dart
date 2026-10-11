@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
 import '../../../core/utils/decimal_money.dart';
+import '../../../core/widgets/animated_progress_bar.dart';
 import '../../../models/credit_card_models.dart';
 import '../../../models/transfer_model.dart';
 import '../../../providers/account_provider.dart';
@@ -134,15 +135,13 @@ class CreditCardSummaryCard extends StatelessWidget {
           ],
 
           const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 6,
-              backgroundColor:
-                  isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.08),
-              valueColor: AlwaysStoppedAnimation<Color>(utilColor),
-            ),
+          AnimatedProgressBar(
+            value: progress,
+            height: 7,
+            backgroundColor:
+                isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.08),
+            color: utilColor,
+            semanticLabel: 'Credit utilization',
           ),
           const SizedBox(height: 16),
 
@@ -1069,7 +1068,9 @@ class _CreditCardBillingDialogState extends State<CreditCardBillingDialog> {
                   helperText: 'Day of month your billing cycle closes',
                 ),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return null; // optional
+                  if (val == null || val.trim().isEmpty) {
+                    return null; // optional
+                  }
                   final parsed = int.tryParse(val.trim());
                   if (parsed == null || parsed < 1 || parsed > 31) {
                     return 'Must be between 1 and 31';
@@ -1090,7 +1091,9 @@ class _CreditCardBillingDialogState extends State<CreditCardBillingDialog> {
                   helperText: 'Day of month payment is due',
                 ),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return null; // optional
+                  if (val == null || val.trim().isEmpty) {
+                    return null; // optional
+                  }
                   final parsed = int.tryParse(val.trim());
                   if (parsed == null || parsed < 1 || parsed > 31) {
                     return 'Must be between 1 and 31';

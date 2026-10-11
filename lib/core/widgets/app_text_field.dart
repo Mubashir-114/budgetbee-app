@@ -8,6 +8,9 @@ class AppTextField extends StatefulWidget {
   final TextInputType keyboardType;
   final bool isPassword;
   final String? Function(String?)? validator;
+  final TextInputAction? textInputAction;
+  final Iterable<String>? autofillHints;
+  final ValueChanged<String>? onFieldSubmitted;
 
   const AppTextField({
     super.key,
@@ -17,6 +20,9 @@ class AppTextField extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.isPassword = false,
     this.validator,
+    this.textInputAction,
+    this.autofillHints,
+    this.onFieldSubmitted,
   });
 
   @override
@@ -47,6 +53,9 @@ class _AppTextFieldState extends State<AppTextField> {
       child: TextFormField(
         controller: widget.controller,
         keyboardType: widget.keyboardType,
+        textInputAction: widget.textInputAction,
+        autofillHints: widget.autofillHints,
+        onFieldSubmitted: widget.onFieldSubmitted,
         obscureText: _obscureText,
         validator: widget.validator,
         style: TextStyle(
@@ -60,19 +69,26 @@ class _AppTextFieldState extends State<AppTextField> {
             widget.prefixIcon,
             color: _isFocused
                 ? AppColors.primary
-                : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                : (isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight),
             size: 22,
           ),
           suffixIcon: widget.isPassword
               ? IconButton(
+                  tooltip: _obscureText ? 'Show password' : 'Hide password',
                   onPressed: () {
                     setState(() {
                       _obscureText = !_obscureText;
                     });
                   },
                   icon: Icon(
-                    _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    _obscureText
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                     size: 20,
                   ),
                 )

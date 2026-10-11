@@ -88,13 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       extendBodyBehindAppBar: true,
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [AppColors.darkScaffold, const Color(0xFF0F172A)]
-                : [const Color(0xFFEEF2F6), AppColors.scaffold],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+          gradient: AppColors.pageGradient(theme.brightness),
         ),
         child: SafeArea(
           child: Center(
@@ -107,20 +101,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      "Join Us Today",
+                      "Create your FinTrack",
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: isDark ? AppColors.textLight : AppColors.textDark,
+                        color: isDark
+                            ? AppColors.textLight
+                            : AppColors.textDark,
                         letterSpacing: -0.5,
                       ),
                     ),
                     AppDimensions.hXS,
                     Text(
-                      "Start tracking and budgeting your transactions",
+                      "One calm place for every account, budget and goal.",
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -130,9 +128,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       elevation: 0,
                       color: isDark ? AppColors.surfaceDark : Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.radiusXL,
+                        ),
                         side: BorderSide(
-                          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                          color: isDark
+                              ? AppColors.dividerDark
+                              : AppColors.dividerLight,
                           width: 1.0,
                         ),
                       ),
@@ -161,7 +163,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 if (value == null || value.trim().isEmpty) {
                                   return "Email is required";
                                 }
-                                if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                if (!RegExp(
+                                  r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                ).hasMatch(value)) {
                                   return "Enter a valid email address";
                                 }
                                 return null;
@@ -217,7 +221,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         Text(
                           "Already have an account?",
                           style: TextStyle(
-                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
                             fontSize: 14,
                           ),
                         ),

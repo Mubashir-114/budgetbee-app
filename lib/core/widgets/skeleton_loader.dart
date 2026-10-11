@@ -18,7 +18,8 @@ class ShimmerLoading extends StatefulWidget {
   State<ShimmerLoading> createState() => _ShimmerLoadingState();
 }
 
-class _ShimmerLoadingState extends State<ShimmerLoading> with SingleTickerProviderStateMixin {
+class _ShimmerLoadingState extends State<ShimmerLoading>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
@@ -28,10 +29,22 @@ class _ShimmerLoadingState extends State<ShimmerLoading> with SingleTickerProvid
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
-    )..repeat(reverse: true);
-    _animation = Tween<double>(begin: 0.3, end: 0.65).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
+    _animation = Tween<double>(
+      begin: 0.3,
+      end: 0.65,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.stop();
+      _controller.value = .5;
+    } else if (!_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    }
   }
 
   @override
@@ -77,7 +90,9 @@ class SkeletonLoader extends StatelessWidget {
           color: isDark ? AppColors.surfaceDark : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-            side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.dividerLight),
+            side: BorderSide(
+              color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.all(AppDimensions.md),
@@ -92,7 +107,7 @@ class SkeletonLoader extends StatelessWidget {
             ),
           ),
         );
-      }
+      },
     );
   }
 
@@ -121,7 +136,7 @@ class SkeletonLoader extends StatelessWidget {
             ],
           ),
         );
-      }
+      },
     );
   }
 
@@ -135,7 +150,9 @@ class SkeletonLoader extends StatelessWidget {
           color: isDark ? AppColors.surfaceDark : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-            side: BorderSide(color: isDark ? AppColors.dividerDark : AppColors.dividerLight),
+            side: BorderSide(
+              color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+            ),
           ),
           child: const Padding(
             padding: EdgeInsets.all(16.0),
@@ -165,7 +182,7 @@ class SkeletonLoader extends StatelessWidget {
             ),
           ),
         );
-      }
+      },
     );
   }
 }
