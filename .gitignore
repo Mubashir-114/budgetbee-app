@@ -58,3 +58,17 @@ app.*.map.json
 /android/local.properties
 /android/.gradle/
 /android/.kotlin/
+
+# Local build artifacts and signing material (never publish)
+*.apk
+*.aab
+*.keystore
+*.jks
+*.p12
+*.pem
+credentials*.json
+*.pfx
+*.key
+.ssh/
+.aws/
+secrets/
