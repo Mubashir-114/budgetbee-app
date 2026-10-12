@@ -59,6 +59,18 @@ final GoRouter appRouter = GoRouter(
       path: '/register',
       builder: (context, state) => const RegisterScreen(),
     ),
+    // Full-screen account creation modal outside bottom-navigation shell
+    GoRoute(
+      path: '/accounts/add',
+      builder: (context, state) => const AddAccountScreen(),
+    ),
+    GoRoute(
+      path: '/accounts/:id/edit',
+      builder: (context, state) {
+        final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+        return EditAccountScreen(accountId: id);
+      },
+    ),
     ShellRoute(
       builder: (context, state, child) => MainNavigationScreen(child: child),
       routes: [
@@ -103,10 +115,6 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const AccountsListScreen(),
         ),
         GoRoute(
-          path: '/accounts/add',
-          builder: (context, state) => const AddAccountScreen(),
-        ),
-        GoRoute(
           path: '/accounts/transfer',
           builder: (context, state) {
             final sourceId = int.tryParse(state.uri.queryParameters['sourceId'] ?? '');
@@ -118,13 +126,6 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) {
             final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
             return AccountDetailScreen(accountId: id);
-          },
-        ),
-        GoRoute(
-          path: '/accounts/:id/edit',
-          builder: (context, state) {
-            final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
-            return EditAccountScreen(accountId: id);
           },
         ),
       ],

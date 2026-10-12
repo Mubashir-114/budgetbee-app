@@ -6,10 +6,16 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../models/account_model.dart';
 import '../../providers/account_provider.dart';
+import 'widgets/live_account_preview_card.dart';
 
 /// Edit Account screen — only permits metadata edits (name, institution,
-/// masked last-4).  Financial fields, type, subtype and currency are immutable
+/// masked last-4). Financial fields, type, subtype and currency are immutable
 /// and displayed read-only per the backend contract.
+///
+/// Features:
+/// - Real-time LiveAccountPreviewCard reflection of edited metadata.
+/// - Read-only display of immutable financial values.
+/// - Theme consistency and safe-area anchored action bar.
 class EditAccountScreen extends StatefulWidget {
   final int accountId;
 
@@ -30,6 +36,10 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
   final _displayNameController = TextEditingController();
   final _institutionController = TextEditingController();
   final _maskedLast4Controller = TextEditingController();
+
+  final _displayNameFocus = FocusNode();
+  final _institutionFocus = FocusNode();
+  final _maskedLast4Focus = FocusNode();
 
   @override
   void initState() {
@@ -73,6 +83,10 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     _displayNameController.dispose();
     _institutionController.dispose();
     _maskedLast4Controller.dispose();
+
+    _displayNameFocus.dispose();
+    _institutionFocus.dispose();
+    _maskedLast4Focus.dispose();
     super.dispose();
   }
 
@@ -80,6 +94,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
       _account?.type == 'bank' || _account?.type == 'credit_card';
 
   Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
     if (_formKey.currentState?.validate() != true) return;
     if (_isSubmitting || _account == null) return;
 
@@ -102,8 +117,23 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
     if (!mounted) return;
     if (updated != null) {
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Expanded(child: Text('${updated.displayName} updated successfully')),
+            ],
+          ),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       Navigator.of(context).pop(true);
     } else {
+      HapticFeedback.vibrate();
       setState(() {
         _isSubmitting = false;
         _submitError = provider.actionError ?? 'Failed to update account';
@@ -120,11 +150,13 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
 
     if (_isLoadingAccount) {
       return Scaffold(
+        backgroundColor: tokens.background,
         body: Center(child: CircularProgressIndicator(color: tokens.primary)),
       );
     }
     if (_account == null) {
       return Scaffold(
+        backgroundColor: tokens.background,
         appBar: AppBar(title: const Text('Edit Account')),
         body: const Center(child: Text('Account not found')),
       );
@@ -133,124 +165,250 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
     final account = _account!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Account')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+      backgroundColor: tokens.background,
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Immutable fields (read-only) ──────────────────────────────
-            _ImmutableSection(account: account, isDark: isDark),
-            const SizedBox(height: 20),
-
-            // ── Editable: Display name ────────────────────────────────────
-            TextFormField(
-              controller: _displayNameController,
-              decoration: const InputDecoration(
-                labelText: 'Account Name *',
-                prefixIcon: Icon(Icons.label_rounded),
-              ),
-              textCapitalization: TextCapitalization.words,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) {
-                  return 'Account name is required';
-                }
-                if (v.trim().length > 100) return 'Max 100 characters';
-                return null;
-              },
+            const Text(
+              'Edit Account',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
             ),
-            const SizedBox(height: 16),
-
-            // ── Editable: Institution (bank / credit card) ────────────────
-            if (_needsInstitution) ...[
-              TextFormField(
-                controller: _institutionController,
-                decoration: const InputDecoration(
-                  labelText: 'Institution Name *',
-                  prefixIcon: Icon(Icons.business_rounded),
-                ),
-                validator: (v) {
-                  if (!_needsInstitution) return null;
-                  if (v == null || v.trim().isEmpty) {
-                    return 'Institution name is required';
-                  }
-                  if (v.trim().length > 100) return 'Max 100 characters';
-                  return null;
-                },
+            Text(
+              'METADATA CONFIGURATION',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                color: tokens.primary,
               ),
-              const SizedBox(height: 16),
-            ],
-
-            // ── Editable: Masked last 4 (non-cash) ────────────────────────
-            if (account.type != 'cash') ...[
-              TextFormField(
-                controller: _maskedLast4Controller,
-                decoration: const InputDecoration(
-                  labelText: 'Last 4 Digits (optional)',
-                  hintText: '1234',
-                  prefixIcon: Icon(Icons.pin_rounded),
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(4),
-                ],
-                validator: (v) {
-                  if (v == null || v.isEmpty) return null;
-                  if (v.length != 4) return 'Must be exactly 4 digits';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // ── Error ─────────────────────────────────────────────────────
-            if (_submitError != null) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: tokens.danger.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-                ),
-                child: Row(
+            ),
+          ],
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   children: [
-                    Icon(Icons.error_rounded, color: tokens.danger, size: 18),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _submitError!,
-                        style: TextStyle(color: tokens.danger, fontSize: 13),
+                    // ── Live Account Preview ──────────────────────────────────
+                    ListenableBuilder(
+                      listenable: Listenable.merge([
+                        _displayNameController,
+                        _institutionController,
+                        _maskedLast4Controller,
+                      ]),
+                      builder: (context, _) {
+                        return LiveAccountPreviewCard(
+                          type: account.type,
+                          subtype: account.subtype,
+                          displayName: _displayNameController.text,
+                          institutionName: _institutionController.text,
+                          maskedLast4: _maskedLast4Controller.text,
+                          openingAmount: account.openingAmount,
+                          creditLimit: account.creditLimit,
+                          currencyCode: account.currencyCode,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ── Immutable fields notice ───────────────────────────────
+                    _ImmutableSection(account: account, isDark: isDark),
+                    const SizedBox(height: 20),
+
+                    // ── Editable: Display name ────────────────────────────────
+                    Text(
+                      'Account Metadata',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: tokens.textPrimary,
+                        letterSpacing: 0.2,
                       ),
                     ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _displayNameController,
+                      focusNode: _displayNameFocus,
+                      decoration: const InputDecoration(
+                        labelText: 'Account Name *',
+                        prefixIcon: Icon(Icons.label_rounded),
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: _needsInstitution
+                          ? TextInputAction.next
+                          : (account.type != 'cash'
+                              ? TextInputAction.next
+                              : TextInputAction.done),
+                      onFieldSubmitted: (_) {
+                        if (_needsInstitution) {
+                          _institutionFocus.requestFocus();
+                        } else if (account.type != 'cash') {
+                          _maskedLast4Focus.requestFocus();
+                        }
+                      },
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Account name is required';
+                        }
+                        if (v.trim().length > 100) return 'Max 100 characters';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 14),
+
+                    // ── Editable: Institution (bank / credit card) ────────────
+                    if (_needsInstitution) ...[
+                      TextFormField(
+                        controller: _institutionController,
+                        focusNode: _institutionFocus,
+                        decoration: const InputDecoration(
+                          labelText: 'Institution Name *',
+                          prefixIcon: Icon(Icons.business_rounded),
+                        ),
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) =>
+                            _maskedLast4Focus.requestFocus(),
+                        validator: (v) {
+                          if (!_needsInstitution) return null;
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Institution name is required';
+                          }
+                          if (v.trim().length > 100) return 'Max 100 characters';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+
+                    // ── Editable: Masked last 4 (non-cash) ────────────────────
+                    if (account.type != 'cash') ...[
+                      TextFormField(
+                        controller: _maskedLast4Controller,
+                        focusNode: _maskedLast4Focus,
+                        decoration: const InputDecoration(
+                          labelText: 'Last 4 Digits (Optional)',
+                          hintText: '1234',
+                          prefixIcon: Icon(Icons.pin_rounded),
+                        ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(4),
+                        ],
+                        textInputAction: TextInputAction.done,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return null;
+                          if (v.length != 4) return 'Must be exactly 4 digits';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+
+                    // ── Error Banner ──────────────────────────────────────────
+                    if (_submitError != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: tokens.danger.withValues(alpha: 0.1),
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusMD),
+                          border: Border.all(
+                            color: tokens.danger.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.error_outline_rounded,
+                                color: tokens.danger, size: 18),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _submitError!,
+                                style:
+                                    TextStyle(color: tokens.danger, fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-            ],
+            ),
 
-            // ── Submit ────────────────────────────────────────────────────
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _isSubmitting ? null : _submit,
-                style: FilledButton.styleFrom(
-                  backgroundColor: tokens.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+            // ── Sticky Bottom Action Bar ────────────────────────────────────
+            Container(
+              decoration: BoxDecoration(
+                color: tokens.surface,
+                border: Border(
+                  top: BorderSide(
+                    color: tokens.divider.withValues(alpha: isDark ? 0.6 : 0.8),
+                  ),
                 ),
-                child: _isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.3)
+                        : Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 12,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                12,
+                16,
+                12 + MediaQuery.paddingOf(context).bottom,
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton(
+                  onPressed: _isSubmitting ? null : _submit,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: tokens.primary,
+                    foregroundColor:
+                        isDark ? const Color(0xFF171B24) : Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusMD),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.2,
+                          ),
+                        )
+                      : const Text(
+                          'Save Changes',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.3,
+                          ),
                         ),
-                      )
-                    : const Text('Save Changes',
-                        style: TextStyle(fontSize: 16)),
+                ),
               ),
             ),
-            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -285,7 +443,7 @@ class _ImmutableSection extends StatelessWidget {
               Icon(Icons.lock_rounded, size: 14, color: tokens.warning),
               const SizedBox(width: 6),
               Text(
-                'Immutable Fields',
+                'Financial Accounting Rules · Read Only',
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: tokens.warning,
@@ -295,11 +453,13 @@ class _ImmutableSection extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           _Row(
-              label: 'Type',
+              label: 'Account Type',
               value: _typeName(account.type),
               isDark: isDark),
           _Row(
-              label: 'Opening Amount',
+              label: account.type == 'credit_card'
+                  ? 'Opening Debt'
+                  : 'Opening Balance',
               value: '₹${account.openingAmount}',
               isDark: isDark),
           _Row(
@@ -345,9 +505,10 @@ class _Row extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            '$label: ',
+            label,
             style: TextStyle(
               fontSize: 12,
               color: tokens.textSecondary,
@@ -355,7 +516,11 @@ class _Row extends StatelessWidget {
           ),
           Text(
             value,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: tokens.textPrimary,
+            ),
           ),
         ],
       ),
