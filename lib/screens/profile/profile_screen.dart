@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../providers/currency_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/custom_toast.dart';
 import 'widgets/settings_group.dart';
 import 'widgets/settings_tile.dart';
@@ -53,6 +55,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (ctx) {
         final colors = AppColors.of(ctx);
+        final themeProvider = ctx.watch<ThemeProvider>();
         return AlertDialog(
           title: const Text(
             "About FinTrack",
@@ -62,18 +65,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: 0.14),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.account_balance_wallet_rounded,
-                  size: 30,
-                  color: colors.primary,
-                ),
+              FinTrackLogo(
+                size: 64,
+                collection: themeProvider.collection,
+                borderRadius: 18,
+                showBorder: true,
+                showShadow: true,
               ),
               const SizedBox(height: 14),
               const Text(
@@ -82,7 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 2),
               Text(
-                "Version 2.0.0 (Graphite & Champagne Edition)",
+                "Version 2.0.0 (${themeProvider.collection.displayName} Edition)",
                 style: TextStyle(
                   fontSize: 12,
                   color: colors.textSecondary,

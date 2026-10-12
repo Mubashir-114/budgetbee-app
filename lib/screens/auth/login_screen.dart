@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_motion.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/custom_toast.dart';
 import '../../core/widgets/living_wallet.dart';
@@ -253,18 +254,9 @@ class _Wordmark extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              gradient: AppColors.auroraGradient,
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: const Icon(
-              Icons.auto_graph_rounded,
-              color: Colors.white,
-              size: 21,
-            ),
+          const FinTrackLogo(
+            size: 34,
+            borderRadius: 10,
           ),
           const SizedBox(width: 10),
           Text(

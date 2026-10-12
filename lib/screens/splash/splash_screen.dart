@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../core/services/token_service.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/widgets/app_logo.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -128,42 +129,53 @@ class _SplashScreenState extends State<SplashScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // App logo container
-                      Container(
-                        padding: const EdgeInsets.all(28),
-                        decoration: BoxDecoration(
-                          color: tokens.surface,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: tokens.primary.withValues(alpha: 0.15),
-                              blurRadius: 32,
-                              spreadRadius: 6,
-                            ),
-                          ],
-                          border: Border.all(
-                            color: tokens.divider,
-                            width: 1.0,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.account_balance_wallet_rounded,
-                          size: 64,
-                          color: tokens.primary,
-                        ),
+                      // FinTrack 2.0 theme-adaptive logo
+                      const FinTrackLogo(
+                        size: 96,
+                        borderRadius: 26,
+                        showShadow: true,
+                        showBorder: true,
                       ),
                       AppDimensions.hLG,
-                      Text(
-                        "Personal Finance",
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: tokens.textPrimary,
-                          letterSpacing: -0.5,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "FinTrack",
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: tokens.textPrimary,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: tokens.primary.withValues(alpha: 0.16),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: tokens.primary.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              "2.0",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: tokens.primary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       AppDimensions.hXS,
                       Text(
-                        "Manage your money smarter",
+                        "Your money, beautifully in control.",
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: tokens.textSecondary,
                           fontWeight: FontWeight.w500,

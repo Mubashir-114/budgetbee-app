@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/services/cache_service.dart';
+import '../core/services/launcher_icon_service.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/theme_collection.dart';
 import '../core/theme/fin_track_theme_tokens.dart';
@@ -67,6 +68,9 @@ class ThemeProvider extends ChangeNotifier {
 
       _isInitialized = true;
       notifyListeners();
+
+      // Safely reconcile launcher icon with active theme at startup
+      await LauncherIconService.reconcile(_collection);
     } catch (_) {
       _isInitialized = true;
     }
@@ -76,6 +80,9 @@ class ThemeProvider extends ChangeNotifier {
     if (_collection == collection) return;
     _collection = collection;
     notifyListeners();
+
+    // Request Android launcher icon update matching selected theme collection
+    await LauncherIconService.setLauncherIcon(collection);
 
     try {
       final prefs = await SharedPreferences.getInstance();

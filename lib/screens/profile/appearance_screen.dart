@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/fin_track_theme_tokens.dart';
 import '../../core/theme/theme_collection.dart';
+import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/custom_toast.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -275,21 +276,12 @@ class _LivePreviewCard extends StatelessWidget {
           // Header row with active badges
           Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: tokens.primary.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: tokens.primary.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Icon(
-                  Icons.auto_graph_rounded,
-                  color: tokens.primary,
-                  size: 20,
-                ),
+              FinTrackLogo(
+                size: 38,
+                collection: collection,
+                borderRadius: 10,
+                showBorder: true,
+                showShadow: true,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -606,6 +598,13 @@ class _ThemeOptionCard extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(width: 12),
+              FinTrackLogo(
+                size: 38,
+                collection: collection,
+                borderRadius: 10,
+                showBorder: isSelected,
               ),
             ],
           ),

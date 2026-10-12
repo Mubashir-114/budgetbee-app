@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/constants/app_colors.dart';
@@ -100,6 +101,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: 16),
+                        child: FinTrackLogo(
+                          size: 52,
+                          borderRadius: 15,
+                          showShadow: true,
+                          showBorder: true,
+                        ),
+                      ),
+                    ),
                     Text(
                       "Create your FinTrack",
                       textAlign: TextAlign.center,

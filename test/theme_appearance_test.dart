@@ -158,8 +158,12 @@ void main() {
             ChangeNotifierProvider<CurrencyProvider>.value(value: currencyProvider),
           ],
           child: MaterialApp(
-            theme: themeProvider.lightTheme,
-            darkTheme: themeProvider.darkTheme,
+            theme: themeProvider.lightTheme.copyWith(
+              splashFactory: InkRipple.splashFactory,
+            ),
+            darkTheme: themeProvider.darkTheme.copyWith(
+              splashFactory: InkRipple.splashFactory,
+            ),
             home: const AppearanceScreen(),
           ),
         ),

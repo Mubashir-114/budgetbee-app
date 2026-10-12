@@ -6,27 +6,34 @@ enum ThemeCollection {
     displayName: 'Graphite & Champagne',
     storageKey: 'graphite_champagne',
     description: 'Warm graphite, champagne accents & soft gold highlights',
+    logoAssetPath: 'assets/branding/logo_graphite_champagne.png',
   ),
   obsidianJade(
     displayName: 'Obsidian & Jade',
     storageKey: 'obsidian_jade',
     description: 'Deep obsidian backdrop with vibrant jade & teal accents',
+    logoAssetPath: 'assets/branding/logo_obsidian_jade.png',
   ),
   arcticBlue(
     displayName: 'Arctic Blue',
     storageKey: 'arctic_blue',
     description: 'Cool navy canvas with vivid arctic blue & cyan accents',
+    logoAssetPath: 'assets/branding/logo_arctic_blue.png',
   );
 
   const ThemeCollection({
     required this.displayName,
     required this.storageKey,
     required this.description,
+    required this.logoAssetPath,
   });
 
   final String displayName;
   final String storageKey;
   final String description;
+  final String logoAssetPath;
+
+  String get launcherIconKey => storageKey;
 
   static ThemeCollection fromKey(String? key) {
     if (key == null) return ThemeCollection.graphiteChampagne;
