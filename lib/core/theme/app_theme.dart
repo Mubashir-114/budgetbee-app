@@ -23,6 +23,7 @@ class AppTheme {
       seedColor: AppColors.primary,
       brightness: brightness,
       primary: AppColors.primary,
+      onPrimary: const Color(0xFF0B111A),
       secondary: AppColors.secondary,
       surface: surface,
       error: AppColors.danger,
@@ -104,7 +105,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: dark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        fillColor: dark ? AppColors.elevatedDark : AppColors.surfaceLight,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 17,
@@ -122,12 +123,17 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           elevation: 0,
           backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: const Color(0xFF0B111A),
+          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.35),
+          disabledForegroundColor: const Color(0xFF0B111A).withValues(alpha: 0.5),
           minimumSize: const Size(88, 52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
           ),
-          textStyle: textTheme.labelLarge,
+          textStyle: textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF0B111A),
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -142,8 +148,8 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: dark ? AppColors.secondary : AppColors.primaryDeep,
-          textStyle: textTheme.labelLarge,
+          foregroundColor: AppColors.primary,
+          textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
       chipTheme: ChipThemeData(
@@ -160,11 +166,25 @@ class AppTheme {
           fontWeight: FontWeight.w700,
         ),
       ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.primary;
+          }
+          return dark ? AppColors.textSecondaryDark : const Color(0xFF94A3B8);
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.primary.withValues(alpha: 0.35);
+          }
+          return dark ? AppColors.dividerDark : const Color(0xFFE2E8F0);
+        }),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         height: 70,
         elevation: 0,
         backgroundColor: dark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        indicatorColor: AppColors.primary.withValues(alpha: dark ? 0.22 : 0.13),
+        indicatorColor: AppColors.primary.withValues(alpha: dark ? 0.18 : 0.12),
         indicatorShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -175,7 +195,14 @@ class AppTheme {
                 ? FontWeight.w700
                 : FontWeight.w500,
             color: states.contains(WidgetState.selected)
-                ? (dark ? AppColors.textLight : AppColors.primaryDeep)
+                ? (dark ? AppColors.primary : AppColors.primaryDeep)
+                : muted,
+          ),
+        ),
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? (dark ? AppColors.primary : AppColors.primaryDeep)
                 : muted,
           ),
         ),
@@ -191,12 +218,13 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: dark ? AppColors.surfaceDark : surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: surface,
-        modalBackgroundColor: surface,
+        backgroundColor: dark ? AppColors.surfaceDark : surface,
+        modalBackgroundColor: dark ? AppColors.surfaceDark : surface,
         showDragHandle: true,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),

@@ -89,14 +89,14 @@ class _AppButtonState extends State<AppButton>
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Color(0xFF0B111A),
                         ),
                       )
                     : Text(
                         widget.text,
                         key: const ValueKey('label'),
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF0B111A),
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           letterSpacing: .3,
