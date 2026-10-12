@@ -115,35 +115,35 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             selectedIndex: selectedIndex,
             onDestinationSelected: (index) => _onItemTapped(index, context),
             labelType: NavigationRailLabelType.all,
-            backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-            indicatorColor: AppColors.primary.withValues(alpha: 0.12),
-            selectedLabelTextStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 11),
+            backgroundColor: theme.colorScheme.surface,
+            indicatorColor: theme.colorScheme.primary.withValues(alpha: 0.14),
+            selectedLabelTextStyle: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 11),
             unselectedLabelTextStyle: TextStyle(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight, fontSize: 11),
-            destinations: const [
+            destinations: [
               NavigationRailDestination(
-                icon: Icon(Icons.grid_view_rounded),
-                selectedIcon: Icon(Icons.grid_view_rounded, color: AppColors.primary),
-                label: Text('Dashboard'),
+                icon: const Icon(Icons.grid_view_rounded),
+                selectedIcon: Icon(Icons.grid_view_rounded, color: theme.colorScheme.primary),
+                label: const Text('Dashboard'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.receipt_long_rounded),
-                selectedIcon: Icon(Icons.receipt_long_rounded, color: AppColors.primary),
-                label: Text('Transactions'),
+                icon: const Icon(Icons.receipt_long_rounded),
+                selectedIcon: Icon(Icons.receipt_long_rounded, color: theme.colorScheme.primary),
+                label: const Text('Transactions'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.account_balance_wallet_rounded),
-                selectedIcon: Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary),
-                label: Text('Budgets'),
+                icon: const Icon(Icons.account_balance_wallet_rounded),
+                selectedIcon: Icon(Icons.account_balance_wallet_rounded, color: theme.colorScheme.primary),
+                label: const Text('Budgets'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.bar_chart_rounded),
-                selectedIcon: Icon(Icons.bar_chart_rounded, color: AppColors.primary),
-                label: Text('Reports'),
+                icon: const Icon(Icons.bar_chart_rounded),
+                selectedIcon: Icon(Icons.bar_chart_rounded, color: theme.colorScheme.primary),
+                label: const Text('Reports'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.person_rounded),
-                selectedIcon: Icon(Icons.person_rounded, color: AppColors.primary),
-                label: Text('Profile'),
+                icon: const Icon(Icons.person_rounded),
+                selectedIcon: Icon(Icons.person_rounded, color: theme.colorScheme.primary),
+                label: const Text('Profile'),
               ),
             ],
           ),
@@ -207,10 +207,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               child: NavigationBar(
                 height: 68,
                 elevation: 0,
-                backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+                backgroundColor: theme.colorScheme.surface,
                 selectedIndex: selectedIndex,
                 onDestinationSelected: (index) => _onItemTapped(index, context),
-                indicatorColor: AppColors.primary.withValues(alpha: 0.12),
+                indicatorColor: theme.colorScheme.primary.withValues(alpha: 0.14),
                 labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
                 destinations: [
                   NavigationDestination(
@@ -218,9 +218,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       Icons.grid_view_rounded,
                       color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                     ),
-                    selectedIcon: const Icon(
+                    selectedIcon: Icon(
                       Icons.grid_view_rounded,
-                      color: AppColors.primary,
+                      color: theme.colorScheme.primary,
                     ),
                     label: 'Home',
                   ),
@@ -229,9 +229,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       Icons.receipt_long_rounded,
                       color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                     ),
-                    selectedIcon: const Icon(
+                    selectedIcon: Icon(
                       Icons.receipt_long_rounded,
-                      color: AppColors.primary,
+                      color: theme.colorScheme.primary,
                     ),
                     label: 'Activity',
                   ),
@@ -240,9 +240,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       Icons.account_balance_wallet_rounded,
                       color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                     ),
-                    selectedIcon: const Icon(
+                    selectedIcon: Icon(
                       Icons.account_balance_wallet_rounded,
-                      color: AppColors.primary,
+                      color: theme.colorScheme.primary,
                     ),
                     label: 'Budgets',
                   ),
@@ -251,9 +251,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       Icons.bar_chart_rounded,
                       color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                     ),
-                    selectedIcon: const Icon(
+                    selectedIcon: Icon(
                       Icons.bar_chart_rounded,
-                      color: AppColors.primary,
+                      color: theme.colorScheme.primary,
                     ),
                     label: 'Reports',
                   ),
@@ -262,9 +262,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                       Icons.person_rounded,
                       color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                     ),
-                    selectedIcon: const Icon(
+                    selectedIcon: Icon(
                       Icons.person_rounded,
-                      color: AppColors.primary,
+                      color: theme.colorScheme.primary,
                     ),
                     label: 'Profile',
                   ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'core/theme/app_theme.dart';
 import 'routes/app_router.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
@@ -10,6 +9,7 @@ import 'providers/report_provider.dart';
 import 'providers/sms_provider.dart';
 import 'providers/currency_provider.dart';
 import 'providers/account_provider.dart';
+import 'providers/theme_provider.dart';
 import 'core/services/cache_service.dart';
 import 'core/services/connectivity_service.dart';
 import 'api/api_client.dart';
@@ -19,6 +19,9 @@ Future<void> main() async {
 
   await CacheService.initialize();
   ConnectivityService.initialize();
+
+  final themeProvider = ThemeProvider();
+  await themeProvider.initialize();
 
   final dashboardProvider = DashboardProvider();
   final transactionProvider = TransactionProvider();
@@ -44,6 +47,7 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: themeProvider),
         ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider(create: (context) => CurrencyProvider()),
         ChangeNotifierProvider.value(value: dashboardProvider),
@@ -63,12 +67,17 @@ class PersonalFinanceApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'Personal Finance Manager',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      routerConfig: appRouter,
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          title: 'Personal Finance Manager',
+          theme: themeProvider.lightTheme,
+          darkTheme: themeProvider.darkTheme,
+          themeMode: themeProvider.themeMode,
+          routerConfig: appRouter,
+        );
+      },
     );
   }
 }

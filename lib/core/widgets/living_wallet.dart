@@ -143,15 +143,17 @@ class _WalletPainter extends CustomPainter {
     canvas.drawRRect(
       walletRect,
       Paint()
-        ..shader = const LinearGradient(
-          colors: [Color(0xFF806BFF), Color(0xFF5542C5)],
+        ..shader = LinearGradient(
+          colors: dark
+              ? const [Color(0xFF2C303B), Color(0xFF1F222B)]
+              : const [Color(0xFF383C47), Color(0xFF282B33)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ).createShader(walletRect.outerRect),
     );
 
     final seam = Paint()
-      ..color = Colors.white.withValues(alpha: .26)
+      ..color = Colors.white.withValues(alpha: .22)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
     canvas.drawRRect(walletRect.deflate(7), seam);
@@ -160,7 +162,10 @@ class _WalletPainter extends CustomPainter {
       Rect.fromLTWH(center.dx + size.width * .13, center.dy - 18, 51, 36),
       const Radius.circular(12),
     );
-    canvas.drawRRect(clasp, Paint()..color = const Color(0xFF3E3296));
+    canvas.drawRRect(
+      clasp,
+      Paint()..color = dark ? const Color(0xFF373C48) : const Color(0xFF2E323D),
+    );
     canvas.drawCircle(
       Offset(clasp.left + 15, clasp.center.dy),
       4,
@@ -218,7 +223,14 @@ class _WalletPainter extends CustomPainter {
       rect,
       Paint()..color = AppColors.secondary.withValues(alpha: .9),
     );
-    canvas.drawCircle(Offset.zero, 6, Paint()..color = const Color(0xFF318B82));
+    canvas.drawCircle(
+      Offset.zero,
+      6,
+      Paint()
+        ..color = dark
+            ? const Color(0xFF353946)
+            : const Color(0xFF454A57),
+    );
     canvas.restore();
   }
 

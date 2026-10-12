@@ -13,6 +13,7 @@ import '../screens/reports/reports_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
 import '../screens/profile/security_screen.dart';
+import '../screens/profile/appearance_screen.dart';
 import '../screens/transactions/sms_import_screen.dart';
 import '../screens/accounts/accounts_list_screen.dart';
 import '../screens/accounts/add_account_screen.dart';
@@ -92,6 +93,10 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/profile/security',
           builder: (context, state) => const SecurityScreen(),
+        ),
+        GoRoute(
+          path: '/profile/appearance',
+          builder: (context, state) => const AppearanceScreen(),
         ),
         GoRoute(
           path: '/accounts',

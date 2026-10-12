@@ -98,23 +98,24 @@ Widget _wrapWithProviders({
 }
 
 void main() {
-  group('Obsidian & Jade Theme Token Specifications', () {
-    test('Dark theme tokens match obsidian and jade specifications', () {
-      expect(AppColors.darkScaffold, const Color(0xFF0B111A));
-      expect(AppColors.surfaceDark, const Color(0xFF151F2B));
-      expect(AppColors.elevatedDark, const Color(0xFF1C2935));
-      expect(AppColors.primary, const Color(0xFF38D5B0));
-      expect(AppColors.primaryDeep, const Color(0xFF159B82));
-      expect(AppColors.textLight, const Color(0xFFF3F7F8));
-      expect(AppColors.textSecondaryDark, const Color(0xFF9CABB8));
-      expect(AppColors.dividerDark, const Color(0xFF293846));
+  group('Graphite & Champagne Default Theme Token Specifications', () {
+    test('Dark theme tokens match graphite and champagne specifications', () {
+      expect(AppColors.darkScaffold, const Color(0xFF171B24));
+      expect(AppColors.surfaceDark, const Color(0xFF252934));
+      expect(AppColors.elevatedDark, const Color(0xFF30343F));
+      expect(AppColors.primary, const Color(0xFFD6A668));
+      expect(AppColors.primaryDeep, const Color(0xFFBE8F50));
+      expect(AppColors.secondary, const Color(0xFFE6BE85));
+      expect(AppColors.textLight, const Color(0xFFF4EFE7));
+      expect(AppColors.textSecondaryDark, const Color(0xFFB5AFAB));
+      expect(AppColors.dividerDark, const Color(0xFF393D48));
     });
 
-    test('ThemeData reflects obsidian surface and jade primary', () {
+    test('ThemeData reflects graphite surface and champagne primary', () {
       final darkTheme = AppTheme.darkTheme;
-      expect(darkTheme.scaffoldBackgroundColor, const Color(0xFF0B111A));
-      expect(darkTheme.colorScheme.primary, const Color(0xFF38D5B0));
-      expect(darkTheme.colorScheme.surface, const Color(0xFF151F2B));
+      expect(darkTheme.scaffoldBackgroundColor, const Color(0xFF171B24));
+      expect(darkTheme.colorScheme.primary, const Color(0xFFD6A668));
+      expect(darkTheme.colorScheme.surface, const Color(0xFF252934));
     });
   });
 
@@ -146,6 +147,7 @@ void main() {
 
       // Verify grouped settings sections
       expect(find.text('PREFERENCES'), findsOneWidget);
+      expect(find.text('Appearance'), findsOneWidget);
       expect(find.text('Accounts & Wallets'), findsOneWidget);
       expect(find.text('Push Notifications'), findsOneWidget);
       expect(find.text('Display Currency'), findsOneWidget);

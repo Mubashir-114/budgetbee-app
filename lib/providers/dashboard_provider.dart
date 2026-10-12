@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 
 import '../models/dashboard_models.dart';
 import '../models/transaction_model.dart';
+import '../models/api_response.dart';
 import '../repositories/dashboard_repository.dart';
 import '../core/services/cache_service.dart';
 
@@ -113,31 +114,84 @@ class DashboardProvider extends ChangeNotifier {
         }
       }
 
-      // Fetch from API concurrently
-      final responses = await Future.wait([
-        _repository.getSummary(
+      // 1. Load core financial overview FIRST (required for dashboard to function)
+      ApiResponse<DashboardSummary>? summaryResponse;
+      try {
+        summaryResponse = await _repository.getSummary(
           period: _selectedPeriod,
           month: _selectedMonth,
           startDate: _startDate,
           endDate: _endDate,
+        );
+        if (generation != _sessionGeneration) return;
+        _summary = summaryResponse.data;
+      } on DioException catch (e) {
+        if (generation != _sessionGeneration) return;
+        // Auth/session errors are global - propagate immediately
+        if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+          _errorMessage = e.response?.data["message"] ?? "Authentication failed";
+          _isLoading = false;
+          notifyListeners();
+          return;
+        }
+        // Non-auth errors: log but continue with cached/partial data
+        _errorMessage = "Overview failed: ${e.response?.data["message"] ?? e.message}";
+      } catch (e) {
+        if (generation != _sessionGeneration) return;
+        _errorMessage = "Overview failed: $e";
+      }
+
+      // 2. Load optional sections INDEPENDENTLY (failures don't block core dashboard)
+      Future<void> loadOptionalSection(
+        String sectionName,
+        Future<dynamic> Function() fetcher,
+        void Function(dynamic) onSuccess,
+      ) async {
+        try {
+          final response = await fetcher();
+          if (generation != _sessionGeneration) return;
+          onSuccess(response.data);
+        } on DioException catch (e) {
+          if (generation != _sessionGeneration) return;
+          if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+            _errorMessage = e.response?.data["message"] ?? "Authentication failed";
+            _isLoading = false;
+            notifyListeners();
+            return;
+          }
+          // Log optional section failure but don't block UI
+          debugPrint("$sectionName failed: ${e.response?.data["message"] ?? e.message}");
+        } catch (e) {
+          if (generation != _sessionGeneration) return;
+          debugPrint("$sectionName failed: $e");
+        }
+      }
+
+      await Future.wait([
+        loadOptionalSection(
+          "MonthlySummary",
+          () => _repository.getMonthlySummary(),
+          (data) => _monthlySummaries = data as List<MonthlySummary>,
         ),
-        _repository.getMonthlySummary(),
-        _repository.getCategorySummary(
-          month: _selectedMonth,
-          startDate: _startDate,
-          endDate: _endDate,
+        loadOptionalSection(
+          "CategorySummary",
+          () => _repository.getCategorySummary(
+            month: _selectedMonth,
+            startDate: _startDate,
+            endDate: _endDate,
+          ),
+          (data) => _categorySummaries = data as List<CategorySummary>,
         ),
-        _repository.getRecentTransactions(limit: 10),
+        loadOptionalSection(
+          "RecentTransactions",
+          () => _repository.getRecentTransactions(limit: 10),
+          (data) => _recentTransactions = data as List<TransactionModel>,
+        ),
       ]);
       if (generation != _sessionGeneration) return;
 
-      _summary = responses[0].data as DashboardSummary;
-      _monthlySummaries = responses[1].data as List<MonthlySummary>;
-      _categorySummaries = responses[2].data as List<CategorySummary>;
-      _recentTransactions = responses[3].data as List<TransactionModel>;
-
       // Save to local cache for default view
-      if (_selectedPeriod == 'current_month' && _selectedMonth == null && _startDate == null) {
+      if (_selectedPeriod == 'current_month' && _selectedMonth == null && _startDate == null && _summary != null) {
         await CacheService.save("dashboard_cache", {
           "summary": _summary?.toJson(),
           "monthly": _monthlySummaries.map((m) => m.toJson()).toList(),
@@ -147,12 +201,6 @@ class DashboardProvider extends ChangeNotifier {
       }
 
       _errorMessage = null;
-    } on DioException catch (e) {
-      if (generation != _sessionGeneration) return;
-      _errorMessage = e.response?.data["message"] ?? e.message ?? "Failed to load dashboard data";
-    } catch (e) {
-      if (generation != _sessionGeneration) return;
-      _errorMessage = e.toString();
     } finally {
       if (generation == _sessionGeneration) {
         _isLoading = false;

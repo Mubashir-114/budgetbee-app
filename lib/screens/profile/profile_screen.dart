@@ -82,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 2),
               Text(
-                "Version 2.0.0 (Obsidian & Jade Edition)",
+                "Version 2.0.0 (Graphite & Champagne Edition)",
                 style: TextStyle(
                   fontSize: 12,
                   color: isDark
@@ -189,28 +189,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Row(
                 children: [
                   // Clean monogram avatar (64px)
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isDark ? AppColors.elevatedDark : const Color(0xFFE6FAF5),
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.35),
-                        width: 2,
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isDark
+                            ? AppColors.elevatedDark
+                            : theme.colorScheme.primary.withValues(alpha: 0.12),
+                        border: Border.all(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.35),
+                          width: 2,
+                        ),
                       ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        initial,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
+                      child: Center(
+                        child: Text(
+                          initial,
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: theme.colorScheme.primary,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   const SizedBox(width: 14),
 
                   // User Info
@@ -290,6 +292,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SettingsGroup(
               title: "Preferences",
               children: [
+                SettingsTile(
+                  icon: Icons.palette_outlined,
+                  title: "Appearance",
+                  subtitle: "Graphite & Champagne, Obsidian & Jade, Arctic Blue",
+                  onTap: () => context.push('/profile/appearance'),
+                ),
                 SettingsTile(
                   icon: Icons.account_balance_wallet_outlined,
                   title: "Accounts & Wallets",
@@ -446,7 +454,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 SettingsTile(
                   icon: Icons.info_outline_rounded,
                   title: "About Application",
-                  subtitle: "Version 2.0.0 · Obsidian & Jade edition",
+                  subtitle: "Version 2.0.0 · Graphite & Champagne edition",
                   showDivider: false,
                   onTap: _showAbout,
                 ),
