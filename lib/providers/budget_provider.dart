@@ -25,7 +25,13 @@ class BudgetProvider extends ChangeNotifier {
   int _selectedMonth = DateTime.now().month;
   int _selectedYear = DateTime.now().year;
   int _sessionGeneration = 0;
-  int _loadGeneration = 0;
+  int _progressGeneration = 0;
+  int _statusGeneration = 0;
+  int _budgetsGeneration = 0;
+  int _alertsGeneration = 0;
+  int _suggestionsGeneration = 0;
+  int _historyGeneration = 0;
+  int _activeLoadsCount = 0;
 
   bool get isLoading => _isLoading;
   bool get isActionLoading => _isActionLoading;
@@ -46,7 +52,13 @@ class BudgetProvider extends ChangeNotifier {
 
   void clearSession() {
     _sessionGeneration++;
-    _loadGeneration++;
+    _progressGeneration++;
+    _statusGeneration++;
+    _budgetsGeneration++;
+    _alertsGeneration++;
+    _suggestionsGeneration++;
+    _historyGeneration++;
+    _activeLoadsCount = 0;
     _isLoading = false;
     _isActionLoading = false;
     _isSuggestionsLoading = false;
@@ -65,6 +77,10 @@ class BudgetProvider extends ChangeNotifier {
   void changeDate(int month, int year) {
     _selectedMonth = month;
     _selectedYear = year;
+    _progressGeneration++;
+    _statusGeneration++;
+    _budgetsGeneration++;
+    _alertsGeneration++;
     loadAllBudgetData();
   }
 
@@ -74,47 +90,52 @@ class BudgetProvider extends ChangeNotifier {
   }
 
   Future<void> loadAllBudgetData({bool forceRefresh = false}) async {
+    _errorMessage = null;
     await Future.wait([
       loadBudgetProgress(forceRefresh: forceRefresh),
       loadBudgetAlerts(),
       loadBudgetStatus(forceRefresh: forceRefresh),
+      loadBudgets(),
     ]);
   }
 
   Future<void> loadBudgets() async {
     final sessionGeneration = _sessionGeneration;
-    final loadGeneration = ++_loadGeneration;
+    final generation = ++_budgetsGeneration;
     try {
+      _activeLoadsCount++;
       _isLoading = true;
       _errorMessage = null;
-      notifyListeners();
 
       final response = await _repository.getBudgets(
         month: _selectedMonth,
         year: _selectedYear,
       );
       if (sessionGeneration != _sessionGeneration ||
-          loadGeneration != _loadGeneration) {
+          generation != _budgetsGeneration) {
         return;
       }
       _budgets = response.data;
     } on DioException catch (e) {
       if (sessionGeneration != _sessionGeneration ||
-          loadGeneration != _loadGeneration) {
+          generation != _budgetsGeneration) {
         return;
       }
       _errorMessage =
           e.response?.data["message"] ?? e.message ?? "Failed to load budgets";
     } catch (e) {
       if (sessionGeneration != _sessionGeneration ||
-          loadGeneration != _loadGeneration) {
+          generation != _budgetsGeneration) {
         return;
       }
       _errorMessage = e.toString();
     } finally {
-      if (sessionGeneration == _sessionGeneration &&
-          loadGeneration == _loadGeneration) {
+      _activeLoadsCount = _activeLoadsCount > 0 ? _activeLoadsCount - 1 : 0;
+      if (_activeLoadsCount == 0) {
         _isLoading = false;
+      }
+      if (sessionGeneration == _sessionGeneration &&
+          generation == _budgetsGeneration) {
         notifyListeners();
       }
     }
@@ -122,18 +143,19 @@ class BudgetProvider extends ChangeNotifier {
 
   Future<void> loadBudgetStatus({bool forceRefresh = false}) async {
     final sessionGeneration = _sessionGeneration;
-    final loadGeneration = ++_loadGeneration;
+    final generation = ++_statusGeneration;
     final month = _selectedMonth;
     final year = _selectedYear;
     final String cacheKey = 'budget_status_${month}_$year';
     try {
+      _activeLoadsCount++;
       _isLoading = true;
       _errorMessage = null;
 
       if (!forceRefresh) {
         final cached = await CacheService.get(cacheKey);
         if (sessionGeneration != _sessionGeneration ||
-            loadGeneration != _loadGeneration) {
+            generation != _statusGeneration) {
           return;
         }
         if (cached != null) {
@@ -153,7 +175,7 @@ class BudgetProvider extends ChangeNotifier {
         year: year,
       );
       if (sessionGeneration != _sessionGeneration ||
-          loadGeneration != _loadGeneration) {
+          generation != _statusGeneration) {
         return;
       }
       _budgetStatuses = response.data;
@@ -164,7 +186,7 @@ class BudgetProvider extends ChangeNotifier {
       );
     } on DioException catch (e) {
       if (sessionGeneration != _sessionGeneration ||
-          loadGeneration != _loadGeneration) {
+          generation != _statusGeneration) {
         return;
       }
       _errorMessage = e.response?.data["message"] ??
@@ -172,14 +194,17 @@ class BudgetProvider extends ChangeNotifier {
           "Failed to load budget status";
     } catch (e) {
       if (sessionGeneration != _sessionGeneration ||
-          loadGeneration != _loadGeneration) {
+          generation != _statusGeneration) {
         return;
       }
       _errorMessage = e.toString();
     } finally {
-      if (sessionGeneration == _sessionGeneration &&
-          loadGeneration == _loadGeneration) {
+      _activeLoadsCount = _activeLoadsCount > 0 ? _activeLoadsCount - 1 : 0;
+      if (_activeLoadsCount == 0) {
         _isLoading = false;
+      }
+      if (sessionGeneration == _sessionGeneration &&
+          generation == _statusGeneration) {
         notifyListeners();
       }
     }
@@ -187,18 +212,19 @@ class BudgetProvider extends ChangeNotifier {
 
   Future<void> loadBudgetProgress({bool forceRefresh = false}) async {
     final sessionGeneration = _sessionGeneration;
-    final loadGeneration = ++_loadGeneration;
+    final generation = ++_progressGeneration;
     final month = _selectedMonth;
     final year = _selectedYear;
     final String cacheKey = 'budget_progress_${month}_$year';
     try {
+      _activeLoadsCount++;
       _isLoading = true;
       _errorMessage = null;
 
       if (!forceRefresh) {
         final cached = await CacheService.get(cacheKey);
         if (sessionGeneration != _sessionGeneration ||
-            loadGeneration != _loadGeneration) {
+            generation != _progressGeneration) {
           return;
         }
         if (cached != null) {
@@ -219,7 +245,7 @@ class BudgetProvider extends ChangeNotifier {
         savingsTarget: _userSavingsTarget,
       );
       if (sessionGeneration != _sessionGeneration ||
-          loadGeneration != _loadGeneration) {
+          generation != _progressGeneration) {
         return;
       }
       _progress = response.data;
@@ -227,7 +253,7 @@ class BudgetProvider extends ChangeNotifier {
       await CacheService.save(cacheKey, _progress!.toJson());
     } on DioException catch (e) {
       if (sessionGeneration != _sessionGeneration ||
-          loadGeneration != _loadGeneration) {
+          generation != _progressGeneration) {
         return;
       }
       _errorMessage = e.response?.data["message"] ??
@@ -235,14 +261,17 @@ class BudgetProvider extends ChangeNotifier {
           "Failed to load budget progress";
     } catch (e) {
       if (sessionGeneration != _sessionGeneration ||
-          loadGeneration != _loadGeneration) {
+          generation != _progressGeneration) {
         return;
       }
       _errorMessage = e.toString();
     } finally {
-      if (sessionGeneration == _sessionGeneration &&
-          loadGeneration == _loadGeneration) {
+      _activeLoadsCount = _activeLoadsCount > 0 ? _activeLoadsCount - 1 : 0;
+      if (_activeLoadsCount == 0) {
         _isLoading = false;
+      }
+      if (sessionGeneration == _sessionGeneration &&
+          generation == _progressGeneration) {
         notifyListeners();
       }
     }
@@ -250,6 +279,7 @@ class BudgetProvider extends ChangeNotifier {
 
   Future<void> loadBudgetAlerts() async {
     final sessionGeneration = _sessionGeneration;
+    final generation = ++_alertsGeneration;
     final month = _selectedMonth;
     final year = _selectedYear;
     try {
@@ -257,7 +287,10 @@ class BudgetProvider extends ChangeNotifier {
         month: month,
         year: year,
       );
-      if (sessionGeneration != _sessionGeneration) return;
+      if (sessionGeneration != _sessionGeneration ||
+          generation != _alertsGeneration) {
+        return;
+      }
       _alerts = response.data;
       notifyListeners();
     } catch (_) {
@@ -267,6 +300,7 @@ class BudgetProvider extends ChangeNotifier {
 
   Future<void> loadBudgetSuggestions() async {
     final sessionGeneration = _sessionGeneration;
+    final generation = ++_suggestionsGeneration;
     try {
       _isSuggestionsLoading = true;
       notifyListeners();
@@ -276,15 +310,22 @@ class BudgetProvider extends ChangeNotifier {
         year: _selectedYear,
         savingsTarget: _userSavingsTarget,
       );
-      if (sessionGeneration != _sessionGeneration) return;
+      if (sessionGeneration != _sessionGeneration ||
+          generation != _suggestionsGeneration) {
+        return;
+      }
       _suggestions = response.data;
     } catch (e) {
-      if (sessionGeneration != _sessionGeneration) return;
+      if (sessionGeneration != _sessionGeneration ||
+          generation != _suggestionsGeneration) {
+        return;
+      }
       _errorMessage = e is DioException
           ? (e.response?.data["message"] ?? e.message ?? "Failed to load suggestions")
           : e.toString();
     } finally {
-      if (sessionGeneration == _sessionGeneration) {
+      if (sessionGeneration == _sessionGeneration &&
+          generation == _suggestionsGeneration) {
         _isSuggestionsLoading = false;
         notifyListeners();
       }
@@ -293,20 +334,28 @@ class BudgetProvider extends ChangeNotifier {
 
   Future<void> loadBudgetHistory({int months = 6}) async {
     final sessionGeneration = _sessionGeneration;
+    final generation = ++_historyGeneration;
     try {
       _isHistoryLoading = true;
       notifyListeners();
 
       final response = await _repository.getBudgetHistory(months: months);
-      if (sessionGeneration != _sessionGeneration) return;
+      if (sessionGeneration != _sessionGeneration ||
+          generation != _historyGeneration) {
+        return;
+      }
       _history = response.data;
     } catch (e) {
-      if (sessionGeneration != _sessionGeneration) return;
+      if (sessionGeneration != _sessionGeneration ||
+          generation != _historyGeneration) {
+        return;
+      }
       _errorMessage = e is DioException
           ? (e.response?.data["message"] ?? e.message ?? "Failed to load history")
           : e.toString();
     } finally {
-      if (sessionGeneration == _sessionGeneration) {
+      if (sessionGeneration == _sessionGeneration &&
+          generation == _historyGeneration) {
         _isHistoryLoading = false;
         notifyListeners();
       }
@@ -362,6 +411,14 @@ class BudgetProvider extends ChangeNotifier {
       if (sessionGeneration != _sessionGeneration) return false;
       await CacheService.clearBudgetCaches();
       await CacheService.remove('dashboard_cache');
+      if (_selectedMonth != month || _selectedYear != year) {
+        _selectedMonth = month;
+        _selectedYear = year;
+        _progressGeneration++;
+        _statusGeneration++;
+        _budgetsGeneration++;
+        _alertsGeneration++;
+      }
       await loadAllBudgetData(forceRefresh: true);
       return true;
     } on DioException catch (e) {
@@ -405,6 +462,14 @@ class BudgetProvider extends ChangeNotifier {
       if (sessionGeneration != _sessionGeneration) return false;
       await CacheService.clearBudgetCaches();
       await CacheService.remove('dashboard_cache');
+      if (_selectedMonth != month || _selectedYear != year) {
+        _selectedMonth = month;
+        _selectedYear = year;
+        _progressGeneration++;
+        _statusGeneration++;
+        _budgetsGeneration++;
+        _alertsGeneration++;
+      }
       await loadAllBudgetData(forceRefresh: true);
       return true;
     } on DioException catch (e) {

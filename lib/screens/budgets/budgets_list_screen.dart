@@ -326,8 +326,68 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
     final overall = progress?.overall;
     final alerts = provider.alerts;
 
-    final hasBudgets = progress != null &&
-        (overall?.hasBudgetsDefined == true || progress.categoryBudgets.isNotEmpty);
+    // Resilient budget detection: check progress, raw budgets, and statuses
+    final hasBudgets = (progress != null &&
+            (overall?.hasBudgetsDefined == true ||
+                progress.categoryBudgets.isNotEmpty)) ||
+        provider.budgets.isNotEmpty ||
+        provider.budgetStatuses.isNotEmpty;
+
+    // Category budgets list with resilient fallback from budget statuses
+    final categoryBudgets = progress?.categoryBudgets.isNotEmpty == true
+        ? progress!.categoryBudgets
+        : provider.budgetStatuses
+            .map((s) => BudgetCategoryProgressModel(
+                  budgetId: s.budgetId,
+                  categoryId: s.categoryId,
+                  category: s.category,
+                  categoryType: "expense",
+                  budgetLimit: s.budget.toStringAsFixed(2),
+                  actualSpending: s.spent.toStringAsFixed(2),
+                  remainingAmount: s.remaining.toStringAsFixed(2),
+                  utilizationPercentage: s.percentageUsed.toStringAsFixed(1),
+                  projectedSpending: s.spent.toStringAsFixed(2),
+                  status: s.status == "over_budget"
+                      ? "exceeded"
+                      : (s.percentageUsed >= 80
+                          ? "approaching_limit"
+                          : "on_track"),
+                  daysRemaining: 0,
+                ))
+            .toList();
+
+    // Overall summary with fallback from statuses
+    final overallModel = overall != null && overall.hasBudgetsDefined
+        ? overall
+        : (provider.budgetStatuses.isNotEmpty
+            ? BudgetOverallProgressModel(
+                budgetLimit: provider.budgetStatuses
+                    .fold(0.0, (sum, b) => sum + b.budget)
+                    .toStringAsFixed(2),
+                actualSpending: provider.budgetStatuses
+                    .fold(0.0, (sum, b) => sum + b.spent)
+                    .toStringAsFixed(2),
+                remainingAmount: provider.budgetStatuses
+                    .fold(0.0, (sum, b) => sum + b.remaining)
+                    .toStringAsFixed(2),
+                utilizationPercentage: provider.budgetStatuses
+                            .fold(0.0, (sum, b) => sum + b.budget) >
+                        0
+                    ? ((provider.budgetStatuses.fold(0.0, (sum, b) => sum + b.spent) /
+                                provider.budgetStatuses.fold(0.0, (sum, b) => sum + b.budget)) *
+                            100)
+                        .toStringAsFixed(1)
+                    : "0.0",
+                dailyBurnRate: "0.00",
+                projectedSpending: provider.budgetStatuses
+                    .fold(0.0, (sum, b) => sum + b.spent)
+                    .toStringAsFixed(2),
+                status: provider.budgetStatuses.any((b) => b.status == "over_budget")
+                    ? "exceeded"
+                    : "on_track",
+                hasBudgetsDefined: true,
+              )
+            : null);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -359,7 +419,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
         onRefresh: () => provider.loadAllBudgetData(forceRefresh: true),
         color: colors.primary,
         backgroundColor: colors.surface,
-        child: provider.isLoading && progress == null
+        child: provider.isLoading && !hasBudgets && progress == null
             ? ListView(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppDimensions.md,
@@ -383,13 +443,113 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                     onTapMonth: _selectMonthYear,
                   ),
 
+                  // Meaningful Error State when refreshing fails with no budgets defined
+                  if (provider.errorMessage != null && !hasBudgets) ...[
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: colors.surface,
+                        borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+                        border: Border.all(color: colors.cardBorder),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: colors.danger.withValues(alpha: 0.12),
+                            ),
+                            child: Icon(Icons.cloud_off_rounded, size: 32, color: colors.danger),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            "Unable to Load Budgets",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            provider.errorMessage ??
+                                "A network issue occurred while loading budget records.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                          ),
+                          const SizedBox(height: 18),
+                          ElevatedButton.icon(
+                            onPressed: () => provider.loadAllBudgetData(forceRefresh: true),
+                            icon: const Icon(Icons.refresh_rounded, size: 16),
+                            label: const Text("Retry"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colors.primary,
+                              foregroundColor: colors.isDark ? const Color(0xFF0B111A) : Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ]
                   // Populated Budgets View
-                  if (hasBudgets) ...[
+                  else if (hasBudgets) ...[
+                    // Non-intrusive warning banner if background update reported error
+                    if (provider.errorMessage != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: colors.danger.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+                          border: Border.all(color: colors.danger.withValues(alpha: 0.25)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.warning_amber_rounded, size: 16, color: colors.danger),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                provider.errorMessage!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: colors.danger,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => provider.loadAllBudgetData(forceRefresh: true),
+                              child: Text(
+                                "RETRY",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.danger,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
                     // Overall Monthly Budget Hero Overview
-                    if (overall != null && overall.hasBudgetsDefined)
+                    if (overallModel != null && overallModel.hasBudgetsDefined)
                       BudgetHeroOverview(
-                        overall: overall,
-                        period: progress.period,
+                        overall: overallModel,
+                        period: progress?.period ??
+                            const BudgetPeriodModel(
+                              daysInMonth: 30,
+                              daysElapsed: 15,
+                              daysRemaining: 15,
+                              isCurrentPeriod: true,
+                              estimationMethod: "Linear Daily Burn-Rate",
+                            ),
                         currency: currency,
                       ),
 
@@ -398,11 +558,12 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                       BudgetAlertsBanner(alerts: alerts),
 
                     // Net Savings Progress Card
-                    BudgetSavingsCard(
-                      savings: progress.savings,
-                      currency: currency,
-                      onEditTarget: _showSavingsTargetDialog,
-                    ),
+                    if (progress?.savings != null)
+                      BudgetSavingsCard(
+                        savings: progress!.savings,
+                        currency: currency,
+                        onEditTarget: _showSavingsTargetDialog,
+                      ),
 
                     // Section Header: Categories
                     Padding(
@@ -411,7 +572,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "Category Budgets (${progress.categoryBudgets.length})",
+                            "Category Budgets (${categoryBudgets.length})",
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -435,9 +596,9 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                       ),
                     ),
 
-                    // Category Budgets List
-                    if (progress.categoryBudgets.isNotEmpty)
-                      ...progress.categoryBudgets.asMap().entries.map(
+                    // Category Budgets List with living animated cards
+                    if (categoryBudgets.isNotEmpty)
+                      ...categoryBudgets.asMap().entries.map(
                             (entry) => CategoryBudgetCard(
                               index: entry.key,
                               budget: entry.value,

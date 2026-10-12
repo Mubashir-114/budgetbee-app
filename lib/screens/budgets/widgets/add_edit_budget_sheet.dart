@@ -108,6 +108,10 @@ class _AddEditBudgetSheetState extends State<AddEditBudgetSheet> {
     }
 
     if (success && mounted) {
+      if (provider.selectedMonth != _selectedMonth ||
+          provider.selectedYear != _selectedYear) {
+        provider.changeDate(_selectedMonth, _selectedYear);
+      }
       context.read<ReportProvider>().loadAllReports();
       Navigator.pop(context);
       CustomToast.showSuccess(
