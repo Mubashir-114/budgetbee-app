@@ -1,20 +1,24 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
-import '../../providers/report_provider.dart';
-import '../../providers/currency_provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
-import '../../core/widgets/skeleton_loader.dart';
-import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/custom_toast.dart';
-import '../../core/widgets/animated_progress_bar.dart';
+import '../../core/widgets/skeleton_loader.dart';
+import '../../providers/currency_provider.dart';
+import '../../providers/report_provider.dart';
+import 'widgets/cashflow_tab_view.dart';
+import 'widgets/categories_tab_view.dart';
+import 'widgets/reports_date_range_bar.dart';
+import 'widgets/trends_tab_view.dart';
 
+/// FinTrack 2.0 Reports & Financial Analytics Screen.
+/// Provides an interactive, animated, and theme-independent analytics
+/// suite comprising Trends, Categories, and Cashflow timelines.
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
 
@@ -48,10 +52,26 @@ class _ReportsScreenState extends State<ReportsScreen>
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
       initialDateRange: provider.selectedDateRange,
+      builder: (context, child) {
+        final colors = AppColors.of(context);
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: colors.primary,
+                  onPrimary: colors.background,
+                ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (range != null) {
       provider.setDateRange(range);
     }
+  }
+
+  void _clearDateRange() {
+    context.read<ReportProvider>().clearDateRange();
   }
 
   Future<void> _exportCSV() async {
@@ -103,7 +123,7 @@ class _ReportsScreenState extends State<ReportsScreen>
       if (!mounted) return;
       CustomToast.showSuccess(
         context,
-        "PDF Report generated successfully at:\n$path\n(Path copied to clipboard!)",
+        "PDF Report generated at:\n$path\n(Path copied to clipboard!)",
       );
     } else if (mounted) {
       CustomToast.showError(
@@ -113,129 +133,82 @@ class _ReportsScreenState extends State<ReportsScreen>
     }
   }
 
-  Widget _buildOverviewTab(ReportProvider provider, bool isDark) {
-    final colors = AppColors.of(context);
-    final summary = provider.summary;
-    if (summary == null) {
-      return const EmptyState(
-        icon: Icons.analytics_outlined,
-        title: "No data available",
-        description: "There is no overview data available for this range.",
-      );
-    }
+  String _getPeriodLabel(DateTimeRange? range) {
+    if (range == null) return "All-Time Overview";
+    final start = DateFormat('d MMM').format(range.start);
+    final end = DateFormat('d MMM yyyy').format(range.end);
+    return "$start – $end";
+  }
 
-    final isTablet = MediaQuery.of(context).size.width >= 600;
-
+  Widget _buildLoadingSkeleton(dynamic colors) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppDimensions.md),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GridView.count(
-            crossAxisCount: isTablet ? 4 : 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: isTablet ? 1.5 : 1.35,
+          SkeletonLoader.card(height: 140),
+          const SizedBox(height: 12),
+          Row(
             children: [
-              _buildStatCard(
-                "Total Income",
-                summary.totalIncome,
-                colors.success,
-                isDark,
-              ),
-              _buildStatCard(
-                "Total Expense",
-                summary.totalExpense,
-                colors.danger,
-                isDark,
-              ),
-              _buildStatCard(
-                "Net Savings",
-                summary.netBalance,
-                colors.info,
-                isDark,
-              ),
-              _buildStatCard(
-                "Savings Rate",
-                summary.savingsRate,
-                colors.warning,
-                isDark,
-                isPercent: true,
-              ),
+              Expanded(child: SkeletonLoader.card(height: 68)),
+              const SizedBox(width: 8),
+              Expanded(child: SkeletonLoader.card(height: 68)),
+              const SizedBox(width: 8),
+              Expanded(child: SkeletonLoader.card(height: 68)),
             ],
           ),
-          const SizedBox(height: 24),
-          const Text(
-            "Monthly Trends",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.2,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Card(
-            elevation: 0,
-            color: colors.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-              side: BorderSide(
-                color: colors.divider,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: _buildTrendsChart(provider, isDark),
-            ),
-          ),
+          const SizedBox(height: 16),
+          SkeletonLoader.chart(),
+          const SizedBox(height: 16),
+          SkeletonLoader.card(height: 120),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(
-    String title,
-    double value,
-    Color color,
-    bool isDark, {
-    bool isPercent = false,
-  }) {
-    final colors = AppColors.of(context);
-    return Card(
-      elevation: 0,
-      color: colors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-        side: BorderSide(
-          color: colors.divider,
-        ),
-      ),
+  Widget _buildErrorState(String message, dynamic colors) {
+    return Center(
       child: Padding(
-        padding: const EdgeInsets.all(14.0),
+        padding: const EdgeInsets.all(AppDimensions.lg),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 48,
+              color: colors.danger,
+            ),
+            const SizedBox(height: 14),
             Text(
-              title,
+              "Unable to load reports",
               style: TextStyle(
-                fontSize: 12,
-                color: colors.textSecondary,
-                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: colors.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
             Text(
-              isPercent
-                  ? "${value.toStringAsFixed(1)}%"
-                  : context.watch<CurrencyProvider>().format(value),
+              message,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
-                letterSpacing: -0.5,
+                fontSize: 12,
+                color: colors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 18),
+            ElevatedButton.icon(
+              onPressed: () {
+                context.read<ReportProvider>().loadAllReports();
+              },
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: const Text("Retry"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colors.primary,
+                foregroundColor: colors.background,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ],
@@ -244,483 +217,42 @@ class _ReportsScreenState extends State<ReportsScreen>
     );
   }
 
-  Widget _buildTrendsChart(ReportProvider provider, bool isDark) {
-    final colors = AppColors.of(context);
-    final trends = provider.trendsReports;
-    if (trends.isEmpty) {
-      return SizedBox(
-        height: 180,
-        child: Center(
-          child: Text(
-            "No trend metrics to plot",
-            style: TextStyle(color: colors.textSecondary),
-          ),
-        ),
-      );
-    }
-
-    final double maxVal = trends.fold(0.0, (max, item) {
-      final val = item.income > item.expense ? item.income : item.expense;
-      return val > max ? val : max;
-    });
-    final double adjustedMax = maxVal == 0 ? 100 : maxVal * 1.2;
-
-    return SizedBox(
-      height: 200,
-      child: BarChart(
-        BarChartData(
-          maxY: adjustedMax,
-          alignment: BarChartAlignment.spaceEvenly,
-          barTouchData: BarTouchData(
-            touchTooltipData: BarTouchTooltipData(
-              getTooltipColor: (_) =>
-                  colors.elevated,
-              getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                final String type = rodIndex == 0 ? "Income" : "Expense";
-                return BarTooltipItem(
-                  "$type: ${context.read<CurrencyProvider>().format(rod.toY)}",
-                  TextStyle(
-                    color: colors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                );
-              },
-            ),
-          ),
-          titlesData: FlTitlesData(
-            show: true,
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (val, meta) {
-                  final idx = val.toInt();
-                  if (idx >= 0 && idx < trends.length) {
-                    return SideTitleWidget(
-                      meta: meta,
-                      child: Text(
-                        trends[idx].monthName.substring(0, 3),
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: colors.textSecondary,
-                        ),
-                      ),
-                    );
-                  }
-                  return const SizedBox();
-                },
-              ),
-            ),
-            leftTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-          ),
-          gridData: const FlGridData(show: false),
-          borderData: FlBorderData(show: false),
-          barGroups: List.generate(trends.length, (index) {
-            final trend = trends[index];
-            return BarChartGroupData(
-              x: index,
-              barRods: [
-                BarChartRodData(
-                  toY: trend.income,
-                  color: colors.success,
-                  width: 7,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                BarChartRodData(
-                  toY: trend.expense,
-                  color: colors.danger,
-                  width: 7,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ],
-            );
-          }),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryTab(ReportProvider provider, bool isDark) {
-    final themeColors = AppColors.of(context);
-    final reports = provider.categoryReports;
-    if (reports.isEmpty) {
-      return const EmptyState(
-        icon: Icons.pie_chart_outline_rounded,
-        title: "No budget limits configured",
-        description: "There are no categories details tracked for this range.",
-      );
-    }
-
-    final double totalExpense = reports.fold(
-      0.0,
-      (sum, item) => sum + item.spent,
-    );
-    final List<PieChartSectionData> sections = [];
-    final colors = [
-      themeColors.primary,
-      themeColors.secondary,
-      themeColors.success,
-      themeColors.warning,
-      themeColors.info,
-      Colors.pink.shade400,
-      Colors.teal.shade400,
-      Colors.indigo.shade400,
-      Colors.amber.shade400,
-      Colors.deepPurple.shade400,
-    ];
-
-    for (int i = 0; i < reports.length; i++) {
-      final r = reports[i];
-      if (r.spent <= 0) continue;
-      final percentage = totalExpense > 0
-          ? (r.spent / totalExpense) * 100
-          : 0.0;
-      sections.add(
-        PieChartSectionData(
-          color: colors[i % colors.length],
-          value: r.spent,
-          title: '${percentage.toStringAsFixed(0)}%',
-          radius: 35,
-          titleStyle: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      );
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppDimensions.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Expense Allocations",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.2,
-            ),
-          ),
-          AppDimensions.hSM,
-          if (sections.isNotEmpty)
-            Card(
-              elevation: 0,
-              color: themeColors.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-                side: BorderSide(
-                  color: themeColors.divider,
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: SizedBox(
-                        height: 140,
-                        child: PieChart(
-                          PieChartData(
-                            sections: sections,
-                            centerSpaceRadius: 30,
-                            sectionsSpace: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                    AppDimensions.wMD,
-                    Expanded(
-                      flex: 6,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: List.generate(reports.length, (index) {
-                          final r = reports[index];
-                          if (r.spent <= 0) return const SizedBox();
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 2.0),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    color: colors[index % colors.length],
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    r.category,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: themeColors.textPrimary,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            Card(
-              elevation: 0,
-              color: themeColors.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-                side: BorderSide(
-                  color: themeColors.divider,
-                ),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 40.0),
-                child: Center(
-                  child: Text(
-                    "No expenses recorded to build allocations.",
-                    style: TextStyle(
-                      color: themeColors.textSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          const SizedBox(height: 24),
-          const Text(
-            "Budget Tracking Status",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.2,
-            ),
-          ),
-          AppDimensions.hSM,
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: reports.length,
-            itemBuilder: (context, index) {
-              final r = reports[index];
-              final progress = r.budget <= 0
-                  ? 0.0
-                  : (r.spent / r.budget).clamp(0.0, 1.0);
-              final isOver = r.spent > r.budget && r.budget > 0;
-
-              return Card(
-                elevation: 0,
-                color: themeColors.surface,
-                margin: const EdgeInsets.only(bottom: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
-                  side: BorderSide(
-                    color: themeColors.divider,
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(14.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            r.category,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            "${context.watch<CurrencyProvider>().format(r.spent)} / ${context.watch<CurrencyProvider>().format(r.budget)}",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: isOver
-                                  ? themeColors.danger
-                                  : themeColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      AnimatedProgressBar(
-                        value: progress,
-                        color: isOver
-                            ? themeColors.danger
-                            : themeColors.success,
-                        backgroundColor: themeColors.divider,
-                        height: 7,
-                        semanticLabel: '${r.category} budget used',
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        r.budget == 0
-                            ? "No budget allocated"
-                            : isOver
-                            ? "Over budget limit by ${context.read<CurrencyProvider>().format(r.spent - r.budget)}"
-                            : "Remaining budget limit: ${context.read<CurrencyProvider>().format(r.remaining)}",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isOver
-                              ? themeColors.danger
-                              : themeColors.success,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCashflowTab(ReportProvider provider, bool isDark) {
-    final colors = AppColors.of(context);
-    final reports = provider.cashflowReports;
-    if (reports.isEmpty) {
-      return const EmptyState(
-        icon: Icons.receipt_long_rounded,
-        title: "No cashflow details",
-        description: "No ledger accounts found for this period range.",
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.md,
-        vertical: AppDimensions.sm,
-      ),
-      itemCount: reports.length,
-      itemBuilder: (context, index) {
-        final item = reports[index];
-        final isExpense = item.type == "expense";
-
-        return Card(
-          elevation: 0,
-          margin: const EdgeInsets.only(bottom: 8),
-          color: colors.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-            side: BorderSide(
-              color: colors.divider,
-            ),
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 4,
-            ),
-            leading: CircleAvatar(
-              backgroundColor: isExpense
-                  ? colors.danger.withValues(alpha: 0.1)
-                  : colors.success.withValues(alpha: 0.1),
-              radius: 18,
-              child: Icon(
-                isExpense
-                    ? Icons.arrow_upward_rounded
-                    : Icons.arrow_downward_rounded,
-                color: isExpense ? colors.danger : colors.success,
-                size: 16,
-              ),
-            ),
-            title: Text(
-              item.title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-            ),
-            subtitle: Text(
-              "${item.category} • ${item.date}",
-              style: TextStyle(
-                fontSize: 11,
-                color: colors.textSecondary,
-              ),
-            ),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  "${isExpense ? '-' : '+'}${context.watch<CurrencyProvider>().format(item.amount)}",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isExpense ? colors.danger : colors.success,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  "Balance: ${context.watch<CurrencyProvider>().format(item.runningBalance)}",
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: colors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ReportProvider>();
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final colors = AppColors.of(context);
 
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text(
-          "Reports",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          "Financial Reports",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
+        backgroundColor: colors.background,
+        elevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(
-              Icons.date_range_rounded,
-              color: provider.selectedDateRange != null
-                  ? colors.primary
-                  : null,
-            ),
-            onPressed: _selectDateRange,
-          ),
+          // Export Popup Menu (PDF & CSV)
           PopupMenuButton<String>(
             icon: provider.isExporting || provider.isPdfExporting
-                ? const SizedBox(
+                ? SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: colors.primary,
+                    ),
                   )
-                : const Icon(Icons.download_rounded),
+                : Icon(
+                    Icons.download_rounded,
+                    color: colors.textPrimary,
+                  ),
+            tooltip: "Export report",
             color: colors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: colors.cardBorder),
+            ),
             onSelected: (action) {
               if (action == 'pdf') {
                 _exportPDF();
@@ -729,81 +261,127 @@ class _ReportsScreenState extends State<ReportsScreen>
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'pdf',
-                child: ListTile(
-                  leading: Icon(
-                    Icons.picture_as_pdf_rounded,
-                    color: AppColors.danger,
-                    size: 20,
-                  ),
-                  title: Text('Export PDF', style: TextStyle(fontSize: 14)),
-                  contentPadding: EdgeInsets.zero,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.picture_as_pdf_rounded,
+                      color: colors.danger,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Export PDF',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'csv',
-                child: ListTile(
-                  leading: Icon(
-                    Icons.grid_on_rounded,
-                    color: AppColors.success,
-                    size: 20,
-                  ),
-                  title: Text('Export CSV', style: TextStyle(fontSize: 14)),
-                  contentPadding: EdgeInsets.zero,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.table_chart_rounded,
+                      color: colors.success,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Export CSV',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          AppDimensions.wSM,
+          const SizedBox(width: 8),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorWeight: 3.0,
-          labelStyle: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(88),
+          child: Column(
+            children: [
+              // Date Range Filter Bar
+              ReportsDateRangeBar(
+                selectedRange: provider.selectedDateRange,
+                onSelectRange: _selectDateRange,
+                onClearRange: _clearDateRange,
+              ),
+              const SizedBox(height: 4),
+
+              // Refined Modern Tab Bar
+              Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.md,
+                ),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: colors.divider.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  indicatorColor: colors.primary,
+                  indicatorWeight: 2.5,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  labelColor: colors.primary,
+                  unselectedLabelColor: colors.textSecondary,
+                  labelStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    letterSpacing: -0.1,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                  tabs: const [
+                    Tab(text: "Trends"),
+                    Tab(text: "Categories"),
+                    Tab(text: "Cashflow"),
+                  ],
+                ),
+              ),
+            ],
           ),
-          tabs: const [
-            Tab(text: "Trends"),
-            Tab(text: "Categories"),
-            Tab(text: "Cashflow"),
-          ],
         ),
       ),
       body: provider.isLoading && provider.summary == null
-          ? SingleChildScrollView(
-              padding: const EdgeInsets.all(AppDimensions.md),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(child: SkeletonLoader.card(height: 60)),
-                      const SizedBox(width: 8),
-                      Expanded(child: SkeletonLoader.card(height: 60)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(child: SkeletonLoader.card(height: 60)),
-                      const SizedBox(width: 8),
-                      Expanded(child: SkeletonLoader.card(height: 60)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  SkeletonLoader.chart(),
-                ],
-              ),
-            )
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                _buildOverviewTab(provider, isDark),
-                _buildCategoryTab(provider, isDark),
-                _buildCashflowTab(provider, isDark),
-              ],
-            ),
+          ? _buildLoadingSkeleton(colors)
+          : provider.errorMessage != null && provider.summary == null
+              ? _buildErrorState(provider.errorMessage!, colors)
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    TrendsTabView(
+                      summary: provider.summary,
+                      trends: provider.trendsReports,
+                      periodLabel: _getPeriodLabel(provider.selectedDateRange),
+                      onRefresh: provider.loadAllReports,
+                    ),
+                    CategoriesTabView(
+                      categoryReports: provider.categoryReports,
+                      onRefresh: provider.loadAllReports,
+                    ),
+                    CashflowTabView(
+                      cashflowReports: provider.cashflowReports,
+                      onRefresh: provider.loadAllReports,
+                    ),
+                  ],
+                ),
     );
   }
 }
