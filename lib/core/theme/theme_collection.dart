@@ -33,8 +33,6 @@ enum ThemeCollection {
   final String description;
   final String logoAssetPath;
 
-  String get launcherIconKey => storageKey;
-
   static ThemeCollection fromKey(String? key) {
     if (key == null) return ThemeCollection.graphiteChampagne;
     return ThemeCollection.values.firstWhere(
