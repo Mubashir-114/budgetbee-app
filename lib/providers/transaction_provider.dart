@@ -226,6 +226,7 @@ class TransactionProvider extends ChangeNotifier {
     required double amount,
     required String transactionDate,
     String? note,
+    int? accountId,
   }) async {
     final sessionGeneration = _sessionGeneration;
     try {
@@ -240,6 +241,7 @@ class TransactionProvider extends ChangeNotifier {
         amount: amount,
         transactionDate: transactionDate,
         note: note,
+        accountId: accountId,
       );
 
       if (sessionGeneration != _sessionGeneration) return false;
@@ -272,6 +274,7 @@ class TransactionProvider extends ChangeNotifier {
     required double amount,
     required String transactionDate,
     String? note,
+    int? accountId,
   }) async {
     final sessionGeneration = _sessionGeneration;
     try {
@@ -287,6 +290,7 @@ class TransactionProvider extends ChangeNotifier {
         amount: amount,
         transactionDate: transactionDate,
         note: note,
+        accountId: accountId,
       );
 
       if (sessionGeneration != _sessionGeneration) return false;

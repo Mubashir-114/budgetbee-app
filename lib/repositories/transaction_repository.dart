@@ -58,17 +58,23 @@ class TransactionRepository {
     required double amount,
     required String transactionDate,
     String? note,
+    int? accountId,
   }) async {
+    final payload = <String, dynamic>{
+      "categoryId": categoryId,
+      "type": type,
+      "title": title,
+      "amount": amount,
+      "transactionDate": transactionDate,
+      "note": note,
+    };
+    if (accountId != null) {
+      payload["accountId"] = accountId;
+    }
+
     final response = await _dio.post(
       "transactions",
-      data: {
-        "categoryId": categoryId,
-        "type": type,
-        "title": title,
-        "amount": amount,
-        "transactionDate": transactionDate,
-        "note": note,
-      },
+      data: payload,
     );
 
     return ApiResponse.fromJson(
@@ -85,17 +91,23 @@ class TransactionRepository {
     required double amount,
     required String transactionDate,
     String? note,
+    int? accountId,
   }) async {
+    final payload = <String, dynamic>{
+      "categoryId": categoryId,
+      "type": type,
+      "title": title,
+      "amount": amount,
+      "transactionDate": transactionDate,
+      "note": note,
+    };
+    if (accountId != null) {
+      payload["accountId"] = accountId;
+    }
+
     final response = await _dio.put(
       "transactions/$id",
-      data: {
-        "categoryId": categoryId,
-        "type": type,
-        "title": title,
-        "amount": amount,
-        "transactionDate": transactionDate,
-        "note": note,
-      },
+      data: payload,
     );
 
     return ApiResponse.fromJson(

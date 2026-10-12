@@ -25,27 +25,23 @@ class CategoryModel {
     };
   }
 
-  // Pre-seeded database categories
+  // Pre-seeded database categories (synced with MySQL categories table)
   static const List<CategoryModel> categories = [
     // Income Categories
     CategoryModel(id: 1, name: "Salary", type: "income"),
-    CategoryModel(id: 2, name: "Freelancing", type: "income"),
-    CategoryModel(id: 3, name: "Business", type: "income"),
-    CategoryModel(id: 4, name: "Investment", type: "income"),
-    CategoryModel(id: 5, name: "Bonus", type: "income"),
-    CategoryModel(id: 6, name: "Gift", type: "income"),
-    
+    CategoryModel(id: 2, name: "Other Income", type: "income"),
+
     // Expense Categories
-    CategoryModel(id: 7, name: "Food", type: "expense"),
-    CategoryModel(id: 8, name: "Transport", type: "expense"),
+    CategoryModel(id: 3, name: "Food", type: "expense"),
+    CategoryModel(id: 4, name: "Transport", type: "expense"),
+    CategoryModel(id: 5, name: "Housing", type: "expense"),
+    CategoryModel(id: 6, name: "Utilities", type: "expense"),
+    CategoryModel(id: 7, name: "Healthcare", type: "expense"),
+    CategoryModel(id: 8, name: "Entertainment", type: "expense"),
     CategoryModel(id: 9, name: "Shopping", type: "expense"),
-    CategoryModel(id: 10, name: "Medical", type: "expense"),
-    CategoryModel(id: 11, name: "Education", type: "expense"),
-    CategoryModel(id: 12, name: "Entertainment", type: "expense"),
-    CategoryModel(id: 13, name: "Bills", type: "expense"),
-    CategoryModel(id: 14, name: "Rent", type: "expense"),
-    CategoryModel(id: 15, name: "Travel", type: "expense"),
-    CategoryModel(id: 16, name: "Other", type: "expense"),
+    CategoryModel(id: 10, name: "Education", type: "expense"),
+    CategoryModel(id: 11, name: "Travel", type: "expense"),
+    CategoryModel(id: 12, name: "Other Expense", type: "expense"),
   ];
 
   static List<CategoryModel> getIncomeCategories() {
@@ -57,7 +53,24 @@ class CategoryModel {
   }
 
   static String getNameById(int id) {
-    final cat = categories.firstWhere((c) => c.id == id, orElse: () => const CategoryModel(id: 0, name: "Unknown", type: ""));
+    final cat = categories.firstWhere(
+      (c) => c.id == id,
+      orElse: () => const CategoryModel(id: 0, name: "Unknown", type: ""),
+    );
     return cat.name;
+  }
+
+  static CategoryModel? findById(int? id) {
+    if (id == null) return null;
+    return categories.where((c) => c.id == id).firstOrNull;
+  }
+
+  static CategoryModel? findByName(String? name, {String? type}) {
+    if (name == null || name.trim().isEmpty) return null;
+    final lower = name.toLowerCase().trim();
+    return categories.where((c) {
+      final matches = c.name.toLowerCase() == lower;
+      return type != null ? matches && c.type == type : matches;
+    }).firstOrNull;
   }
 }

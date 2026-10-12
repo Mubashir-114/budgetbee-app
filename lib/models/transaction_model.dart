@@ -14,6 +14,8 @@ class TransactionModel {
   final String? sender;
   final String? referenceNumber;
   final String? smsHash;
+  final int? accountId;
+  final String? accountName;
 
   const TransactionModel({
     required this.id,
@@ -31,25 +33,29 @@ class TransactionModel {
     this.sender,
     this.referenceNumber,
     this.smsHash,
+    this.accountId,
+    this.accountName,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
       id: json["id"] as int,
-      userId: json["user_id"] as int,
-      categoryId: json["category_id"] as int,
+      userId: json["user_id"] as int? ?? json["userId"] as int? ?? 0,
+      categoryId: json["category_id"] as int? ?? json["categoryId"] as int? ?? 0,
       type: json["type"] as String,
       title: json["title"] as String,
       amount: double.tryParse(json["amount"].toString()) ?? 0.0,
-      transactionDate: json["transaction_date"] as String,
+      transactionDate: json["transaction_date"] as String? ?? json["transactionDate"] as String? ?? '',
       note: json["note"] as String?,
-      category: json["category"] as String,
-      createdAt: json["created_at"] as String?,
+      category: json["category"] as String? ?? '',
+      createdAt: json["created_at"] as String? ?? json["createdAt"] as String?,
       source: json["source"] as String? ?? 'manual',
       bank: json["bank"] as String?,
       sender: json["sender"] as String?,
-      referenceNumber: json["reference_number"] as String?,
-      smsHash: json["sms_hash"] as String?,
+      referenceNumber: json["reference_number"] as String? ?? json["referenceNumber"] as String?,
+      smsHash: json["sms_hash"] as String? ?? json["smsHash"] as String?,
+      accountId: json["account_id"] as int? ?? json["accountId"] as int?,
+      accountName: json["account_name"] as String? ?? json["accountName"] as String?,
     );
   }
 
@@ -70,6 +76,10 @@ class TransactionModel {
       "sender": sender,
       "reference_number": referenceNumber,
       "sms_hash": smsHash,
+      "account_id": accountId,
+      "accountId": accountId,
+      "account_name": accountName,
+      "accountName": accountName,
     };
   }
 
@@ -89,6 +99,8 @@ class TransactionModel {
     String? sender,
     String? referenceNumber,
     String? smsHash,
+    int? accountId,
+    String? accountName,
   }) {
     return TransactionModel(
       id: id ?? this.id,
@@ -106,6 +118,8 @@ class TransactionModel {
       sender: sender ?? this.sender,
       referenceNumber: referenceNumber ?? this.referenceNumber,
       smsHash: smsHash ?? this.smsHash,
+      accountId: accountId ?? this.accountId,
+      accountName: accountName ?? this.accountName,
     );
   }
 }

@@ -287,20 +287,22 @@ class SmsParser {
       return 'Entertainment';
     }
 
-    // Hospital, Medical, Doctor -> Medical
+    // Hospital, Medical, Doctor, Healthcare -> Healthcare
     if (merchantLower.contains('hospital') || 
         merchantLower.contains('pharmacy') || 
         merchantLower.contains('medical') || 
         merchantLower.contains('doctor') || 
         merchantLower.contains('clinic') || 
         merchantLower.contains('chemist') || 
+        merchantLower.contains('healthcare') ||
         bodyLower.contains('hospital') || 
         bodyLower.contains('medical') ||
-        bodyLower.contains('chemist')) {
-      return 'Medical';
+        bodyLower.contains('chemist') ||
+        bodyLower.contains('healthcare')) {
+      return 'Healthcare';
     }
 
-    // Recharge, Telecom -> Bills
+    // Utilities, Recharge, Telecom -> Utilities
     if (merchantLower.contains('recharge') || 
         merchantLower.contains('jio') || 
         merchantLower.contains('airtel') || 
@@ -309,8 +311,10 @@ class SmsParser {
         bodyLower.contains('recharge') || 
         bodyLower.contains('bill') ||
         bodyLower.contains('electricity') ||
+        bodyLower.contains('utility') ||
+        bodyLower.contains('utilities') ||
         bodyLower.contains('gas')) {
-      return 'Bills';
+      return 'Utilities';
     }
 
     // Salary, Employer -> Salary
@@ -321,9 +325,9 @@ class SmsParser {
       return 'Salary';
     }
 
-    // Rent -> Rent
-    if (merchantLower.contains('rent') || bodyLower.contains('rent paid') || bodyLower.contains('house rent')) {
-      return 'Rent';
+    // Rent / Housing -> Housing
+    if (merchantLower.contains('rent') || merchantLower.contains('housing') || bodyLower.contains('rent paid') || bodyLower.contains('house rent')) {
+      return 'Housing';
     }
 
     // Travel, Flight, Hotel -> Travel
@@ -336,7 +340,7 @@ class SmsParser {
       return 'Travel';
     }
 
-    // Default to 'Other'
-    return 'Other';
+    // Default to 'Other Expense'
+    return 'Other Expense';
   }
 }
