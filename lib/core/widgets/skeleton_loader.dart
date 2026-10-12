@@ -55,14 +55,14 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = AppColors.of(context);
     return FadeTransition(
       opacity: _animation,
       child: Container(
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+          color: colors.divider,
           borderRadius: BorderRadius.circular(widget.borderRadius),
         ),
       ),
@@ -84,14 +84,14 @@ class SkeletonLoader extends StatelessWidget {
   static Widget card({double height = 120.0}) {
     return Builder(
       builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final colors = AppColors.of(context);
         return Card(
           elevation: 0,
-          color: isDark ? AppColors.surfaceDark : Colors.white,
+          color: colors.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
             side: BorderSide(
-              color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+              color: colors.divider,
             ),
           ),
           child: Padding(
@@ -144,14 +144,14 @@ class SkeletonLoader extends StatelessWidget {
   static Widget chart() {
     return Builder(
       builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final colors = AppColors.of(context);
         return Card(
           elevation: 0,
-          color: isDark ? AppColors.surfaceDark : Colors.white,
+          color: colors.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
             side: BorderSide(
-              color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+              color: colors.divider,
             ),
           ),
           child: const Padding(

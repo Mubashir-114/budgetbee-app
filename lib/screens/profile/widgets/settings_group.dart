@@ -16,11 +16,10 @@ class SettingsGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final colors = AppColors.of(context);
 
-    final surfaceColor = isDark ? AppColors.surfaceDark : Colors.white;
-    final borderColor = isDark
-        ? AppColors.dividerDark.withValues(alpha: 0.7)
-        : AppColors.dividerLight;
+    final surfaceColor = colors.surface;
+    final borderColor = colors.divider.withValues(alpha: isDark ? 0.7 : 1);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,9 +33,7 @@ class SettingsGroup extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.9,
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
+                color: colors.textSecondary,
               ),
             ),
           ),

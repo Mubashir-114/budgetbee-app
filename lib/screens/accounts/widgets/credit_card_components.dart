@@ -48,16 +48,16 @@ class CreditCardSummaryCard extends StatelessWidget {
     } catch (_) {}
 
     final utilColor = progress > 0.7
-        ? AppColors.danger
-        : (progress > 0.3 ? AppColors.warning : AppColors.success);
+        ? AppColors.of(context).danger
+        : (progress > 0.3 ? AppColors.of(context).warning : AppColors.of(context).success);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : AppColors.cardLight,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
         border: Border.all(
-          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+          color: Theme.of(context).dividerColor,
         ),
       ),
       child: Column(
@@ -96,8 +96,8 @@ class CreditCardSummaryCard extends StatelessWidget {
             'Current Outstanding Debt',
             style: theme.textTheme.bodySmall?.copyWith(
               color: isDark
-                  ? AppColors.textSecondaryDark
-                  : AppColors.textSecondaryLight,
+                  ? AppColors.of(context).textSecondary
+                  : AppColors.of(context).textSecondary,
             ),
           ),
           const SizedBox(height: 4),
@@ -106,7 +106,7 @@ class CreditCardSummaryCard extends StatelessWidget {
             currencyCode: currencyCode,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w800,
-              color: hasDebt ? AppColors.danger : AppColors.success,
+              color: hasDebt ? AppColors.of(context).danger : AppColors.of(context).success,
             ),
           ),
 
@@ -114,20 +114,20 @@ class CreditCardSummaryCard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.check_circle_outline,
-                    size: 14, color: AppColors.success),
+                Icon(Icons.check_circle_outline,
+                    size: 14, color: AppColors.of(context).success),
                 const SizedBox(width: 4),
                 Text(
                   'Credit balance (overpayment): ',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.success,
+                    color: AppColors.of(context).success,
                   ),
                 ),
                 Text(
                   '$currencyCode $creditBalance',
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: AppColors.success,
+                    color: AppColors.of(context).success,
                   ),
                 ),
               ],
@@ -156,8 +156,8 @@ class CreditCardSummaryCard extends StatelessWidget {
                       'Credit Limit',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
+                            ? AppColors.of(context).textSecondary
+                            : AppColors.of(context).textSecondary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -178,8 +178,8 @@ class CreditCardSummaryCard extends StatelessWidget {
                       'Available Credit',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
+                            ? AppColors.of(context).textSecondary
+                            : AppColors.of(context).textSecondary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -187,7 +187,7 @@ class CreditCardSummaryCard extends StatelessWidget {
                       '$currencyCode $availableCredit',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: AppColors.of(context).primary,
                       ),
                     ),
                   ],
@@ -225,33 +225,33 @@ class CreditCardBillingCard extends StatelessWidget {
     String statusLabel;
     switch (billing.status) {
       case 'overdue':
-        statusColor = AppColors.danger;
+        statusColor = AppColors.of(context).danger;
         statusLabel = 'Overdue';
         break;
       case 'due':
-        statusColor = AppColors.warning;
+        statusColor = AppColors.of(context).warning;
         statusLabel = 'Payment Due';
         break;
       case 'paid_in_full':
-        statusColor = AppColors.success;
+        statusColor = AppColors.of(context).success;
         statusLabel = 'Paid in Full';
         break;
       case 'current':
-        statusColor = AppColors.primary;
+        statusColor = AppColors.of(context).primary;
         statusLabel = 'Current';
         break;
       default:
-        statusColor = AppColors.textSecondaryLight;
+        statusColor = AppColors.of(context).textSecondary;
         statusLabel = 'Unconfigured';
     }
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : AppColors.cardLight,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
         border: Border.all(
-          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+          color: Theme.of(context).dividerColor,
         ),
       ),
       child: Column(
@@ -303,8 +303,8 @@ class CreditCardBillingCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
+                    ? AppColors.of(context).textSecondary
+                    : AppColors.of(context).textSecondary,
               ),
             ),
             const SizedBox(height: 12),
@@ -350,8 +350,8 @@ class CreditCardBillingCard extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: billing.isOverdue
-                        ? AppColors.danger
-                        : (billing.isDue ? AppColors.warning : statusColor),
+                        ? AppColors.of(context).danger
+                        : (billing.isDue ? AppColors.of(context).warning : statusColor),
                   ),
                 ),
               ),
@@ -371,8 +371,8 @@ class CreditCardBillingCard extends StatelessWidget {
                     Icons.info_outline,
                     size: 14,
                     color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                        ? AppColors.of(context).textSecondary
+                        : AppColors.of(context).textSecondary,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -381,8 +381,8 @@ class CreditCardBillingCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
+                            ? AppColors.of(context).textSecondary
+                            : AppColors.of(context).textSecondary,
                       ),
                     ),
                   ),
@@ -421,8 +421,8 @@ class _DateColumn extends StatelessWidget {
           label,
           style: theme.textTheme.bodySmall?.copyWith(
             color: isDark
-                ? AppColors.textSecondaryDark
-                : AppColors.textSecondaryLight,
+                ? AppColors.of(context).textSecondary
+                : AppColors.of(context).textSecondary,
           ),
         ),
         const SizedBox(height: 2),
@@ -430,7 +430,7 @@ class _DateColumn extends StatelessWidget {
           dateString,
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            color: highlight ? AppColors.danger : null,
+            color: highlight ? AppColors.of(context).danger : null,
           ),
         ),
         Text(
@@ -438,8 +438,8 @@ class _DateColumn extends StatelessWidget {
           style: TextStyle(
             fontSize: 11,
             color: isDark
-                ? AppColors.textSecondaryDark
-                : AppColors.textSecondaryLight,
+                ? AppColors.of(context).textSecondary
+                : AppColors.of(context).textSecondary,
           ),
         ),
       ],
@@ -469,10 +469,10 @@ class CreditCardRepaymentHistoryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : AppColors.cardLight,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
         border: Border.all(
-          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+          color: Theme.of(context).dividerColor,
         ),
       ),
       child: Column(
@@ -492,8 +492,8 @@ class CreditCardRepaymentHistoryCard extends StatelessWidget {
                   '${payments.length} payments',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                        ? AppColors.of(context).textSecondary
+                        : AppColors.of(context).textSecondary,
                   ),
                 ),
             ],
@@ -521,8 +521,8 @@ class CreditCardRepaymentHistoryCard extends StatelessWidget {
                       Icons.history_rounded,
                       size: 32,
                       color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
+                          ? AppColors.of(context).textSecondary
+                          : AppColors.of(context).textSecondary,
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -530,8 +530,8 @@ class CreditCardRepaymentHistoryCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
+                            ? AppColors.of(context).textSecondary
+                            : AppColors.of(context).textSecondary,
                       ),
                     ),
                   ],
@@ -552,14 +552,14 @@ class CreditCardRepaymentHistoryCard extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: 0.12),
+                        color: AppColors.of(context).success.withValues(alpha: 0.12),
                         borderRadius:
                             BorderRadius.circular(AppDimensions.radiusSM),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_downward_rounded,
                         size: 18,
-                        color: AppColors.success,
+                        color: AppColors.of(context).success,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -582,8 +582,8 @@ class CreditCardRepaymentHistoryCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               color: isDark
-                                  ? AppColors.textSecondaryDark
-                                  : AppColors.textSecondaryLight,
+                                  ? AppColors.of(context).textSecondary
+                                  : AppColors.of(context).textSecondary,
                             ),
                           ),
                           if (p.note != null && p.note!.isNotEmpty) ...[
@@ -594,8 +594,8 @@ class CreditCardRepaymentHistoryCard extends StatelessWidget {
                                 fontSize: 11,
                                 fontStyle: FontStyle.italic,
                                 color: isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight,
+                                    ? AppColors.of(context).textSecondary
+                                    : AppColors.of(context).textSecondary,
                               ),
                             ),
                           ],
@@ -605,10 +605,10 @@ class CreditCardRepaymentHistoryCard extends StatelessWidget {
                     MoneyText(
                       decimalString: p.amount,
                       currencyCode: p.currencyCode,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.success,
+                        color: AppColors.of(context).success,
                       ),
                     ),
                   ],
@@ -738,7 +738,7 @@ class _CreditCardRepaymentDialogState extends State<CreditCardRepaymentDialog> {
           content: Text(
             'Repayment successful! Remaining card debt: ${widget.currencyCode} ${result.cardDebt}',
           ),
-          backgroundColor: AppColors.success,
+          backgroundColor: AppColors.of(context).success,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -770,14 +770,14 @@ class _CreditCardRepaymentDialogState extends State<CreditCardRepaymentDialog> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.danger.withValues(alpha: 0.12),
+                    color: AppColors.of(context).danger.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
                   ),
                   child: Text(
                     _errorMessage!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.danger,
+                      color: AppColors.of(context).danger,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -792,9 +792,9 @@ class _CreditCardRepaymentDialogState extends State<CreditCardRepaymentDialog> {
               ),
               const SizedBox(height: 6),
               if (eligibleAccounts.isEmpty)
-                const Text(
+                Text(
                   'No active bank or wallet accounts available for repayment.',
-                  style: TextStyle(color: AppColors.danger, fontSize: 12),
+                  style: TextStyle(color: AppColors.of(context).danger, fontSize: 12),
                 )
               else
                 DropdownButtonFormField<int>(
@@ -1003,9 +1003,9 @@ class _CreditCardBillingDialogState extends State<CreditCardBillingDialog> {
     if (ok) {
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Billing cycle settings updated'),
-          backgroundColor: AppColors.success,
+        SnackBar(
+          content: const Text('Billing cycle settings updated'),
+          backgroundColor: AppColors.of(context).success,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -1029,11 +1029,11 @@ class _CreditCardBillingDialogState extends State<CreditCardBillingDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Configure your card\'s monthly billing schedule to estimate statement dates and payment deadlines.',
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondaryLight,
+                  color: AppColors.of(context).textSecondary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -1042,14 +1042,14 @@ class _CreditCardBillingDialogState extends State<CreditCardBillingDialog> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.danger.withValues(alpha: 0.12),
+                    color: AppColors.of(context).danger.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
                   ),
                   child: Text(
                     _errorMessage!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.danger,
+                      color: AppColors.of(context).danger,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

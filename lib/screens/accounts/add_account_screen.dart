@@ -144,6 +144,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final tokens = AppColors.of(context);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Add Account')),
@@ -308,20 +309,18 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.danger.withValues(alpha: 0.1),
+                  color: tokens.danger.withValues(alpha: 0.1),
                   borderRadius:
                       BorderRadius.circular(AppDimensions.radiusMD),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_rounded,
-                        color: AppColors.danger, size: 18),
+                    Icon(Icons.error_rounded, color: tokens.danger, size: 18),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         _submitError!,
-                        style: const TextStyle(
-                            color: AppColors.danger, fontSize: 13),
+                        style: TextStyle(color: tokens.danger, fontSize: 13),
                       ),
                     ),
                   ],
@@ -336,7 +335,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
               child: FilledButton(
                 onPressed: _isSubmitting ? null : _submit,
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: tokens.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: _isSubmitting
@@ -378,6 +377,7 @@ class _TypeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -393,14 +393,10 @@ class _TypeSelector extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.12)
-                  : (isDark ? AppColors.cardDark : Colors.white),
+              color: isSelected ? tokens.primary.withValues(alpha: 0.12) : tokens.surface,
               borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
               border: Border.all(
-                color: isSelected
-                    ? AppColors.primary
-                    : (isDark ? AppColors.dividerDark : AppColors.dividerLight),
+                color: isSelected ? tokens.primary : tokens.divider,
                 width: isSelected ? 1.5 : 1.0,
               ),
             ),
@@ -410,11 +406,7 @@ class _TypeSelector extends StatelessWidget {
                 children: [
                   Icon(icon,
                       size: 18,
-                      color: isSelected
-                          ? AppColors.primary
-                          : (isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight)),
+                      color: isSelected ? tokens.primary : tokens.textSecondary),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
@@ -424,7 +416,7 @@ class _TypeSelector extends StatelessWidget {
                         fontWeight: isSelected
                             ? FontWeight.w700
                             : FontWeight.normal,
-                        color: isSelected ? AppColors.primary : null,
+                        color: isSelected ? tokens.primary : null,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -454,6 +446,7 @@ class _SubtypeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Row(
       children: subtypes.map((s) {
         final (value, label) = s;
@@ -465,9 +458,9 @@ class _SubtypeSelector extends StatelessWidget {
               label: Text(label),
               selected: isSelected,
               onSelected: (_) => onChanged(value),
-              selectedColor: AppColors.primary.withValues(alpha: 0.15),
+              selectedColor: tokens.primary.withValues(alpha: 0.15),
               labelStyle: TextStyle(
-                color: isSelected ? AppColors.primary : null,
+                color: isSelected ? tokens.primary : null,
                 fontWeight:
                     isSelected ? FontWeight.w700 : FontWeight.normal,
                 fontSize: 13,
@@ -493,15 +486,16 @@ class _DefaultToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     final theme = Theme.of(context);
     return Material(
-      color: isDark ? AppColors.cardDark : Colors.white,
+      color: tokens.surface,
       borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
           border: Border.all(
-            color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+            color: tokens.divider,
           ),
         ),
         child: SwitchListTile.adaptive(
@@ -513,7 +507,7 @@ class _DefaultToggle extends StatelessWidget {
           ),
           value: value,
           onChanged: onChanged,
-          activeThumbColor: AppColors.primary,
+          activeThumbColor: tokens.primary,
         ),
       ),
     );

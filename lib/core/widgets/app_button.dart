@@ -37,6 +37,8 @@ class _AppButtonState extends State<AppButton>
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final foreground = Theme.of(context).colorScheme.onPrimary;
     return Semantics(
       button: true,
       enabled: !widget.isLoading,
@@ -64,16 +66,16 @@ class _AppButtonState extends State<AppButton>
               gradient: LinearGradient(
                 colors: widget.isLoading
                     ? [
-                        AppColors.primary.withValues(alpha: .55),
-                        AppColors.primaryDeep.withValues(alpha: .55),
+                        colors.primary.withValues(alpha: .55),
+                        colors.primaryDeep.withValues(alpha: .55),
                       ]
-                    : const [AppColors.primary, AppColors.primaryDeep],
+                    : [colors.primary, colors.primaryDeep],
               ),
               boxShadow: widget.isLoading
                   ? null
                   : [
                       BoxShadow(
-                        color: AppColors.primary.withValues(alpha: .28),
+                        color: colors.primary.withValues(alpha: .28),
                         blurRadius: 18,
                         offset: const Offset(0, 7),
                       ),
@@ -83,20 +85,20 @@ class _AppButtonState extends State<AppButton>
               child: AnimatedSwitcher(
                 duration: AppMotion.quick,
                 child: widget.isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         key: ValueKey('loading'),
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Color(0xFF0B111A),
+                          color: foreground,
                         ),
                       )
                     : Text(
                         widget.text,
                         key: const ValueKey('label'),
-                        style: const TextStyle(
-                          color: Color(0xFF0B111A),
+                        style: TextStyle(
+                          color: foreground,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
                           letterSpacing: .3,

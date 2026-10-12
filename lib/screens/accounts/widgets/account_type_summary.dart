@@ -12,8 +12,7 @@ class AccountTypeSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final tokens = AppColors.of(context);
 
     final bankCount = accounts.where((a) => a.type == 'bank').length;
     final cashCount = accounts.where((a) => a.type == 'cash').length;
@@ -25,15 +24,15 @@ class AccountTypeSummary extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primary.withValues(alpha: isDark ? 0.18 : 0.08),
-            AppColors.secondary.withValues(alpha: isDark ? 0.12 : 0.05),
+            tokens.primary.withValues(alpha: tokens.isDark ? 0.18 : 0.08),
+            tokens.secondary.withValues(alpha: tokens.isDark ? 0.12 : 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
         border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.15),
+          color: tokens.primary.withValues(alpha: 0.15),
         ),
       ),
       child: Row(
@@ -43,25 +42,25 @@ class AccountTypeSummary extends StatelessWidget {
             icon: Icons.savings_rounded,
             label: 'Bank',
             count: bankCount,
-            color: AppColors.primary,
+            color: tokens.primary,
           ),
           _TypeChip(
             icon: Icons.money_rounded,
             label: 'Cash',
             count: cashCount,
-            color: AppColors.success,
+            color: tokens.success,
           ),
           _TypeChip(
             icon: Icons.account_balance_wallet_rounded,
             label: 'Wallet',
             count: walletCount,
-            color: AppColors.info,
+            color: tokens.info,
           ),
           _TypeChip(
             icon: Icons.credit_card_rounded,
             label: 'Credit',
             count: creditCount,
-            color: AppColors.danger,
+            color: tokens.danger,
           ),
         ],
       ),

@@ -46,8 +46,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final tokens = AppColors.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -87,7 +86,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
               activeAccounts.where((a) => !a.isAsset).toList();
 
           return RefreshIndicator(
-            color: AppColors.primary,
+            color: tokens.primary,
             onRefresh: provider.refresh,
             child: CustomScrollView(
               controller: _scrollController,
@@ -107,8 +106,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
                   _SectionHeader(
                     label: 'Asset Accounts',
                     count: assets.length,
-                    color: AppColors.success,
-                    isDark: isDark,
+                    color: tokens.success,
                   ),
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
@@ -131,8 +129,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
                   _SectionHeader(
                     label: 'Credit Cards',
                     count: liabilities.length,
-                    color: AppColors.danger,
-                    isDark: isDark,
+                    color: tokens.danger,
                   ),
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
@@ -152,12 +149,12 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
 
                 // Pagination loader
                 if (provider.isLoadingMore)
-                  const SliverToBoxAdapter(
+                  SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
+                      padding: const EdgeInsets.symmetric(vertical: 24),
                       child: Center(
                         child: CircularProgressIndicator(
-                          color: AppColors.primary,
+                          color: tokens.primary,
                           strokeWidth: 2,
                         ),
                       ),
@@ -178,8 +175,6 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
         onPressed: () => context.push('/accounts/add'),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Account'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
       ),
     );
   }
@@ -192,13 +187,14 @@ class _LoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final tokens = AppColors.of(context);
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(color: AppColors.primary),
-          SizedBox(height: 16),
-          Text('Loading accounts…'),
+          CircularProgressIndicator(color: tokens.primary),
+          const SizedBox(height: 16),
+          const Text('Loading accounts…'),
         ],
       ),
     );
@@ -214,6 +210,7 @@ class _ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppColors.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -223,11 +220,11 @@ class _ErrorView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.danger.withValues(alpha: 0.1),
+                color: tokens.danger.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.wifi_off_rounded,
-                  size: 40, color: AppColors.danger),
+              child: Icon(Icons.wifi_off_rounded,
+                  size: 40, color: tokens.danger),
             ),
             const SizedBox(height: 20),
             Text(
@@ -239,7 +236,7 @@ class _ErrorView extends StatelessWidget {
             Text(
               message,
               style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.textSecondaryLight),
+                  ?.copyWith(color: tokens.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -263,6 +260,7 @@ class _EmptyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppColors.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -274,16 +272,16 @@ class _EmptyView extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppColors.primary.withValues(alpha: 0.12),
-                    AppColors.secondary.withValues(alpha: 0.08),
+                    tokens.primary.withValues(alpha: 0.12),
+                    tokens.secondary.withValues(alpha: 0.08),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.account_balance_rounded,
-                  size: 48, color: AppColors.primary),
+              child: Icon(Icons.account_balance_rounded,
+                  size: 48, color: tokens.primary),
             ),
             const SizedBox(height: 24),
             Text(
@@ -295,7 +293,7 @@ class _EmptyView extends StatelessWidget {
             Text(
               'Add your bank accounts, cash, wallets\nor credit cards to get started.',
               style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.textSecondaryLight),
+                  ?.copyWith(color: tokens.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
@@ -304,7 +302,6 @@ class _EmptyView extends StatelessWidget {
               icon: const Icon(Icons.add_rounded),
               label: const Text('Add First Account'),
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(
                     horizontal: 28, vertical: 14),
               ),
@@ -320,17 +317,16 @@ class _SectionHeader extends StatelessWidget {
   final String label;
   final int count;
   final Color color;
-  final bool isDark;
 
   const _SectionHeader({
     required this.label,
     required this.count,
     required this.color,
-    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
@@ -350,7 +346,7 @@ class _SectionHeader extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: isDark ? AppColors.textLight : AppColors.textDark,
+                color: tokens.textPrimary,
                 letterSpacing: 0.4,
               ),
             ),

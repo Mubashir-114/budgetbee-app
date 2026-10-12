@@ -41,8 +41,7 @@ class _AppTextFieldState extends State<AppTextField> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final colors = AppColors.of(context);
 
     return Focus(
       onFocusChange: (hasFocus) {
@@ -61,17 +60,15 @@ class _AppTextFieldState extends State<AppTextField> {
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,
-          color: isDark ? AppColors.textLight : AppColors.textDark,
+          color: colors.textPrimary,
         ),
         decoration: InputDecoration(
           labelText: widget.label,
           prefixIcon: Icon(
             widget.prefixIcon,
             color: _isFocused
-                ? AppColors.primary
-                : (isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight),
+                ? colors.primary
+                : colors.textSecondary,
             size: 22,
           ),
           suffixIcon: widget.isPassword
@@ -86,9 +83,7 @@ class _AppTextFieldState extends State<AppTextField> {
                     _obscureText
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                    color: colors.textSecondary,
                     size: 20,
                   ),
                 )

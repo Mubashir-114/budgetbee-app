@@ -68,9 +68,10 @@ class _SecurityScreenState extends State<SecurityScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final colors = AppColors.of(context);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkScaffold : AppColors.scaffold,
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text(
           "Security & Password",
@@ -90,12 +91,10 @@ class _SecurityScreenState extends State<SecurityScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.surfaceDark : Colors.white,
+                    color: colors.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isDark
-                          ? AppColors.dividerDark.withValues(alpha: 0.7)
-                          : AppColors.dividerLight,
+                      color: colors.divider.withValues(alpha: isDark ? 0.7 : 1),
                     ),
                   ),
                   child: Row(
@@ -104,12 +103,12 @@ class _SecurityScreenState extends State<SecurityScreen> {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.12),
+                          color: colors.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.shield_outlined,
-                          color: AppColors.primary,
+                          color: colors.primary,
                           size: 24,
                         ),
                       ),
@@ -123,9 +122,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
-                                color: isDark
-                                    ? AppColors.textLight
-                                    : AppColors.textDark,
+                                color: colors.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -133,9 +130,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                               "Choose a strong password with at least 6 characters.",
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight,
+                                color: colors.textSecondary,
                                 height: 1.3,
                               ),
                             ),

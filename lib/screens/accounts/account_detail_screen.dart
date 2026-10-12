@@ -174,9 +174,9 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Record an auditable correction or reconciliation entry.',
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+                        style: TextStyle(fontSize: 12, color: AppColors.of(context).textSecondary),
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -269,9 +269,9 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
       if (!mounted) return;
       if (ok) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Balance adjusted successfully'),
-            backgroundColor: AppColors.success,
+          SnackBar(
+            content: const Text('Balance adjusted successfully'),
+            backgroundColor: AppColors.of(context).success,
           ),
         );
         _loadAccount();
@@ -279,7 +279,7 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(provider.actionError ?? 'Adjustment failed'),
-            backgroundColor: AppColors.danger,
+            backgroundColor: AppColors.of(context).danger,
           ),
         );
       }
@@ -293,16 +293,16 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
     final ok = await provider.setDefault(widget.accountId);
     if (!mounted) return;
     if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Default account updated'),
-        backgroundColor: AppColors.success,
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('Default account updated'),
+        backgroundColor: AppColors.of(context).success,
         behavior: SnackBarBehavior.floating,
       ));
       _loadAccount();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(provider.actionError ?? 'Failed to set default'),
-        backgroundColor: AppColors.danger,
+        backgroundColor: AppColors.of(context).danger,
         behavior: SnackBarBehavior.floating,
       ));
     }
@@ -322,7 +322,7 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
           TextButton(
               onPressed: () => ctx.pop(false), child: const Text('Cancel')),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.of(context).danger),
             onPressed: () => ctx.pop(true),
             child: const Text('Archive'),
           ),
@@ -339,7 +339,7 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(provider.actionError ?? 'Failed to archive'),
-        backgroundColor: AppColors.danger,
+        backgroundColor: AppColors.of(context).danger,
         behavior: SnackBarBehavior.floating,
       ));
     }
@@ -348,9 +348,11 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
+
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator(color: tokens.primary)),
       );
     }
     if (_error != null || _account == null) {
@@ -358,14 +360,14 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
         appBar: AppBar(title: const Text('Account Details')),
         body: Center(
           child: Text(_error ?? 'Account not found',
-              style: const TextStyle(color: AppColors.danger)),
+              style: TextStyle(color: tokens.danger)),
         ),
       );
     }
 
     final account = _account!;
     final isCredit = account.type == 'credit_card';
-    final accentColor = isCredit ? AppColors.danger : AppColors.primary;
+    final accentColor = isCredit ? tokens.danger : tokens.primary;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -410,26 +412,26 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                     ),
                   ),
                 if (!isCredit && !account.isDefault)
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'default',
                     child: Row(
                       children: [
                         Icon(Icons.star_rounded, size: 18,
-                            color: AppColors.warning),
+                            color: tokens.warning),
                         SizedBox(width: 12),
                         Text('Set as Default'),
                       ],
                     ),
                   ),
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'archive',
                   child: Row(
                     children: [
                       Icon(Icons.archive_rounded, size: 18,
-                          color: AppColors.danger),
+                          color: tokens.danger),
                       SizedBox(width: 12),
                       Text('Archive',
-                          style: TextStyle(color: AppColors.danger)),
+                          style: TextStyle(color: tokens.danger)),
                     ],
                   ),
                 ),
@@ -462,7 +464,7 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                         icon: const Icon(Icons.payment_rounded),
                         label: const Text('Pay Credit Card'),
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.success,
+                          backgroundColor: tokens.success,
                         ),
                         onPressed: _showRepayDialog,
                       ),
@@ -560,7 +562,7 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                     value: account.status[0].toUpperCase() +
                         account.status.substring(1),
                     valueColor:
-                        account.isActive ? AppColors.success : AppColors.danger,
+                        account.isActive ? tokens.success : tokens.danger,
                   ),
                 ],
               ),
@@ -595,12 +597,12 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                     value: account.status[0].toUpperCase() +
                         account.status.substring(1),
                     valueColor:
-                        account.isActive ? AppColors.success : AppColors.danger,
+                        account.isActive ? tokens.success : tokens.danger,
                   ),
                   _InfoRow(
                     label: 'Default Account',
                     value: account.isDefault ? 'Yes' : 'No',
-                    valueColor: account.isDefault ? AppColors.primary : null,
+                    valueColor: account.isDefault ? tokens.primary : null,
                   ),
                 ],
               ),
@@ -675,8 +677,8 @@ class _AccountDetailScreenState extends State<AccountDetailScreen> {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.danger,
-                    side: const BorderSide(color: AppColors.danger),
+                    foregroundColor: tokens.danger,
+                    side: BorderSide(color: tokens.danger),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: _archive,
@@ -744,6 +746,7 @@ class _HeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
@@ -786,9 +789,7 @@ class _HeaderCard extends StatelessWidget {
                       Text(
                         account.institutionName!,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
+                          color: tokens.textSecondary,
                         ),
                       ),
                     ],
@@ -800,19 +801,19 @@ class _HeaderCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.12),
+                    color: tokens.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AppDimensions.radiusSM),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Icon(Icons.star_rounded,
-                          size: 12, color: AppColors.primary),
-                      SizedBox(width: 4),
+                          size: 12, color: tokens.primary),
+                      const SizedBox(width: 4),
                       Text('Default',
                           style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.primary)),
+                              color: tokens.primary)),
                     ],
                   ),
                 ),
@@ -824,8 +825,7 @@ class _HeaderCard extends StatelessWidget {
           Text(
             account.type == 'credit_card' ? 'Outstanding Debt' : 'Current Balance',
             style: theme.textTheme.bodySmall?.copyWith(
-              color:
-                  isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              color: tokens.textSecondary,
               letterSpacing: 0.5,
             ),
           ),
@@ -845,16 +845,14 @@ class _HeaderCard extends StatelessWidget {
                 Text(
                   'Available Credit: ',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                    color: tokens.textSecondary,
                   ),
                 ),
                 Text(
                   '${account.currencyCode} $availableCredit',
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: AppColors.success,
+                    color: tokens.success,
                   ),
                 ),
               ],
@@ -879,13 +877,14 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : AppColors.cardLight,
+        color: tokens.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
         border: Border.all(
-            color: isDark ? AppColors.dividerDark : AppColors.dividerLight),
+            color: tokens.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -916,8 +915,8 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -927,9 +926,7 @@ class _InfoRow extends StatelessWidget {
             child: Text(
               label,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
+                color: tokens.textSecondary,
               ),
             ),
           ),
@@ -965,6 +962,7 @@ class _MoneyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -978,9 +976,7 @@ class _MoneyRow extends StatelessWidget {
                 Text(
                   label,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                    color: tokens.textSecondary,
                   ),
                 ),
               ],
@@ -1013,13 +1009,14 @@ class _ActivityFeedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : AppColors.cardLight,
+        color: tokens.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
         border: Border.all(
-          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+          color: tokens.divider,
         ),
       ),
       child: Column(
@@ -1046,15 +1043,12 @@ class _ActivityFeedCard extends StatelessWidget {
           ),
           const Divider(height: 24, indent: 16, endIndent: 16),
           if (activities.isEmpty && !isLoading)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               child: Center(
                 child: Text(
                   'No activity recorded for this account',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondaryLight,
-                  ),
+                  style: TextStyle(fontSize: 13, color: tokens.textSecondary),
                 ),
               ),
             )
@@ -1068,8 +1062,7 @@ class _ActivityFeedCard extends StatelessWidget {
               itemBuilder: (context, index) {
                 final item = activities[index];
                 final isPositive = item.isIncomeOrInflow;
-                final color =
-                    isPositive ? AppColors.success : AppColors.danger;
+                final color = isPositive ? tokens.success : tokens.danger;
                 final sign = isPositive ? '+' : '-';
 
                 IconData icon;
@@ -1101,9 +1094,7 @@ class _ActivityFeedCard extends StatelessWidget {
                     '${item.date}${item.note != null && item.note!.isNotEmpty ? ' • ${item.note}' : ''}',
                     style: TextStyle(
                       fontSize: 11,
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
+                      color: tokens.textSecondary,
                     ),
                   ),
                   trailing: Text(

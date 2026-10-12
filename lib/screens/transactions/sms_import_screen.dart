@@ -115,11 +115,12 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
   Widget build(BuildContext context) {
     final smsProvider = context.watch<SmsProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colors = AppColors.of(context);
 
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: isDark ? AppColors.darkScaffold : AppColors.scaffold,
+        backgroundColor: colors.background,
         appBar: AppBar(
           title: const Text("Smart SMS Transactions"),
           elevation: 0,
@@ -137,8 +138,6 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
               Tab(text: "New SMS"),
               Tab(text: "Archived"),
             ],
-            indicatorColor: AppColors.primary,
-            labelColor: AppColors.primary,
             labelStyle: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
@@ -166,31 +165,32 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
   // ── Privacy & Safety Banner ─────────────────────────────────────────────────
 
   Widget _buildPrivacyBanner(bool isDark) {
+    final colors = AppColors.of(context);
     return Container(
       margin: const EdgeInsets.all(AppDimensions.md),
       padding: const EdgeInsets.all(AppDimensions.md),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.08),
+        color: colors.primary.withValues(alpha: isDark ? 0.15 : 0.08),
         borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
         border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.25),
+          color: colors.primary.withValues(alpha: 0.25),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.security_rounded, color: AppColors.primary, size: 24),
+          Icon(Icons.security_rounded, color: colors.primary, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   "Privacy & Financial Safety",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
-                    color: AppColors.primary,
+                    color: colors.primary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -199,7 +199,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                   style: TextStyle(
                     fontSize: 11,
                     height: 1.35,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: colors.textSecondary,
                   ),
                 ),
               ],
@@ -213,6 +213,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
   // ── Tab 1: Smart Review Content ─────────────────────────────────────────────
 
   Widget _buildSmartReviewTab(BuildContext context, SmsProvider smsProvider, bool isDark) {
+    final colors = AppColors.of(context);
     if (smsProvider.isScanning || smsProvider.isLoadingDetected) {
       return Center(
         child: Column(
@@ -225,7 +226,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: isDark ? AppColors.textLight : AppColors.textDark,
+                color: colors.textPrimary,
               ),
             ),
           ],
@@ -247,7 +248,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.textLight : AppColors.textDark,
+                  color: colors.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -255,7 +256,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                 smsProvider.detectedErrorMessage!,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  color: colors.textSecondary,
                 ),
               ),
               const SizedBox(height: 20),
@@ -282,7 +283,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                 Icon(
                   Icons.task_alt_rounded,
                   size: 64,
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  color: colors.textSecondary,
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -290,7 +291,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.textLight : AppColors.textDark,
+                    color: colors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -298,7 +299,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                   "No detected transactions are currently awaiting review. Tap Rescan to scan new SMS messages.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: colors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -321,7 +322,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
         // Multi-select & Batch Actions Header
         Container(
           padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md, vertical: AppDimensions.sm),
-          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          color: colors.surface,
           child: Row(
             children: [
               Checkbox(
@@ -393,12 +394,13 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
     SmsProvider smsProvider,
     bool isDark,
   ) {
+    final colors = AppColors.of(context);
     final currencySymbol = context.watch<CurrencyProvider>().currencySymbol;
     final isSelected = smsProvider.selectedDetectedIds.contains(tx.id);
     final isIncomeType = ["income", "refund", "credit_card_repayment"].contains(tx.classification);
     final isNeedsReview = tx.confidence < 0.8 || tx.isAccountAmbiguous || tx.accountId == null;
 
-    final cardBg = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final cardBg = colors.surface;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: AppDimensions.sm, vertical: AppDimensions.xs),
@@ -408,8 +410,8 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
         borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
         side: BorderSide(
           color: isNeedsReview
-              ? AppColors.warning.withValues(alpha: 0.5)
-              : (isDark ? AppColors.dividerDark : AppColors.dividerLight),
+              ? colors.warning.withValues(alpha: 0.5)
+              : colors.divider,
         ),
       ),
       child: Padding(
@@ -439,7 +441,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                           "Raw: ${tx.merchantRaw}",
                           style: TextStyle(
                             fontSize: 11,
-                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            color: colors.textSecondary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -452,7 +454,9 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: isIncomeType ? AppColors.success : (isDark ? AppColors.textLight : AppColors.textDark),
+                    color: isIncomeType
+                        ? colors.success
+                        : colors.textPrimary,
                   ),
                 ),
               ],
@@ -468,7 +472,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                 // Classification badge
                 _buildBadge(
                   label: _formatClassification(tx.classification),
-                  color: isIncomeType ? AppColors.success : AppColors.primary,
+                  color: isIncomeType ? colors.success : colors.primary,
                   icon: isIncomeType ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
                 ),
 
@@ -476,26 +480,26 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                 if (tx.isAccountAmbiguous)
                   _buildBadge(
                     label: "Ambiguous (**${tx.maskedAccountHint ?? '----'})",
-                    color: AppColors.warning,
+                    color: colors.warning,
                     icon: Icons.warning_amber_rounded,
                   )
                 else if (tx.suggestedAccountName != null || tx.accountName != null)
                   _buildBadge(
                     label: tx.accountName ?? tx.suggestedAccountName!,
-                    color: AppColors.primary,
+                    color: colors.primary,
                     icon: Icons.account_balance_rounded,
                   )
                 else
                   _buildBadge(
                     label: "Select Account",
-                    color: AppColors.warning,
+                    color: colors.warning,
                     icon: Icons.help_outline_rounded,
                   ),
 
                 // Category suggestion badge
                 _buildBadge(
                   label: tx.categoryName ?? tx.suggestedCategoryName ?? "General",
-                  color: AppColors.secondary,
+                  color: colors.secondary,
                   icon: getCategoryIcon(tx.categoryName ?? tx.suggestedCategoryName ?? "General"),
                 ),
 
@@ -504,7 +508,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                   label: isNeedsReview
                       ? "Needs Review (${(tx.confidence * 100).toInt()}%)"
                       : "${(tx.confidence * 100).toInt()}% Match",
-                  color: isNeedsReview ? AppColors.warning : AppColors.success,
+                  color: isNeedsReview ? colors.warning : colors.success,
                   icon: isNeedsReview ? Icons.rate_review_outlined : Icons.verified_rounded,
                 ),
               ],
@@ -517,7 +521,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                 style: TextStyle(
                   fontSize: 11,
                   fontStyle: FontStyle.italic,
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  color: colors.textSecondary,
                 ),
               ),
             ],
@@ -534,7 +538,7 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
                   tx.transactionDate,
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: colors.textSecondary,
                   ),
                 ),
                 const Spacer(),

@@ -104,15 +104,15 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final tokens = AppColors.of(context);
 
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: isDark
-                ? [AppColors.darkScaffold, const Color(0xFF0D0E15)]
-                : [const Color(0xFFF1F5F9), AppColors.scaffold],
+            colors: tokens.isDark
+                ? [tokens.surface, tokens.background]
+                : [tokens.elevated, tokens.background],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -132,26 +132,24 @@ class _SplashScreenState extends State<SplashScreen> {
                       Container(
                         padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.surfaceDark : Colors.white,
+                          color: tokens.surface,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.15),
+                              color: tokens.primary.withValues(alpha: 0.15),
                               blurRadius: 32,
                               spreadRadius: 6,
                             ),
                           ],
                           border: Border.all(
-                            color: isDark
-                                ? AppColors.dividerDark
-                                : AppColors.dividerLight,
+                            color: tokens.divider,
                             width: 1.0,
                           ),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.account_balance_wallet_rounded,
                           size: 64,
-                          color: AppColors.primary,
+                          color: tokens.primary,
                         ),
                       ),
                       AppDimensions.hLG,
@@ -159,9 +157,7 @@ class _SplashScreenState extends State<SplashScreen> {
                         "Personal Finance",
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? AppColors.textLight
-                              : AppColors.textDark,
+                          color: tokens.textPrimary,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -169,9 +165,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       Text(
                         "Manage your money smarter",
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
+                          color: tokens.textSecondary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -185,15 +179,16 @@ class _SplashScreenState extends State<SplashScreen> {
                   child: Column(
                     children: [
                       if (!_showRetry) ...[
-                        const SizedBox(
+                        SizedBox(
                           width: 200,
                           child: ClipRRect(
-                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(10)),
                             child: LinearProgressIndicator(
                               minHeight: 4,
                               backgroundColor: Colors.transparent,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.primary,
+                                tokens.primary,
                               ),
                             ),
                           ),
@@ -202,10 +197,11 @@ class _SplashScreenState extends State<SplashScreen> {
                         OutlinedButton.icon(
                           onPressed: _verifySession,
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(
-                              color: AppColors.primary,
+                            side: BorderSide(
+                              color: tokens.primary,
                               width: 1.5,
                             ),
+                            foregroundColor: tokens.primary,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 20,
                               vertical: 12,
@@ -229,11 +225,7 @@ class _SplashScreenState extends State<SplashScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: isDark
-                                ? AppColors.textSecondaryDark.withValues(
-                                    alpha: 0.8,
-                                  )
-                                : AppColors.textSecondaryLight,
+                            color: tokens.textSecondary.withValues(alpha: 0.8),
                           ),
                         ),
                       ),

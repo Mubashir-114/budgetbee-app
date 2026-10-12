@@ -116,10 +116,11 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final tokens = AppColors.of(context);
 
     if (_isLoadingAccount) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator(color: tokens.primary)),
       );
     }
     if (_account == null) {
@@ -208,19 +209,17 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.danger.withValues(alpha: 0.1),
+                  color: tokens.danger.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_rounded,
-                        color: AppColors.danger, size: 18),
+                    Icon(Icons.error_rounded, color: tokens.danger, size: 18),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         _submitError!,
-                        style: const TextStyle(
-                            color: AppColors.danger, fontSize: 13),
+                        style: TextStyle(color: tokens.danger, fontSize: 13),
                       ),
                     ),
                   ],
@@ -235,7 +234,7 @@ class _EditAccountScreenState extends State<EditAccountScreen> {
               child: FilledButton(
                 onPressed: _isSubmitting ? null : _submit,
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: tokens.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: _isSubmitting
@@ -270,28 +269,26 @@ class _ImmutableSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppColors.of(context);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.warning.withValues(alpha: 0.08)
-            : AppColors.warning.withValues(alpha: 0.06),
+        color: tokens.warning.withValues(alpha: isDark ? 0.08 : 0.06),
         borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+        border: Border.all(color: tokens.warning.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.lock_rounded,
-                  size: 14, color: AppColors.warning),
+              Icon(Icons.lock_rounded, size: 14, color: tokens.warning),
               const SizedBox(width: 6),
               Text(
                 'Immutable Fields',
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.warning,
+                  color: tokens.warning,
                 ),
               ),
             ],
@@ -344,6 +341,7 @@ class _Row extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -352,9 +350,7 @@ class _Row extends StatelessWidget {
             '$label: ',
             style: TextStyle(
               fontSize: 12,
-              color: isDark
-                  ? AppColors.textSecondaryDark
-                  : AppColors.textSecondaryLight,
+              color: tokens.textSecondary,
             ),
           ),
           Text(

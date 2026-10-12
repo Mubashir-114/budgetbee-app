@@ -59,22 +59,28 @@ class _LoginScreenState extends State<LoginScreen> {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final short = MediaQuery.sizeOf(context).height < 700;
 
+    final tokens = AppColors.of(context);
+
     return Scaffold(
       body: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: AppColors.pageGradient(theme.brightness),
+          gradient: LinearGradient(
+            colors: [tokens.surface, tokens.background],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
         ),
         child: Stack(
           children: [
-            const Positioned(
+            Positioned(
               top: -90,
               right: -80,
-              child: _AmbientOrb(color: AppColors.primary),
+              child: _AmbientOrb(color: tokens.primary),
             ),
-            const Positioned(
+            Positioned(
               top: 220,
               left: -105,
-              child: _AmbientOrb(color: AppColors.secondary, size: 210),
+              child: _AmbientOrb(color: tokens.secondary, size: 210),
             ),
             SafeArea(
               child: Center(
@@ -117,9 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 'Welcome Back · Sign in to see the full picture.',
                                 textAlign: TextAlign.center,
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.brightness == Brightness.dark
-                                      ? AppColors.textSecondaryDark
-                                      : AppColors.textSecondaryLight,
+                                  color: tokens.textSecondary,
                                 ),
                               ),
                               SizedBox(height: short ? 18 : 25),
@@ -243,6 +247,7 @@ class _Wordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppColors.of(context);
     return Semantics(
       header: true,
       child: Row(
@@ -272,13 +277,13 @@ class _Wordmark extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: .14),
+              color: tokens.primary.withValues(alpha: .14),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Text(
+            child: Text(
               '2.0',
               style: TextStyle(
-                color: AppColors.primary,
+                color: tokens.primary,
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
               ),

@@ -20,8 +20,7 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final colors = AppColors.of(context);
 
     return Center(
       child: Padding(
@@ -33,24 +32,24 @@ class EmptyState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : Colors.white,
+                color: colors.surface,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.06),
+                    color: colors.primary.withValues(alpha: 0.08),
                     blurRadius: 16,
                     spreadRadius: 4,
                   ),
                 ],
                 border: Border.all(
-                  color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                  color: colors.divider,
                   width: 1.0,
                 ),
               ),
               child: Icon(
                 icon,
                 size: 40,
-                color: AppColors.primary,
+                color: colors.primary,
               ),
             ),
             AppDimensions.hLG,
@@ -60,7 +59,7 @@ class EmptyState extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.textLight : AppColors.textDark,
+                color: colors.textPrimary,
                 letterSpacing: -0.2,
               ),
             ),
@@ -72,7 +71,7 @@ class EmptyState extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  color: colors.textSecondary,
                 ),
               ),
             ),

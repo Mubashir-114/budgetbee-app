@@ -57,6 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   ) {
     final currentPeriod = provider.selectedPeriod;
     final customMonth = provider.selectedMonth;
+    final colors = AppColors.of(context);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -66,15 +67,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             label: const Text("Current Month"),
             selected: currentPeriod == "current_month" && customMonth == null,
             onSelected: (_) => provider.setPeriod("current_month"),
-            selectedColor: AppColors.primary.withValues(alpha: 0.18),
+            selectedColor: colors.primary.withValues(alpha: 0.18),
             labelStyle: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: currentPeriod == "current_month" && customMonth == null
-                  ? AppColors.primary
-                  : (isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight),
+                  ? colors.primary
+                  : colors.textSecondary,
             ),
           ),
           const SizedBox(width: 8),
@@ -82,15 +81,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             label: const Text("Previous Month"),
             selected: currentPeriod == "previous_month",
             onSelected: (_) => provider.setPeriod("previous_month"),
-            selectedColor: AppColors.primary.withValues(alpha: 0.18),
+            selectedColor: colors.primary.withValues(alpha: 0.18),
             labelStyle: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: currentPeriod == "previous_month"
-                  ? AppColors.primary
-                  : (isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight),
+                  ? colors.primary
+                  : colors.textSecondary,
             ),
           ),
           const SizedBox(width: 8),
@@ -99,16 +96,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             label: Text(customMonth ?? "Select Month"),
             onPressed: () => _selectCustomMonth(context, provider),
             backgroundColor: customMonth != null
-                ? AppColors.primary.withValues(alpha: 0.18)
-                : (isDark ? AppColors.surfaceDark : Colors.white),
+                ? colors.primary.withValues(alpha: 0.18)
+                : colors.surface,
             labelStyle: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: customMonth != null
-                  ? AppColors.primary
-                  : (isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight),
+                  ? colors.primary
+                  : colors.textSecondary,
             ),
           ),
         ],
@@ -124,13 +119,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final netWorth = overview?.netWorth ?? "0.00";
     final totalAssets = overview?.totalAssets ?? "0.00";
     final totalLiabilities = overview?.totalLiabilities ?? "0.00";
+    final colors = AppColors.of(context);
 
     return PremiumSummaryCard(
       animatedHighlight: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
@@ -139,7 +135,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   fontSize: 10,
                   letterSpacing: 1.55,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textSecondaryDark,
+                  color: colors.textSecondary,
                 ),
               ),
               DashboardGlowChip(label: "LEDGER ACCURATE"),
@@ -152,7 +148,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               fontSize: 34,
               fontWeight: FontWeight.w900,
               letterSpacing: -1.35,
-              color: isDark ? AppColors.textLight : AppColors.textDark,
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: 5),
@@ -160,9 +156,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             "Your position across every connected account",
             style: TextStyle(
               fontSize: 11,
-              color: isDark
-                  ? AppColors.textSecondaryDark
-                  : AppColors.textSecondaryLight,
+              color: colors.textSecondary,
             ),
           ),
           if (monthlySummaries.length > 1) ...[
@@ -173,12 +167,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Container(
             padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
-              color: (isDark ? Colors.white : AppColors.primary).withValues(
+              color: (isDark ? Colors.white : colors.primary).withValues(
                 alpha: .055,
               ),
               borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
               border: Border.all(
-                color: (isDark ? Colors.white : AppColors.primary).withValues(
+                color: (isDark ? Colors.white : colors.primary).withValues(
                   alpha: .08,
                 ),
               ),
@@ -197,8 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   width: 1,
                   height: 38,
                   color:
-                      (isDark ? AppColors.dividerDark : AppColors.dividerLight)
-                          .withValues(alpha: .7),
+                      colors.divider.withValues(alpha: .7),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -223,6 +216,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Color color,
     bool isDark,
   ) {
+    final colors = AppColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -240,9 +234,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 fontSize: 9,
                 letterSpacing: .8,
                 fontWeight: FontWeight.w700,
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
+                color: colors.textSecondary,
               ),
             ),
           ],
@@ -261,6 +253,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildHeroSparkline(List<MonthlySummary> summaries) {
+    final colors = AppColors.of(context);
     final values = summaries.take(8).toList().reversed.toList();
     final spots = <FlSpot>[];
     for (var index = 0; index < values.length; index++) {
@@ -283,7 +276,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 spots: spots,
                 isCurved: true,
                 curveSmoothness: .35,
-                color: AppColors.secondary,
+                color: colors.secondary,
                 barWidth: 2.4,
                 dotData: const FlDotData(show: false),
                 belowBarData: BarAreaData(
@@ -292,7 +285,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      AppColors.secondary.withValues(alpha: .2),
+                      colors.secondary.withValues(alpha: .2),
                       Colors.transparent,
                     ],
                   ),
@@ -530,6 +523,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final savingsMoM = overview?.savingsChangePercent ?? "0.0";
     final savingsRate = overview?.savingsRate ?? "0.0";
     final parsedRate = (double.tryParse(savingsRate) ?? 0) / 100;
+    final colors = AppColors.of(context);
 
     String trendLabel(String value) =>
         "${value.startsWith('-') || value.startsWith('+') ? '' : '+'}$value%";
@@ -550,7 +544,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 label: "Income",
                 amount: income,
                 icon: Icons.south_west_rounded,
-                accent: AppColors.success,
+                accent: colors.success,
                 trend: trendLabel(incomeMoM),
                 trendIsPositive: !incomeMoM.startsWith('-'),
               ),
@@ -561,7 +555,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 label: "Expenses",
                 amount: expenses,
                 icon: Icons.north_east_rounded,
-                accent: AppColors.danger,
+                accent: colors.danger,
                 trend: trendLabel(expenseMoM),
                 trendIsPositive: expenseMoM.startsWith('-'),
               ),
@@ -573,9 +567,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           label: "Net Savings (Cash Flow)",
           amount: savings,
           icon: Icons.auto_graph_rounded,
-          accent: savings.startsWith('-')
-              ? AppColors.danger
-              : AppColors.primary,
+          accent: savings.startsWith('-') ? colors.danger : colors.primary,
           trend: trendLabel(savingsMoM),
           trendIsPositive: !savingsMoM.startsWith('-'),
           trailing: Column(
@@ -587,9 +579,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     "Savings rate",
                     style: TextStyle(
                       fontSize: 10,
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
+                      color: colors.textSecondary,
                     ),
                   ),
                   Text(
@@ -605,11 +595,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               AnimatedProgressBar(
                 value: parsedRate,
                 color: savings.startsWith('-')
-                    ? AppColors.danger
-                    : AppColors.primary,
-                backgroundColor: isDark
-                    ? AppColors.dividerDark
-                    : AppColors.dividerLight,
+                    ? colors.danger
+                    : colors.primary,
+                backgroundColor: colors.divider,
                 height: 6,
                 semanticLabel: "Savings rate",
               ),
@@ -624,18 +612,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     List<CategorySummary> categories,
     bool isDark,
   ) {
+    final colors = AppColors.of(context);
     if (categories.isEmpty) {
-      return const PremiumEmptyStateCard(
+      return PremiumEmptyStateCard(
         icon: Icons.donut_large_rounded,
         title: "No expenses recorded for this period.",
         message:
             "Category insights will appear as soon as spending is recorded.",
-        accent: AppColors.gold,
+        accent: colors.secondary,
       );
     }
 
     return PremiumSummaryCard(
-      accent: AppColors.gold,
+      accent: colors.secondary,
       padding: const EdgeInsets.all(AppDimensions.md),
       child: Padding(
         padding: EdgeInsets.zero,
@@ -670,9 +659,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? AppColors.textLight
-                              : AppColors.textDark,
+                          color: colors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -680,9 +667,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         "$pct% of expenses",
                         style: TextStyle(
                           fontSize: 11,
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
+                          color: colors.textSecondary,
                         ),
                       ),
                     ],
@@ -708,6 +693,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     List<DashboardAccountItem> accounts,
     bool isDark,
   ) {
+    final colors = AppColors.of(context);
     if (accounts.isEmpty) {
       return PremiumEmptyStateCard(
         icon: Icons.account_balance_wallet_outlined,
@@ -716,7 +702,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             "Connect an account to bring your complete financial picture to life.",
         actionLabel: "Add Account",
         onAction: () => context.push('/accounts'),
-        accent: AppColors.secondary,
+        accent: colors.secondary,
       );
     }
 
@@ -729,7 +715,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         itemBuilder: (context, index) {
           final acc = accounts[index];
           final isCredit = acc.type == "credit_card";
-          final accentColor = isCredit ? AppColors.danger : AppColors.primary;
+          final accentColor = isCredit ? colors.danger : colors.primary;
 
           final utilization =
               (double.tryParse(acc.utilizationPercentage ?? '0') ?? 0) / 100;
@@ -742,7 +728,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 colors: isDark
                     ? [
                         accentColor.withValues(alpha: .12),
-                        AppColors.surfaceDark,
+                        colors.surface,
                       ]
                     : [accentColor.withValues(alpha: .07), Colors.white],
                 begin: Alignment.topLeft,
@@ -789,16 +775,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                     if (acc.isDefault)
-                      const Icon(
+                      Icon(
                         Icons.star_rounded,
                         size: 16,
                         color: AppColors.warning,
                       )
                     else if (acc.isArchived)
-                      const Icon(
+                      Icon(
                         Icons.archive_outlined,
                         size: 14,
-                        color: AppColors.textSecondaryLight,
+                        color: colors.textSecondary,
                       ),
                   ],
                 ),
@@ -809,9 +795,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       isCredit ? "Outstanding Debt" : "Ledger Balance",
                       style: TextStyle(
                         fontSize: 10,
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
+                        color: colors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -824,10 +808,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: isCredit
-                            ? AppColors.danger
-                            : (isDark
-                                  ? AppColors.textLight
-                                  : AppColors.textDark),
+                            ? colors.danger
+                            : colors.textPrimary,
                       ),
                     ),
                     if (isCredit && acc.utilizationPercentage != null) ...[
@@ -835,11 +817,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             "Utilization",
                             style: TextStyle(
                               fontSize: 9,
-                              color: AppColors.textSecondaryLight,
+                              color: colors.textSecondary,
                             ),
                           ),
                           Text(
@@ -856,9 +838,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       AnimatedProgressBar(
                         value: utilization,
                         color: accentColor,
-                        backgroundColor: isDark
-                            ? AppColors.dividerDark
-                            : AppColors.dividerLight,
+                        backgroundColor: colors.divider,
                         height: 4,
                         semanticLabel: "${acc.displayName} utilization",
                       ),
@@ -874,18 +854,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildMonthlyTrendChart(DashboardProvider provider, bool isDark) {
+    final colors = AppColors.of(context);
     final summaries = provider.monthlySummaries
         .take(6)
         .toList()
         .reversed
         .toList();
     if (summaries.isEmpty) {
-      return const SizedBox(
+      return SizedBox(
         height: 180,
         child: Center(
           child: Text(
             "No monthly summary data available.",
-            style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
+            style: TextStyle(color: colors.textSecondary, fontSize: 13),
           ),
         ),
       );
@@ -914,14 +895,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
               getTooltipColor: (_) =>
-                  isDark ? AppColors.cardDark : AppColors.surfaceLight,
+                  colors.elevated,
               getTooltipItems: (touchedSpots) {
                 return touchedSpots.map((spot) {
                   final String type = spot.barIndex == 0 ? "Income" : "Expense";
                   return LineTooltipItem(
                     "$type: ₹${spot.y.toStringAsFixed(2)}",
                     TextStyle(
-                      color: isDark ? AppColors.textLight : AppColors.textDark,
+                      color: colors.textPrimary,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -935,9 +916,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             drawVerticalLine: false,
             getDrawingHorizontalLine: (value) {
               return FlLine(
-                color: isDark
-                    ? AppColors.dividerDark.withValues(alpha: 0.4)
-                    : AppColors.dividerLight.withValues(alpha: 0.4),
+                color: colors.divider.withValues(alpha: 0.4),
                 strokeWidth: 1,
               );
             },
@@ -965,9 +944,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
+                          color: colors.textSecondary,
                         ),
                       ),
                     );
@@ -1009,6 +986,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildInsightsSection(List<FinancialInsight> insights, bool isDark) {
     if (insights.isEmpty) return const SizedBox.shrink();
+    final colors = AppColors.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1024,11 +1002,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         AppDimensions.hSM,
         Card(
           elevation: 0,
-          color: isDark ? AppColors.surfaceDark : Colors.white,
+          color: colors.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
             side: BorderSide(
-              color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+              color: colors.divider,
             ),
           ),
           child: Padding(
@@ -1058,7 +1036,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     break;
                   case 'credit_utilization':
                     icon = Icons.credit_card_rounded;
-                    iconColor = AppColors.primary;
+                    iconColor = colors.primary;
                     break;
                   default:
                     icon = Icons.insights_rounded;
@@ -1075,9 +1053,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         insight.message,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark
-                              ? AppColors.textLight
-                              : AppColors.textDark,
+                          color: colors.textPrimary,
                           height: 1.4,
                         ),
                       ),
@@ -1098,24 +1074,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final dashboardProvider = context.watch<DashboardProvider>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final colors = AppColors.of(context);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkScaffold : AppColors.scaffold,
+      backgroundColor: colors.background,
       appBar: AppBar(
         toolbarHeight: 65,
         title: Row(
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+              backgroundColor: colors.primary.withValues(alpha: 0.12),
               child: Text(
                 user?.name.isNotEmpty == true
                     ? user!.name[0].toUpperCase()
                     : "U",
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
-                  color: AppColors.primary,
+                  color: colors.primary,
                 ),
               ),
             ),
@@ -1128,16 +1105,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
-                    color: isDark ? AppColors.textLight : AppColors.textDark,
+                    color: colors.textPrimary,
                   ),
                 ),
                 Text(
                   "FinTrack Dashboard",
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                    color: colors.textSecondary,
                   ),
                 ),
               ],
@@ -1149,7 +1124,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             tooltip: 'Accounts & Wallets',
             icon: Icon(
               Icons.account_balance_rounded,
-              color: isDark ? AppColors.textLight : AppColors.textDark,
+              color: colors.textPrimary,
             ),
             onPressed: () => context.push('/accounts'),
           ),
@@ -1157,7 +1132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             tooltip: 'Refresh',
             icon: Icon(
               Icons.sync_rounded,
-              color: isDark ? AppColors.textLight : AppColors.textDark,
+              color: colors.textPrimary,
             ),
             onPressed: () => dashboardProvider.loadDashboardData(),
           ),
@@ -1287,7 +1262,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               label:
                                   "TOP · ${dashboardProvider.topMerchants[0].merchant.toUpperCase()}",
                               icon: Icons.local_fire_department_rounded,
-                              color: AppColors.gold,
+                              color: colors.secondary,
                             )
                           : null,
                     ),
@@ -1361,9 +1336,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             height: 1,
                             indent: 72,
                             endIndent: 16,
-                            color: isDark
-                                ? AppColors.dividerDark
-                                : AppColors.dividerLight,
+                              color: colors.divider,
                           ),
                           itemBuilder: (context, index) {
                             final tx =
@@ -1409,9 +1382,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 14,
-                                            color: isDark
-                                                ? AppColors.textLight
-                                                : AppColors.textDark,
+                                          color: colors.textPrimary,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -1421,9 +1392,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           "${tx.category} • $formattedDate",
                                           style: TextStyle(
                                             fontSize: 11,
-                                            color: isDark
-                                                ? AppColors.textSecondaryDark
-                                                : AppColors.textSecondaryLight,
+                                          color: colors.textSecondary,
                                           ),
                                         ),
                                       ],
@@ -1457,6 +1426,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildLegendItem(String label, Color color) {
+    final colors = AppColors.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1468,10 +1438,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: AppColors.textSecondaryLight,
+            color: colors.textSecondary,
           ),
         ),
       ],

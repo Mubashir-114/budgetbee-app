@@ -48,14 +48,13 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
     showDialog(
       context: context,
       builder: (ctx) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final tokens = AppColors.of(ctx);
         return AlertDialog(
           title: const Text(
             "Monthly Savings Target",
             style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.2),
           ),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +86,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                   Navigator.pop(ctx);
                   CustomToast.showSuccess(context, "Savings target cleared");
                 },
-                child: const Text("CLEAR", style: TextStyle(color: AppColors.danger)),
+                child: Text("CLEAR", style: TextStyle(color: tokens.danger)),
               ),
             ElevatedButton(
               onPressed: () {
@@ -142,15 +141,12 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
       builder: (ctx) {
         int tempMonth = provider.selectedMonth;
         int tempYear = provider.selectedYear;
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-
         return AlertDialog(
           title: const Text(
             "Select Month & Year",
             style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.2),
           ),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
           content: StatefulBuilder(
             builder: (context, setDialogState) {
               return Column(
@@ -159,7 +155,6 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                   DropdownButtonFormField<int>(
                     initialValue: tempMonth,
                     decoration: const InputDecoration(labelText: "Month"),
-                    dropdownColor: isDark ? AppColors.surfaceDark : Colors.white,
                     items: List.generate(12, (i) => i + 1)
                         .map((m) => DropdownMenuItem(
                               value: m,
@@ -174,7 +169,6 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                   DropdownButtonFormField<int>(
                     initialValue: tempYear,
                     decoration: const InputDecoration(labelText: "Year"),
-                    dropdownColor: isDark ? AppColors.surfaceDark : Colors.white,
                     items: List.generate(10, (i) => DateTime.now().year - 2 + i)
                         .map((y) => DropdownMenuItem(
                               value: y,
@@ -214,6 +208,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
     final currency = context.watch<CurrencyProvider>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final tokens = AppColors.of(context);
     final selectedMonthName =
         DateFormat('MMMM').format(DateTime(2026, provider.selectedMonth));
 
@@ -222,7 +217,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
     final alerts = provider.alerts;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkScaffold : AppColors.scaffold,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Budgets", style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
@@ -260,11 +255,11 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                   Card(
                     elevation: 0,
                     margin: const EdgeInsets.only(bottom: 12),
-                    color: isDark ? AppColors.surfaceDark : Colors.white,
+                    color: Theme.of(context).colorScheme.surface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
                       side: BorderSide(
-                        color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                        color: Theme.of(context).dividerColor,
                         width: 1.0,
                       ),
                     ),
@@ -277,7 +272,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                             children: [
                               Icon(
                                 Icons.date_range_rounded,
-                                color: AppColors.primary.withValues(alpha: 0.8),
+                                color: tokens.primary.withValues(alpha: 0.8),
                                 size: 20,
                               ),
                               AppDimensions.wSM,
@@ -286,7 +281,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
-                                  color: isDark ? AppColors.textLight : AppColors.textDark,
+                                  color: tokens.textPrimary,
                                 ),
                               ),
                             ],
@@ -360,8 +355,8 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddEditDialog(),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: tokens.primary,
+        foregroundColor: tokens.isDark ? const Color(0xFF0B111A) : Colors.white,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusLG)),
         icon: const Icon(Icons.add_rounded, size: 24),
@@ -377,6 +372,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
     bool isDark,
     CurrencyProvider currency,
   ) {
+    final tokens = AppColors.of(context);
     final limitNum = double.tryParse(overall.budgetLimit) ?? 0.0;
     final spentNum = double.tryParse(overall.actualSpending) ?? 0.0;
     final remainingNum = double.tryParse(overall.remainingAmount) ?? 0.0;
@@ -385,27 +381,27 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
 
     final progressVal = limitNum > 0 ? (spentNum / limitNum).clamp(0.0, 1.0) : 0.0;
 
-    Color statusColor = AppColors.success;
+    Color statusColor = tokens.success;
     String statusLabel = "ON TRACK";
     if (isExceeded) {
-      statusColor = AppColors.danger;
+      statusColor = tokens.danger;
       statusLabel = "EXCEEDED";
     } else if (isApproaching) {
-      statusColor = AppColors.warning;
+      statusColor = tokens.warning;
       statusLabel = "APPROACHING LIMIT";
     }
 
     return Card(
       elevation: 0,
-      color: isDark ? AppColors.surfaceDark : Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
         side: BorderSide(
           color: isExceeded
-              ? AppColors.danger.withValues(alpha: 0.5)
+              ? tokens.danger.withValues(alpha: 0.5)
               : (isApproaching
-                  ? AppColors.warning.withValues(alpha: 0.5)
-                  : (isDark ? AppColors.dividerDark : AppColors.dividerLight)),
+                  ? tokens.warning.withValues(alpha: 0.5)
+                  : (Theme.of(context).dividerColor)),
           width: isExceeded || isApproaching ? 1.5 : 1.0,
         ),
       ),
@@ -442,7 +438,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
             const SizedBox(height: 12),
             AnimatedProgressBar(
               value: progressVal,
-              backgroundColor: isDark ? AppColors.dividerDark : Colors.grey.shade200,
+              backgroundColor: Theme.of(context).dividerColor,
               color: statusColor,
               height: 10,
               semanticLabel: 'Overall budget used',
@@ -459,7 +455,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        color: isExceeded ? AppColors.danger : (isDark ? AppColors.textLight : AppColors.textDark),
+                        color: isExceeded ? tokens.danger : (tokens.textPrimary),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -469,7 +465,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                           : "Over: ${currency.format(remainingNum.abs())}",
                       style: TextStyle(
                         fontSize: 12,
-                        color: remainingNum >= 0 ? AppColors.success : AppColors.danger,
+                        color: remainingNum >= 0 ? tokens.success : tokens.danger,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -487,7 +483,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                       "${overall.utilizationPercentage}% used",
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: tokens.textSecondary,
                       ),
                     ),
                   ],
@@ -510,6 +506,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
   }
 
   Widget _buildStatColumn(String label, String value, bool isDark) {
+    final tokens = AppColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -517,7 +514,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
           label,
           style: TextStyle(
             fontSize: 11,
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            color: tokens.textSecondary,
           ),
         ),
         const SizedBox(height: 2),
@@ -530,6 +527,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
   }
 
   Widget _buildAlertsBanner(BuildContext context, BudgetAlertsResponseModel alerts, bool isDark) {
+    final tokens = AppColors.of(context);
     final alertItems = [...alerts.exceeded, ...alerts.approachingLimit];
     if (alertItems.isEmpty && alerts.overallAlert == null) {
       return const SizedBox.shrink();
@@ -538,14 +536,14 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
     return Card(
       elevation: 0,
       color: alerts.exceeded.isNotEmpty
-          ? AppColors.danger.withValues(alpha: 0.08)
-          : AppColors.warning.withValues(alpha: 0.08),
+          ? tokens.danger.withValues(alpha: 0.08)
+          : tokens.warning.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
         side: BorderSide(
           color: alerts.exceeded.isNotEmpty
-              ? AppColors.danger.withValues(alpha: 0.3)
-              : AppColors.warning.withValues(alpha: 0.3),
+              ? tokens.danger.withValues(alpha: 0.3)
+              : tokens.warning.withValues(alpha: 0.3),
         ),
       ),
       child: Padding(
@@ -560,7 +558,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                       ? Icons.warning_rounded
                       : Icons.info_outline_rounded,
                   size: 18,
-                  color: alerts.exceeded.isNotEmpty ? AppColors.danger : AppColors.warning,
+                  color: alerts.exceeded.isNotEmpty ? tokens.danger : tokens.warning,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -568,7 +566,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
-                    color: alerts.exceeded.isNotEmpty ? AppColors.danger : AppColors.warning,
+                    color: alerts.exceeded.isNotEmpty ? tokens.danger : tokens.warning,
                   ),
                 ),
               ],
@@ -602,17 +600,18 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
     bool isDark,
     CurrencyProvider currency,
   ) {
+    final tokens = AppColors.of(context);
     final incomeNum = double.tryParse(savings.totalIncome) ?? 0.0;
     final netSavingsNum = double.tryParse(savings.netSavings) ?? 0.0;
     final targetNum = double.tryParse(savings.savingsTarget ?? '') ?? 0.0;
 
     return Card(
       elevation: 0,
-      color: isDark ? AppColors.surfaceDark : Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
         side: BorderSide(
-          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+          color: Theme.of(context).dividerColor,
           width: 1.0,
         ),
       ),
@@ -626,7 +625,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.savings_outlined, size: 20, color: AppColors.primary),
+                    Icon(Icons.savings_outlined, size: 20, color: tokens.primary),
                     const SizedBox(width: 8),
                     const Text(
                       "Net Savings Progress",
@@ -650,7 +649,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: netSavingsNum >= 0 ? AppColors.success : AppColors.danger,
+                    color: netSavingsNum >= 0 ? tokens.success : tokens.danger,
                   ),
                 ),
                 if (targetNum > 0)
@@ -658,7 +657,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                     "Target: ${currency.format(targetNum)}",
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: tokens.textSecondary,
                     ),
                   )
                 else
@@ -666,7 +665,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                     "Income: ${currency.format(incomeNum)}",
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: tokens.textSecondary,
                     ),
                   ),
               ],
@@ -675,8 +674,8 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
               const SizedBox(height: 8),
               AnimatedProgressBar(
                 value: (netSavingsNum / targetNum).clamp(0.0, 1.0),
-                backgroundColor: isDark ? AppColors.dividerDark : Colors.grey.shade200,
-                color: savings.isTargetAchieved ? AppColors.success : AppColors.primary,
+                backgroundColor: Theme.of(context).dividerColor,
+                color: savings.isTargetAchieved ? tokens.success : tokens.primary,
                 height: 7,
                 semanticLabel: 'Savings target achieved',
               ),
@@ -685,7 +684,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                 "${savings.progressPercentage ?? '0.0'}% achieved",
                 style: TextStyle(
                   fontSize: 11,
-                  color: savings.isTargetAchieved ? AppColors.success : AppColors.primary,
+                  color: savings.isTargetAchieved ? tokens.success : tokens.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -702,6 +701,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
     bool isDark,
     CurrencyProvider currency,
   ) {
+    final tokens = AppColors.of(context);
     final limitNum = double.tryParse(b.budgetLimit) ?? 0.0;
     final spentNum = double.tryParse(b.actualSpending) ?? 0.0;
     final remainingNum = double.tryParse(b.remainingAmount) ?? 0.0;
@@ -710,25 +710,25 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
 
     final progress = limitNum <= 0 ? 0.0 : (spentNum / limitNum).clamp(0.0, 1.0);
 
-    Color color = AppColors.primary;
+    Color color = tokens.primary;
     if (isOver) {
-      color = AppColors.danger;
+      color = tokens.danger;
     } else if (isApproaching) {
-      color = AppColors.warning;
+      color = tokens.warning;
     }
 
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 12),
-      color: isDark ? AppColors.surfaceDark : Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
         side: BorderSide(
           color: isOver
-              ? AppColors.danger.withValues(alpha: 0.4)
+              ? tokens.danger.withValues(alpha: 0.4)
               : (isApproaching
-                  ? AppColors.warning.withValues(alpha: 0.4)
-                  : (isDark ? AppColors.dividerDark : AppColors.dividerLight)),
+                  ? tokens.warning.withValues(alpha: 0.4)
+                  : (Theme.of(context).dividerColor)),
           width: isOver || isApproaching ? 1.5 : 1.0,
         ),
       ),
@@ -750,13 +750,13 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.danger.withValues(alpha: 0.12),
+                          color: tokens.danger.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(AppDimensions.radiusXS),
                         ),
-                        child: const Text(
+                        child: Text(
                           "OVER BUDGET",
                           style: TextStyle(
-                            color: AppColors.danger,
+                            color: tokens.danger,
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.5,
@@ -767,13 +767,13 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.warning.withValues(alpha: 0.12),
+                          color: tokens.warning.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(AppDimensions.radiusXS),
                         ),
-                        child: const Text(
+                        child: Text(
                           "80%+ USED",
                           style: TextStyle(
-                            color: AppColors.warning,
+                            color: tokens.warning,
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.5,
@@ -782,10 +782,8 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                       ),
                     const SizedBox(width: 4),
                     PopupMenuButton<String>(
-                      iconColor: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
-                      color: isDark ? AppColors.surfaceDark : Colors.white,
+                      iconColor: tokens.textSecondary,
+                      color: Theme.of(context).colorScheme.surface,
                       onSelected: (action) {
                         if (action == 'edit') {
                           _showAddEditDialog(b);
@@ -802,13 +800,13 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                             contentPadding: EdgeInsets.zero,
                           ),
                         ),
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'delete',
                           child: ListTile(
                             leading: Icon(Icons.delete_outline_rounded,
-                                color: AppColors.danger, size: 20),
+                                color: tokens.danger, size: 20),
                             title: Text('Delete',
-                                style: TextStyle(color: AppColors.danger, fontSize: 14)),
+                                style: TextStyle(color: tokens.danger, fontSize: 14)),
                             contentPadding: EdgeInsets.zero,
                           ),
                         ),
@@ -821,7 +819,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
             const SizedBox(height: 8),
             AnimatedProgressBar(
               value: progress,
-              backgroundColor: isDark ? AppColors.dividerDark : Colors.grey.shade100,
+              backgroundColor: Theme.of(context).dividerColor,
               color: color,
               height: 7,
               semanticLabel: '${b.category} budget used',
@@ -834,11 +832,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                   "Spent: ${currency.format(spentNum)}",
                   style: TextStyle(
                     fontSize: 12,
-                    color: isOver
-                        ? AppColors.danger
-                        : (isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight),
+                    color: isOver ? tokens.danger : tokens.textSecondary,
                     fontWeight: isOver ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
@@ -847,7 +841,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.textLight : AppColors.textDark,
+                    color: tokens.textPrimary,
                   ),
                 ),
               ],
@@ -861,7 +855,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                       ? "Remaining: ${currency.format(remainingNum)}"
                       : "Over by: ${currency.format(remainingNum.abs())}",
                   style: TextStyle(
-                    color: remainingNum >= 0 ? AppColors.success : AppColors.danger,
+                    color: remainingNum >= 0 ? tokens.success : tokens.danger,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -870,9 +864,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                   "${b.utilizationPercentage}% (${b.projectedSpending} proj)",
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                    color: tokens.textSecondary,
                   ),
                 ),
               ],
@@ -908,7 +900,7 @@ class _BudgetsListScreenState extends State<BudgetsListScreen> {
                     context, provider.errorMessage ?? "Failed to delete budget");
               }
             },
-            child: const Text("DELETE", style: TextStyle(color: AppColors.danger)),
+            child: Builder(builder: (ctx2) => Text("DELETE", style: TextStyle(color: AppColors.of(ctx2).danger))),
           ),
         ],
       ),
@@ -926,7 +918,7 @@ class SmartSuggestionsBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BudgetProvider>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tokens = AppColors.of(context);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.65,
@@ -937,7 +929,7 @@ class SmartSuggestionsBottomSheet extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -989,9 +981,7 @@ class SmartSuggestionsBottomSheet extends StatelessWidget {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   side: BorderSide(
-                                    color: isDark
-                                        ? AppColors.dividerDark
-                                        : AppColors.dividerLight,
+                                    color: tokens.divider,
                                   ),
                                 ),
                                 child: Padding(
@@ -1013,7 +1003,7 @@ class SmartSuggestionsBottomSheet extends StatelessWidget {
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
-                                              color: AppColors.primary,
+                                              color: tokens.primary,
                                             ),
                                           ),
                                         ],
@@ -1034,10 +1024,10 @@ class SmartSuggestionsBottomSheet extends StatelessWidget {
                                               fontSize: 11,
                                               fontWeight: FontWeight.bold,
                                               color: s.estimates.trend == "increasing"
-                                                  ? AppColors.danger
+                                                  ? tokens.danger
                                                   : (s.estimates.trend == "decreasing"
-                                                      ? AppColors.success
-                                                      : Colors.grey),
+                                                      ? tokens.success
+                                                      : Theme.of(context).disabledColor),
                                             ),
                                           ),
                                           ElevatedButton(
@@ -1112,7 +1102,7 @@ class BudgetHistoryBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<BudgetProvider>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tokens = AppColors.of(context);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.65,
@@ -1123,7 +1113,7 @@ class BudgetHistoryBottomSheet extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -1178,9 +1168,7 @@ class BudgetHistoryBottomSheet extends StatelessWidget {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                   side: BorderSide(
-                                    color: isDark
-                                        ? AppColors.dividerDark
-                                        : AppColors.dividerLight,
+                                    color: tokens.divider,
                                   ),
                                 ),
                                 child: Padding(
@@ -1216,11 +1204,7 @@ class BudgetHistoryBottomSheet extends StatelessWidget {
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.bold,
-                                              color: isOver
-                                                  ? AppColors.danger
-                                                  : (isDark
-                                                      ? AppColors.textLight
-                                                      : AppColors.textDark),
+                                              color: isOver ? tokens.danger : tokens.textPrimary,
                                             ),
                                           ),
                                           const SizedBox(height: 2),
@@ -1229,8 +1213,8 @@ class BudgetHistoryBottomSheet extends StatelessWidget {
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: isOver
-                                                  ? AppColors.danger
-                                                  : AppColors.success,
+                                                  ? tokens.danger
+                                                  : tokens.success,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -1344,7 +1328,7 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
     final provider = context.watch<BudgetProvider>();
     final currencyProvider = context.watch<CurrencyProvider>();
     final expenseCategories = CategoryModel.getExpenseCategories();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tokens = AppColors.of(context);
 
     return AlertDialog(
       title: Text(
@@ -1352,7 +1336,7 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
         style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: -0.2),
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       content: SizedBox(
         width: 320,
         child: Form(
@@ -1363,7 +1347,7 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
               DropdownButtonFormField<int>(
                 initialValue: _selectedCategoryId,
                 decoration: const InputDecoration(labelText: "Expense Category"),
-                dropdownColor: isDark ? AppColors.surfaceDark : Colors.white,
+                dropdownColor: Theme.of(context).colorScheme.surface,
                 items: expenseCategories
                     .map((c) => DropdownMenuItem(
                           value: c.id,
@@ -1406,9 +1390,7 @@ class _AddEditBudgetDialogState extends State<AddEditBudgetDialog> {
                 child: Text(
                   "${DateFormat('MMMM').format(DateTime(2026, _selectedMonth))} $_selectedYear",
                   style: TextStyle(
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight),
+                      color: tokens.textSecondary),
                 ),
               ),
             ],

@@ -12,13 +12,13 @@ class PremiumSummaryCard extends StatefulWidget {
   const PremiumSummaryCard({
     super.key,
     required this.child,
-    this.accent = AppColors.primary,
+    this.accent,
     this.padding = const EdgeInsets.all(20),
     this.animatedHighlight = false,
   });
 
   final Widget child;
-  final Color accent;
+  final Color? accent;
   final EdgeInsetsGeometry padding;
   final bool animatedHighlight;
 
@@ -56,6 +56,8 @@ class _PremiumSummaryCardState extends State<PremiumSummaryCard>
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final colors = AppColors.of(context);
+    final accent = widget.accent ?? colors.primary;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -66,7 +68,7 @@ class _PremiumSummaryCardState extends State<PremiumSummaryCard>
             borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
             boxShadow: [
               BoxShadow(
-                color: widget.accent.withValues(alpha: dark ? .13 : .1),
+                color: accent.withValues(alpha: dark ? .13 : .1),
                 blurRadius: 30,
                 offset: const Offset(0, 14),
               ),
@@ -77,7 +79,7 @@ class _PremiumSummaryCardState extends State<PremiumSummaryCard>
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: dark
-                    ? AppColors.midnightGradient
+                    ? colors.midnightGradient
                     : const LinearGradient(
                         colors: [Color(0xFFFFFFFF), Color(0xFFFBF8F1)],
                         begin: Alignment.topLeft,
@@ -85,7 +87,7 @@ class _PremiumSummaryCardState extends State<PremiumSummaryCard>
                       ),
                 borderRadius: BorderRadius.circular(AppDimensions.radiusXL),
                 border: Border.all(
-                  color: widget.accent.withValues(alpha: dark ? .36 : .24),
+                  color: accent.withValues(alpha: dark ? .36 : .24),
                 ),
               ),
               child: Stack(
@@ -95,7 +97,7 @@ class _PremiumSummaryCardState extends State<PremiumSummaryCard>
                     right: -65,
                     child: _GlowOrb(
                       size: 210,
-                      color: widget.accent.withValues(alpha: dark ? .18 : .1),
+                      color: accent.withValues(alpha: dark ? .18 : .1),
                     ),
                   ),
                   Positioned(
@@ -103,7 +105,7 @@ class _PremiumSummaryCardState extends State<PremiumSummaryCard>
                     bottom: -105,
                     child: _GlowOrb(
                       size: 190,
-                      color: AppColors.secondary.withValues(
+                      color: colors.secondary.withValues(
                         alpha: dark ? .12 : .08,
                       ),
                     ),
@@ -173,6 +175,7 @@ class _PremiumMetricCardState extends State<PremiumMetricCard> {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final colors = AppColors.of(context);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return Semantics(
       container: true,
@@ -192,7 +195,7 @@ class _PremiumMetricCardState extends State<PremiumMetricCard> {
                 colors: dark
                     ? [
                         widget.accent.withValues(alpha: .13),
-                        AppColors.surfaceDark,
+                        colors.surface,
                       ]
                     : [widget.accent.withValues(alpha: .09), Colors.white],
                 begin: Alignment.topLeft,
@@ -239,9 +242,7 @@ class _PremiumMetricCardState extends State<PremiumMetricCard> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: dark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                    color: colors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -286,9 +287,7 @@ class PremiumSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final muted = Theme.of(context).brightness == Brightness.dark
-        ? AppColors.textSecondaryDark
-        : AppColors.textSecondaryLight;
+    final muted = AppColors.of(context).textSecondary;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -336,7 +335,7 @@ class PremiumEmptyStateCard extends StatelessWidget {
     required this.message,
     this.actionLabel,
     this.onAction,
-    this.accent = AppColors.primary,
+    this.accent,
   });
 
   final IconData icon;
@@ -344,21 +343,21 @@ class PremiumEmptyStateCard extends StatelessWidget {
   final String message;
   final String? actionLabel;
   final VoidCallback? onAction;
-  final Color accent;
+  final Color? accent;
 
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final muted = dark
-        ? AppColors.textSecondaryDark
-        : AppColors.textSecondaryLight;
+    final colors = AppColors.of(context);
+    final accent = this.accent ?? colors.primary;
+    final muted = colors.textSecondary;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: dark
-              ? [accent.withValues(alpha: .1), AppColors.surfaceDark]
+              ? [accent.withValues(alpha: .1), colors.surface]
               : [accent.withValues(alpha: .07), Colors.white],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -476,15 +475,16 @@ class DashboardGlowChip extends StatelessWidget {
     super.key,
     required this.label,
     this.icon = Icons.verified_rounded,
-    this.color = AppColors.secondary,
+    this.color,
   });
 
   final String label;
   final IconData icon;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final color = this.color ?? AppColors.of(context).secondary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
@@ -519,22 +519,24 @@ class DashboardSkeletonCard extends StatelessWidget {
   const DashboardSkeletonCard({
     super.key,
     this.height = 120,
-    this.accent = AppColors.primary,
+    this.accent,
   });
 
   final double height;
-  final Color accent;
+  final Color? accent;
 
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final colors = AppColors.of(context);
+    final accent = this.accent ?? colors.primary;
     return Container(
       height: height,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: dark
-              ? [accent.withValues(alpha: .08), AppColors.surfaceDark]
+              ? [accent.withValues(alpha: .08), colors.surface]
               : [accent.withValues(alpha: .05), Colors.white],
         ),
         borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
@@ -612,7 +614,8 @@ class _TrendPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = positive ? AppColors.success : AppColors.danger;
+    final colors = AppColors.of(context);
+    final color = positive ? colors.success : colors.danger;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(

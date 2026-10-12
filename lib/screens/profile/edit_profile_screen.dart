@@ -92,8 +92,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final colors = AppColors.of(context);
 
     final user = context.watch<AuthProvider>().currentUser;
     final initials = (user?.name.isNotEmpty ?? false)
@@ -101,7 +100,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         : 'U';
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkScaffold : AppColors.scaffold,
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text(
           "Edit Profile",
@@ -130,19 +129,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     height: 72,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isDark ? AppColors.surfaceDark : Colors.white,
+                      color: colors.surface,
                       border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.35),
+                        color: colors.primary.withValues(alpha: 0.35),
                         width: 2,
                       ),
                     ),
                     child: Center(
                       child: Text(
                         initials,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
+                          color: colors.primary,
                         ),
                       ),
                     ),
@@ -155,9 +154,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
+                      color: colors.textSecondary,
                     ),
                   ),
                 ),
@@ -206,9 +203,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.4,
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
+                      color: colors.textSecondary,
                     ),
                   ),
                 ),

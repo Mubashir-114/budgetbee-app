@@ -32,27 +32,24 @@ class SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final colors = AppColors.of(context);
 
     final effectiveIconColor = isDestructive
-        ? AppColors.danger
-        : (iconColor ?? AppColors.primary);
+        ? colors.danger
+        : (iconColor ?? colors.primary);
 
     final effectiveIconBg = iconBackgroundColor ??
         (isDestructive
-            ? AppColors.danger.withValues(alpha: 0.12)
-            : AppColors.primary.withValues(alpha: isDark ? 0.14 : 0.10));
+            ? colors.danger.withValues(alpha: 0.12)
+            : colors.primary.withValues(alpha: isDark ? 0.14 : 0.10));
 
     final titleColor = isDestructive
-        ? AppColors.danger
-        : (isDark ? AppColors.textLight : AppColors.textDark);
+        ? colors.danger
+        : colors.textPrimary;
 
-    final subtitleColor = isDark
-        ? AppColors.textSecondaryDark
-        : AppColors.textSecondaryLight;
+    final subtitleColor = colors.textSecondary;
 
-    final dividerColor = isDark
-        ? AppColors.dividerDark.withValues(alpha: 0.6)
-        : AppColors.dividerLight.withValues(alpha: 0.8);
+    final dividerColor = colors.divider.withValues(alpha: isDark ? 0.6 : 0.8);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -117,9 +114,9 @@ class SettingsTile extends StatelessWidget {
                     Icon(
                       Icons.chevron_right_rounded,
                       size: 20,
-                      color: isDark
-                          ? AppColors.textSecondaryDark.withValues(alpha: 0.7)
-                          : AppColors.textSecondaryLight.withValues(alpha: 0.8),
+                      color: colors.textSecondary.withValues(
+                        alpha: isDark ? 0.7 : 0.8,
+                      ),
                     ),
                 ],
               ),

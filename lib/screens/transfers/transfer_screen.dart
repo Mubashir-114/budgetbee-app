@@ -40,20 +40,21 @@ class _TransferScreenState extends State<TransferScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final tokens = AppColors.of(context);
     if (_sourceAccountId == null || _destinationAccountId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select both source and destination accounts'),
-          backgroundColor: AppColors.danger,
+        SnackBar(
+          content: const Text('Please select both source and destination accounts'),
+          backgroundColor: tokens.danger,
         ),
       );
       return;
     }
     if (_sourceAccountId == _destinationAccountId) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Source and destination accounts must be different'),
-          backgroundColor: AppColors.danger,
+        SnackBar(
+          content: const Text('Source and destination accounts must be different'),
+          backgroundColor: tokens.danger,
         ),
       );
       return;
@@ -78,11 +79,12 @@ class _TransferScreenState extends State<TransferScreen> {
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
+    final tokensAfter = AppColors.of(context);
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Transfer completed successfully'),
-          backgroundColor: AppColors.success,
+        SnackBar(
+          content: const Text('Transfer completed successfully'),
+          backgroundColor: tokensAfter.success,
         ),
       );
       context.pop(true);
@@ -90,7 +92,7 @@ class _TransferScreenState extends State<TransferScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(provider.actionError ?? 'Transfer failed'),
-          backgroundColor: AppColors.danger,
+          backgroundColor: tokensAfter.danger,
         ),
       );
     }
@@ -99,6 +101,7 @@ class _TransferScreenState extends State<TransferScreen> {
   @override
   Widget build(BuildContext context) {
     final accounts = context.watch<AccountProvider>().accounts.where((a) => a.isActive).toList();
+    final tokens = AppColors.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -220,16 +223,23 @@ class _TransferScreenState extends State<TransferScreen> {
               // Submit button
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  backgroundColor: tokens.primary,
+                  foregroundColor: tokens.isDark
+                      ? const Color(0xFF0B111A)
+                      : Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 onPressed: _isSubmitting ? null : _submit,
                 icon: _isSubmitting
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: tokens.isDark
+                              ? const Color(0xFF0B111A)
+                              : Colors.white,
+                        ),
                       )
                     : const Icon(Icons.swap_horiz_rounded),
                 label: Text(_isSubmitting ? 'Transferring...' : 'Transfer Funds'),

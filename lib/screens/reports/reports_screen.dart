@@ -114,6 +114,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   }
 
   Widget _buildOverviewTab(ReportProvider provider, bool isDark) {
+    final colors = AppColors.of(context);
     final summary = provider.summary;
     if (summary == null) {
       return const EmptyState(
@@ -141,25 +142,25 @@ class _ReportsScreenState extends State<ReportsScreen>
               _buildStatCard(
                 "Total Income",
                 summary.totalIncome,
-                AppColors.success,
+                colors.success,
                 isDark,
               ),
               _buildStatCard(
                 "Total Expense",
                 summary.totalExpense,
-                AppColors.danger,
+                colors.danger,
                 isDark,
               ),
               _buildStatCard(
                 "Net Savings",
                 summary.netBalance,
-                AppColors.info,
+                colors.info,
                 isDark,
               ),
               _buildStatCard(
                 "Savings Rate",
                 summary.savingsRate,
-                AppColors.warning,
+                colors.warning,
                 isDark,
                 isPercent: true,
               ),
@@ -177,11 +178,11 @@ class _ReportsScreenState extends State<ReportsScreen>
           const SizedBox(height: 10),
           Card(
             elevation: 0,
-            color: isDark ? AppColors.surfaceDark : Colors.white,
+            color: colors.surface,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
               side: BorderSide(
-                color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                color: colors.divider,
               ),
             ),
             child: Padding(
@@ -201,13 +202,14 @@ class _ReportsScreenState extends State<ReportsScreen>
     bool isDark, {
     bool isPercent = false,
   }) {
+    final colors = AppColors.of(context);
     return Card(
       elevation: 0,
-      color: isDark ? AppColors.surfaceDark : Colors.white,
+      color: colors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
         side: BorderSide(
-          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+          color: colors.divider,
         ),
       ),
       child: Padding(
@@ -218,9 +220,9 @@ class _ReportsScreenState extends State<ReportsScreen>
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textSecondaryLight,
+                color: colors.textSecondary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -243,14 +245,15 @@ class _ReportsScreenState extends State<ReportsScreen>
   }
 
   Widget _buildTrendsChart(ReportProvider provider, bool isDark) {
+    final colors = AppColors.of(context);
     final trends = provider.trendsReports;
     if (trends.isEmpty) {
-      return const SizedBox(
+      return SizedBox(
         height: 180,
         child: Center(
           child: Text(
             "No trend metrics to plot",
-            style: TextStyle(color: AppColors.textSecondaryLight),
+            style: TextStyle(color: colors.textSecondary),
           ),
         ),
       );
@@ -271,13 +274,13 @@ class _ReportsScreenState extends State<ReportsScreen>
           barTouchData: BarTouchData(
             touchTooltipData: BarTouchTooltipData(
               getTooltipColor: (_) =>
-                  isDark ? AppColors.cardDark : AppColors.surfaceLight,
+                  colors.elevated,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 final String type = rodIndex == 0 ? "Income" : "Expense";
                 return BarTooltipItem(
                   "$type: ${context.read<CurrencyProvider>().format(rod.toY)}",
                   TextStyle(
-                    color: isDark ? AppColors.textLight : AppColors.textDark,
+                    color: colors.textPrimary,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
@@ -300,9 +303,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
+                          color: colors.textSecondary,
                         ),
                       ),
                     );
@@ -330,13 +331,13 @@ class _ReportsScreenState extends State<ReportsScreen>
               barRods: [
                 BarChartRodData(
                   toY: trend.income,
-                  color: AppColors.success,
+                  color: colors.success,
                   width: 7,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 BarChartRodData(
                   toY: trend.expense,
-                  color: AppColors.danger,
+                  color: colors.danger,
                   width: 7,
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -349,6 +350,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   }
 
   Widget _buildCategoryTab(ReportProvider provider, bool isDark) {
+    final themeColors = AppColors.of(context);
     final reports = provider.categoryReports;
     if (reports.isEmpty) {
       return const EmptyState(
@@ -364,11 +366,11 @@ class _ReportsScreenState extends State<ReportsScreen>
     );
     final List<PieChartSectionData> sections = [];
     final colors = [
-      AppColors.primary,
-      AppColors.secondary,
-      AppColors.success,
-      AppColors.warning,
-      AppColors.info,
+      themeColors.primary,
+      themeColors.secondary,
+      themeColors.success,
+      themeColors.warning,
+      themeColors.info,
       Colors.pink.shade400,
       Colors.teal.shade400,
       Colors.indigo.shade400,
@@ -414,13 +416,11 @@ class _ReportsScreenState extends State<ReportsScreen>
           if (sections.isNotEmpty)
             Card(
               elevation: 0,
-              color: isDark ? AppColors.surfaceDark : Colors.white,
+              color: themeColors.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
                 side: BorderSide(
-                  color: isDark
-                      ? AppColors.dividerDark
-                      : AppColors.dividerLight,
+                  color: themeColors.divider,
                 ),
               ),
               child: Padding(
@@ -469,9 +469,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
-                                      color: isDark
-                                          ? AppColors.textLight
-                                          : AppColors.textDark,
+                                      color: themeColors.textPrimary,
                                     ),
                                   ),
                                 ),
@@ -488,22 +486,20 @@ class _ReportsScreenState extends State<ReportsScreen>
           else
             Card(
               elevation: 0,
-              color: isDark ? AppColors.surfaceDark : Colors.white,
+              color: themeColors.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
                 side: BorderSide(
-                  color: isDark
-                      ? AppColors.dividerDark
-                      : AppColors.dividerLight,
+                  color: themeColors.divider,
                 ),
               ),
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 40.0),
                 child: Center(
                   child: Text(
                     "No expenses recorded to build allocations.",
                     style: TextStyle(
-                      color: AppColors.textSecondaryLight,
+                      color: themeColors.textSecondary,
                       fontSize: 13,
                     ),
                   ),
@@ -533,14 +529,12 @@ class _ReportsScreenState extends State<ReportsScreen>
 
               return Card(
                 elevation: 0,
-                color: isDark ? AppColors.surfaceDark : Colors.white,
+                color: themeColors.surface,
                 margin: const EdgeInsets.only(bottom: 8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
                   side: BorderSide(
-                    color: isDark
-                        ? AppColors.dividerDark
-                        : AppColors.dividerLight,
+                    color: themeColors.divider,
                   ),
                 ),
                 child: Padding(
@@ -564,10 +558,8 @@ class _ReportsScreenState extends State<ReportsScreen>
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
                               color: isOver
-                                  ? AppColors.danger
-                                  : (isDark
-                                        ? AppColors.textLight
-                                        : AppColors.textDark),
+                                  ? themeColors.danger
+                                  : themeColors.textPrimary,
                             ),
                           ),
                         ],
@@ -575,10 +567,10 @@ class _ReportsScreenState extends State<ReportsScreen>
                       const SizedBox(height: 10),
                       AnimatedProgressBar(
                         value: progress,
-                        color: isOver ? AppColors.danger : AppColors.success,
-                        backgroundColor: isDark
-                            ? AppColors.dividerDark
-                            : Colors.grey.shade100,
+                        color: isOver
+                            ? themeColors.danger
+                            : themeColors.success,
+                        backgroundColor: themeColors.divider,
                         height: 7,
                         semanticLabel: '${r.category} budget used',
                       ),
@@ -591,7 +583,9 @@ class _ReportsScreenState extends State<ReportsScreen>
                             : "Remaining budget limit: ${context.read<CurrencyProvider>().format(r.remaining)}",
                         style: TextStyle(
                           fontSize: 12,
-                          color: isOver ? AppColors.danger : AppColors.success,
+                          color: isOver
+                              ? themeColors.danger
+                              : themeColors.success,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -607,6 +601,7 @@ class _ReportsScreenState extends State<ReportsScreen>
   }
 
   Widget _buildCashflowTab(ReportProvider provider, bool isDark) {
+    final colors = AppColors.of(context);
     final reports = provider.cashflowReports;
     if (reports.isEmpty) {
       return const EmptyState(
@@ -629,11 +624,11 @@ class _ReportsScreenState extends State<ReportsScreen>
         return Card(
           elevation: 0,
           margin: const EdgeInsets.only(bottom: 8),
-          color: isDark ? AppColors.surfaceDark : Colors.white,
+          color: colors.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
             side: BorderSide(
-              color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+              color: colors.divider,
             ),
           ),
           child: ListTile(
@@ -643,14 +638,14 @@ class _ReportsScreenState extends State<ReportsScreen>
             ),
             leading: CircleAvatar(
               backgroundColor: isExpense
-                  ? AppColors.danger.withValues(alpha: 0.1)
-                  : AppColors.success.withValues(alpha: 0.1),
+                  ? colors.danger.withValues(alpha: 0.1)
+                  : colors.success.withValues(alpha: 0.1),
               radius: 18,
               child: Icon(
                 isExpense
                     ? Icons.arrow_upward_rounded
                     : Icons.arrow_downward_rounded,
-                color: isExpense ? AppColors.danger : AppColors.success,
+                color: isExpense ? colors.danger : colors.success,
                 size: 16,
               ),
             ),
@@ -660,9 +655,9 @@ class _ReportsScreenState extends State<ReportsScreen>
             ),
             subtitle: Text(
               "${item.category} • ${item.date}",
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: AppColors.textSecondaryLight,
+                color: colors.textSecondary,
               ),
             ),
             trailing: Column(
@@ -673,16 +668,16 @@ class _ReportsScreenState extends State<ReportsScreen>
                   "${isExpense ? '-' : '+'}${context.watch<CurrencyProvider>().format(item.amount)}",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: isExpense ? AppColors.danger : AppColors.success,
+                    color: isExpense ? colors.danger : colors.success,
                     fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   "Balance: ${context.watch<CurrencyProvider>().format(item.runningBalance)}",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
-                    color: AppColors.textSecondaryLight,
+                    color: colors.textSecondary,
                   ),
                 ),
               ],
@@ -698,9 +693,10 @@ class _ReportsScreenState extends State<ReportsScreen>
     final provider = context.watch<ReportProvider>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final colors = AppColors.of(context);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkScaffold : AppColors.scaffold,
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text(
           "Reports",
@@ -711,7 +707,7 @@ class _ReportsScreenState extends State<ReportsScreen>
             icon: Icon(
               Icons.date_range_rounded,
               color: provider.selectedDateRange != null
-                  ? AppColors.primary
+                  ? colors.primary
                   : null,
             ),
             onPressed: _selectDateRange,
@@ -724,7 +720,7 @@ class _ReportsScreenState extends State<ReportsScreen>
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.download_rounded),
-            color: isDark ? AppColors.surfaceDark : Colors.white,
+            color: colors.surface,
             onSelected: (action) {
               if (action == 'pdf') {
                 _exportPDF();
@@ -763,11 +759,6 @@ class _ReportsScreenState extends State<ReportsScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: isDark
-              ? AppColors.textSecondaryDark
-              : AppColors.textSecondaryLight,
-          indicatorColor: AppColors.primary,
           indicatorWeight: 3.0,
           labelStyle: const TextStyle(
             fontWeight: FontWeight.bold,

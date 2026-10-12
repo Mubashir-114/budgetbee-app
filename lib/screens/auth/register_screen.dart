@@ -75,7 +75,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final tokens = AppColors.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -88,7 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       extendBodyBehindAppBar: true,
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppColors.pageGradient(theme.brightness),
+          gradient: LinearGradient(colors: [tokens.surface, tokens.background], begin: Alignment.topCenter, end: Alignment.bottomCenter,),
         ),
         child: SafeArea(
           child: Center(
@@ -105,9 +105,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: isDark
-                            ? AppColors.textLight
-                            : AppColors.textDark,
+                        color: tokens.textPrimary,
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -116,9 +114,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       "One calm place for every account, budget and goal.",
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
+                        color: tokens.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -126,15 +122,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     // Register inputs card
                     Card(
                       elevation: 0,
-                      color: isDark ? AppColors.surfaceDark : Colors.white,
+                      color: tokens.surface,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
                           AppDimensions.radiusXL,
                         ),
                         side: BorderSide(
-                          color: isDark
-                              ? AppColors.dividerDark
-                              : AppColors.dividerLight,
+                          color: tokens.divider,
                           width: 1.0,
                         ),
                       ),
@@ -221,9 +215,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         Text(
                           "Already have an account?",
                           style: TextStyle(
-                            color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight,
+                            color: tokens.textSecondary,
                             fontSize: 14,
                           ),
                         ),

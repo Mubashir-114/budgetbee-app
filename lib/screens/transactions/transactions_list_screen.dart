@@ -87,7 +87,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+      backgroundColor: AppColors.of(context).surface,
       builder: (ctx) {
         return SafeArea(
           child: Padding(
@@ -158,6 +158,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final colors = AppColors.of(context);
     return ListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(
@@ -165,13 +166,13 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
         style: TextStyle(
           fontSize: 14,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-          color: isSelected ? AppColors.primary : null,
+          color: isSelected ? colors.primary : null,
         ),
       ),
       trailing: isSelected
-          ? const Icon(
+          ? Icon(
               Icons.check_circle_rounded,
-              color: AppColors.primary,
+              color: colors.primary,
               size: 20,
             )
           : null,
@@ -180,6 +181,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
   }
 
   Widget _buildFilterChips(TransactionProvider provider, bool isDark) {
+    final colors = AppColors.of(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -208,13 +210,11 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
               "Category",
               style: TextStyle(
                 fontSize: 13,
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
+                color: colors.textSecondary,
               ),
             ),
             underline: const SizedBox(),
-            dropdownColor: isDark ? AppColors.surfaceDark : Colors.white,
+            dropdownColor: colors.surface,
             items: [
               const DropdownMenuItem(
                 value: null,
@@ -239,9 +239,10 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
     final provider = context.watch<TransactionProvider>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final colors = AppColors.of(context);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkScaffold : AppColors.scaffold,
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text(
           "Transactions",
@@ -254,7 +255,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
               color:
                   provider.sortBy != "transaction_date" ||
                       provider.sortOrder != "desc"
-                  ? AppColors.primary
+                  ? colors.primary
                   : null,
             ),
             onPressed: () => _showSortSheet(provider, isDark),
@@ -263,7 +264,7 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
             icon: Icon(
               Icons.date_range_rounded,
               color: provider.selectedDateRange != null
-                  ? AppColors.primary
+                  ? colors.primary
                   : null,
             ),
             onPressed: _selectDateRange,
@@ -298,30 +299,24 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
               hintText: "Search transactions...",
               hintStyle: WidgetStatePropertyAll(
                 TextStyle(
-                  color: isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
+                  color: colors.textSecondary,
                   fontSize: 14,
                 ),
               ),
               leading: Icon(
                 Icons.search,
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
+                color: colors.textSecondary,
                 size: 20,
               ),
               backgroundColor: WidgetStatePropertyAll(
-                isDark ? AppColors.surfaceDark : Colors.white,
+                colors.surface,
               ),
               elevation: const WidgetStatePropertyAll(0),
               shape: WidgetStatePropertyAll(
                 RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
                   side: BorderSide(
-                    color: isDark
-                        ? AppColors.dividerDark
-                        : AppColors.dividerLight,
+                    color: colors.divider,
                     width: 1.0,
                   ),
                 ),
@@ -409,15 +404,13 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
                         return Card(
                           elevation: 0,
                           margin: const EdgeInsets.only(bottom: 8),
-                          color: isDark ? AppColors.surfaceDark : Colors.white,
+                          color: colors.surface,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(
                               AppDimensions.radiusMD,
                             ),
                             side: BorderSide(
-                              color: isDark
-                                  ? AppColors.dividerDark
-                                  : AppColors.dividerLight,
+                              color: colors.divider,
                               width: 1.0,
                             ),
                           ),
@@ -449,9 +442,9 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
                             ),
                             subtitle: Text(
                               "${tx.category} • ${tx.transactionDate}\n${tx.note ?? ''}",
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
-                                color: AppColors.textSecondaryLight,
+                                color: colors.textSecondary,
                               ),
                             ),
                             trailing: Row(
@@ -469,12 +462,8 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
                                 ),
                                 const SizedBox(width: 4),
                                 PopupMenuButton<String>(
-                                  iconColor: isDark
-                                      ? AppColors.textSecondaryDark
-                                      : AppColors.textSecondaryLight,
-                                  color: isDark
-                                      ? AppColors.surfaceDark
-                                      : Colors.white,
+                                  iconColor: colors.textSecondary,
+                                  color: colors.surface,
                                   onSelected: (action) {
                                     if (action == 'edit') {
                                       _showAddEditDialog(tx);
@@ -581,8 +570,6 @@ class _TransactionsListScreenState extends State<TransactionsListScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddEditDialog(),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
         ),
@@ -725,6 +712,7 @@ class _AddEditTransactionDialogState extends State<AddEditTransactionDialog> {
         : CategoryModel.getExpenseCategories();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final colors = AppColors.of(context);
 
     return AlertDialog(
       title: Text(
@@ -735,7 +723,7 @@ class _AddEditTransactionDialogState extends State<AddEditTransactionDialog> {
         ),
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+      backgroundColor: colors.surface,
       content: SizedBox(
         width: 340,
         child: SingleChildScrollView(
@@ -747,7 +735,7 @@ class _AddEditTransactionDialogState extends State<AddEditTransactionDialog> {
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: isDark ? AppColors.cardDark : Colors.grey.shade100,
+                    color: colors.elevated,
                     borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
                   ),
                   child: Row(
@@ -765,7 +753,7 @@ class _AddEditTransactionDialogState extends State<AddEditTransactionDialog> {
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
                               color: _selectedType == 'expense'
-                                  ? (isDark ? AppColors.primary : Colors.white)
+                                  ? colors.primary
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(
                                 AppDimensions.radiusSM,
@@ -787,10 +775,8 @@ class _AddEditTransactionDialogState extends State<AddEditTransactionDialog> {
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                                 color: _selectedType == 'expense'
-                                    ? (isDark
-                                          ? Colors.white
-                                          : AppColors.textDark)
-                                    : AppColors.textSecondaryLight,
+                                    ? theme.colorScheme.onPrimary
+                                    : colors.textSecondary,
                               ),
                             ),
                           ),
@@ -809,7 +795,7 @@ class _AddEditTransactionDialogState extends State<AddEditTransactionDialog> {
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             decoration: BoxDecoration(
                               color: _selectedType == 'income'
-                                  ? (isDark ? AppColors.primary : Colors.white)
+                                  ? colors.primary
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(
                                 AppDimensions.radiusSM,
@@ -831,10 +817,8 @@ class _AddEditTransactionDialogState extends State<AddEditTransactionDialog> {
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                                 color: _selectedType == 'income'
-                                    ? (isDark
-                                          ? Colors.white
-                                          : AppColors.textDark)
-                                    : AppColors.textSecondaryLight,
+                                    ? theme.colorScheme.onPrimary
+                                    : colors.textSecondary,
                               ),
                             ),
                           ),
@@ -847,7 +831,7 @@ class _AddEditTransactionDialogState extends State<AddEditTransactionDialog> {
                 DropdownButtonFormField<int>(
                   initialValue: _selectedCategoryId,
                   decoration: const InputDecoration(labelText: "Category"),
-                  dropdownColor: isDark ? AppColors.surfaceDark : Colors.white,
+                  dropdownColor: colors.surface,
                   items: categories
                       .map(
                         (c) =>
@@ -909,17 +893,13 @@ class _AddEditTransactionDialogState extends State<AddEditTransactionDialog> {
                         Text(
                           DateFormat('yyyy-MM-dd').format(_selectedDate),
                           style: TextStyle(
-                            color: isDark
-                                ? AppColors.textLight
-                                : AppColors.textDark,
+                            color: colors.textPrimary,
                           ),
                         ),
                         Icon(
                           Icons.calendar_today_rounded,
                           size: 16,
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
+                          color: colors.textSecondary,
                         ),
                       ],
                     ),

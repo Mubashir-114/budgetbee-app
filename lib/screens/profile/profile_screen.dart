@@ -21,16 +21,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _notificationsEnabled = true;
 
   void _showPrivacyPolicy() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (ctx) {
+        final colors = AppColors.of(ctx);
         return AlertDialog(
           title: const Text(
             "Privacy Policy",
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
           ),
-          backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+          backgroundColor: colors.surface,
           content: const SingleChildScrollView(
             child: Text(
               "Your privacy is our priority. Personal Finance Manager encrypts your authentication token locally using secure hardware-backed storage. None of your transaction details, savings data, or budgets are shared with third parties or advertisers. Information is fetched securely over HTTPS from our cloud server. If you request account deletion, all data is immediately and permanently removed from our hosting database.\n\nFor questions, please contact support@personalfinance.io.",
@@ -49,16 +49,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showAbout() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (ctx) {
+        final colors = AppColors.of(ctx);
         return AlertDialog(
           title: const Text(
             "About FinTrack",
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
           ),
-          backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+          backgroundColor: colors.surface,
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -66,13 +66,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.14),
+                  color: colors.primary.withValues(alpha: 0.14),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.account_balance_wallet_rounded,
                   size: 30,
-                  color: AppColors.primary,
+                  color: colors.primary,
                 ),
               ),
               const SizedBox(height: 14),
@@ -85,9 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 "Version 2.0.0 (Graphite & Champagne Edition)",
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
+                  color: colors.textSecondary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -111,12 +109,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _confirmLogout() {
     final provider = context.read<AuthProvider>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+        backgroundColor: AppColors.of(ctx).surface,
         title: const Text(
           "Confirm Logout",
           style: TextStyle(fontWeight: FontWeight.w700),
@@ -152,6 +148,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = context.watch<AuthProvider>().currentUser;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final colors = AppColors.of(context);
 
     final name = (user?.name != null && user!.name.isNotEmpty)
         ? user.name
@@ -162,7 +159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final initial = name.substring(0, 1).toUpperCase();
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkScaffold : AppColors.scaffold,
+      backgroundColor: colors.background,
       appBar: AppBar(
         title: const Text(
           "Profile",
@@ -178,12 +175,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : Colors.white,
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark
-                      ? AppColors.dividerDark.withValues(alpha: 0.7)
-                      : AppColors.dividerLight,
+                  color: colors.divider.withValues(alpha: isDark ? 0.7 : 1),
                 ),
               ),
               child: Row(
@@ -195,8 +190,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isDark
-                            ? AppColors.elevatedDark
-                            : theme.colorScheme.primary.withValues(alpha: 0.12),
+                            ? colors.elevated
+                            : colors.primary.withValues(alpha: 0.12),
                         border: Border.all(
                           color: theme.colorScheme.primary.withValues(alpha: 0.35),
                           width: 2,
@@ -228,7 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.2,
-                            color: isDark ? AppColors.textLight : AppColors.textDark,
+                            color: colors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -238,9 +233,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ],
@@ -255,28 +248,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.09),
+                        color: colors.primary.withValues(
+                          alpha: isDark ? 0.12 : 0.09,
+                        ),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.28),
+                          color: colors.primary.withValues(alpha: 0.28),
                           width: 1,
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.edit_outlined,
                             size: 13,
-                            color: AppColors.primary,
+                            color: colors.primary,
                           ),
-                          SizedBox(width: 5),
+                          const SizedBox(width: 5),
                           Text(
                             "Edit",
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
+                              color: colors.primary,
                             ),
                           ),
                         ],
@@ -310,8 +305,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   subtitle: "Receive limit threshold alerts",
                   trailing: Switch.adaptive(
                     value: _notificationsEnabled,
-                    activeTrackColor: AppColors.primary.withValues(alpha: 0.35),
-                    activeThumbColor: AppColors.primary,
                     onChanged: (val) {
                       setState(() {
                         _notificationsEnabled = val;
@@ -335,9 +328,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'Current currency: ${currency.selectedCurrencyString}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight,
+                            color: colors.textSecondary,
                           ),
                         ),
                         const SizedBox(height: 1),
@@ -345,9 +336,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'Changes the symbol only; amounts are not converted.',
                           style: TextStyle(
                             fontSize: 11,
-                            color: isDark
-                                ? AppColors.textSecondaryDark.withValues(alpha: 0.8)
-                                : AppColors.textSecondaryLight.withValues(alpha: 0.8),
+                            color: colors.textSecondary.withValues(alpha: 0.8),
                           ),
                         ),
                       ],
@@ -360,10 +349,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.elevatedDark : const Color(0xFFF1F5F9),
+                            color: colors.elevated,
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
-                              color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                              color: colors.divider,
                             ),
                           ),
                           child: Text(
@@ -371,7 +360,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: isDark ? AppColors.textLight : AppColors.textDark,
+                              color: colors.textPrimary,
                             ),
                           ),
                         ),
@@ -379,9 +368,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Icon(
                           Icons.chevron_right_rounded,
                           size: 20,
-                          color: isDark
-                              ? AppColors.textSecondaryDark.withValues(alpha: 0.7)
-                              : AppColors.textSecondaryLight.withValues(alpha: 0.8),
+                          color: colors.textSecondary.withValues(
+                            alpha: isDark ? 0.7 : 0.8,
+                          ),
                         ),
                       ],
                     ),
@@ -395,7 +384,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           "Select Display Currency",
                           style: TextStyle(fontWeight: FontWeight.w700),
                         ),
-                        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+                        backgroundColor: colors.surface,
                         content: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -410,9 +399,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                                     ),
                                     trailing: currencyProv.currencyCode == c['code']
-                                        ? const Icon(
+                                        ? Icon(
                                             Icons.check_circle_rounded,
-                                            color: AppColors.primary,
+                                            color: colors.primary,
                                             size: 20,
                                           )
                                         : null,

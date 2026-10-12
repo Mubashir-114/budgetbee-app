@@ -168,6 +168,38 @@ class AppTheme {
           textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        elevation: 3,
+        focusElevation: 4,
+        hoverElevation: 4,
+        backgroundColor: tokens.primary,
+        foregroundColor: onPrimary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: ButtonStyle(
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? muted.withValues(alpha: .45)
+                : foreground,
+          ),
+          overlayColor: WidgetStatePropertyAll(
+            tokens.primary.withValues(alpha: .1),
+          ),
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: tokens.primary,
+        unselectedLabelColor: muted,
+        indicatorColor: tokens.primary,
+        dividerColor: divider,
+        labelStyle: textTheme.labelLarge,
+        unselectedLabelStyle: textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
       chipTheme: ChipThemeData(
         backgroundColor: surface,
         selectedColor: tokens.primary.withValues(alpha: 0.16),
@@ -195,6 +227,22 @@ class AppTheme {
           }
           return divider;
         }),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? tokens.primary
+              : Colors.transparent,
+        ),
+        checkColor: WidgetStatePropertyAll(onPrimary),
+        side: BorderSide(color: divider, width: 1.4),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? tokens.primary
+              : muted,
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: 70,

@@ -103,6 +103,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final selectedIndex = _getSelectedIndex(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final colors = AppColors.of(context);
     final isTablet = MediaQuery.of(context).size.width >= 600;
 
     Widget mainLayout;
@@ -118,7 +119,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             backgroundColor: theme.colorScheme.surface,
             indicatorColor: theme.colorScheme.primary.withValues(alpha: 0.14),
             selectedLabelTextStyle: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 11),
-            unselectedLabelTextStyle: TextStyle(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight, fontSize: 11),
+            unselectedLabelTextStyle: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 11,
+            ),
             destinations: [
               NavigationRailDestination(
                 icon: const Icon(Icons.grid_view_rounded),
@@ -216,7 +220,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   NavigationDestination(
                     icon: Icon(
                       Icons.grid_view_rounded,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: colors.textSecondary,
                     ),
                     selectedIcon: Icon(
                       Icons.grid_view_rounded,
@@ -227,7 +231,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   NavigationDestination(
                     icon: Icon(
                       Icons.receipt_long_rounded,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: colors.textSecondary,
                     ),
                     selectedIcon: Icon(
                       Icons.receipt_long_rounded,
@@ -238,7 +242,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   NavigationDestination(
                     icon: Icon(
                       Icons.account_balance_wallet_rounded,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: colors.textSecondary,
                     ),
                     selectedIcon: Icon(
                       Icons.account_balance_wallet_rounded,
@@ -249,7 +253,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   NavigationDestination(
                     icon: Icon(
                       Icons.bar_chart_rounded,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: colors.textSecondary,
                     ),
                     selectedIcon: Icon(
                       Icons.bar_chart_rounded,
@@ -260,7 +264,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   NavigationDestination(
                     icon: Icon(
                       Icons.person_rounded,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: colors.textSecondary,
                     ),
                     selectedIcon: Icon(
                       Icons.person_rounded,
