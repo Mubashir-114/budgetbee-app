@@ -62,7 +62,18 @@ class _AddEditBudgetSheetState extends State<AddEditBudgetSheet> {
 
     if (_selectedCategoryId == null) {
       final expenses = CategoryModel.getExpenseCategories();
-      if (expenses.isNotEmpty) {
+      final budgetedIds = <int>{
+        ...provider.budgetStatuses.map((b) => b.categoryId),
+        if (provider.progress != null)
+          ...provider.progress!.categoryBudgets.map((b) => b.categoryId),
+        ...provider.budgets
+            .where((b) => b.month == _selectedMonth && b.year == _selectedYear)
+            .map((b) => b.categoryId),
+      };
+      final unbudgeted = expenses.where((c) => !budgetedIds.contains(c.id)).toList();
+      if (unbudgeted.isNotEmpty) {
+        _selectedCategoryId = unbudgeted.first.id;
+      } else if (expenses.isNotEmpty) {
         _selectedCategoryId = expenses.first.id;
       }
     }
@@ -89,6 +100,12 @@ class _AddEditBudgetSheetState extends State<AddEditBudgetSheet> {
     final provider = context.read<BudgetProvider>();
     final amount = double.tryParse(_amountController.text.trim()) ?? 0.0;
 
+    final category = CategoryModel.findById(_selectedCategoryId);
+    if (category == null || category.type != 'expense') {
+      CustomToast.showError(context, "Selected category is not a valid expense category");
+      return;
+    }
+
     bool success;
     if (widget.categoryBudget != null) {
       success = await provider.editBudget(
@@ -99,6 +116,22 @@ class _AddEditBudgetSheetState extends State<AddEditBudgetSheet> {
         year: _selectedYear,
       );
     } else {
+      // Explicit duplicate guard before dispatching add
+      final isAlreadyBudgeted = provider.budgetStatuses.any((b) => b.categoryId == _selectedCategoryId) ||
+          (provider.progress?.categoryBudgets.any((b) => b.categoryId == _selectedCategoryId) ?? false) ||
+          provider.budgets.any((b) =>
+              b.categoryId == _selectedCategoryId &&
+              b.month == _selectedMonth &&
+              b.year == _selectedYear);
+      if (isAlreadyBudgeted) {
+        final monthName = DateFormat('MMMM').format(DateTime(2026, _selectedMonth));
+        CustomToast.showError(
+          context,
+          "${category.name} budget already exists for $monthName $_selectedYear. Edit the existing budget card instead.",
+        );
+        return;
+      }
+
       success = await provider.addBudget(
         categoryId: _selectedCategoryId!,
         amount: amount,
@@ -322,6 +355,13 @@ class _AddEditBudgetSheetState extends State<AddEditBudgetSheet> {
                     ),
                     items: expenseCategories.map((c) {
                       final cColor = getCategoryColor(c.name);
+                      final isAlreadyBudgeted = !isEditing &&
+                          (provider.budgetStatuses.any((b) => b.categoryId == c.id) ||
+                              (provider.progress?.categoryBudgets.any((b) => b.categoryId == c.id) ?? false) ||
+                              provider.budgets.any((b) =>
+                                  b.categoryId == c.id &&
+                                  b.month == _selectedMonth &&
+                                  b.year == _selectedYear));
                       return DropdownMenuItem<int>(
                         value: c.id,
                         child: Row(
@@ -344,6 +384,25 @@ class _AddEditBudgetSheetState extends State<AddEditBudgetSheet> {
                                 color: colors.textPrimary,
                               ),
                             ),
+                            if (isAlreadyBudgeted) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: colors.elevated,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: colors.cardBorder),
+                                ),
+                                child: Text(
+                                  "Configured",
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: colors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       );
@@ -351,7 +410,22 @@ class _AddEditBudgetSheetState extends State<AddEditBudgetSheet> {
                     onChanged: (val) {
                       if (val != null) setState(() => _selectedCategoryId = val);
                     },
-                    validator: (val) => val == null ? "Select a category" : null,
+                    validator: (val) {
+                      if (val == null) return "Select a category";
+                      if (!isEditing) {
+                        final isAlreadyBudgeted = provider.budgetStatuses.any((b) => b.categoryId == val) ||
+                            (provider.progress?.categoryBudgets.any((b) => b.categoryId == val) ?? false) ||
+                            provider.budgets.any((b) =>
+                                b.categoryId == val &&
+                                b.month == _selectedMonth &&
+                                b.year == _selectedYear);
+                        if (isAlreadyBudgeted) {
+                          final name = CategoryModel.getNameById(val);
+                          return "$name already has a budget for $monthName $_selectedYear";
+                        }
+                      }
+                      return null;
+                    },
                   ),
 
                 const SizedBox(height: 18),

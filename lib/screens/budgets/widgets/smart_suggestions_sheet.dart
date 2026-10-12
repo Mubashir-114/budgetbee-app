@@ -308,12 +308,21 @@ class _SuggestionCard extends StatelessWidget {
                   elevation: 0,
                 ),
                 onPressed: () async {
+                  final isAlreadyBudgeted = provider.budgetStatuses.any((b) => b.categoryId == suggestion.categoryId) ||
+                      (provider.progress?.categoryBudgets.any((b) => b.categoryId == suggestion.categoryId) ?? false) ||
+                      provider.budgets.any((b) =>
+                          b.categoryId == suggestion.categoryId &&
+                          b.month == provider.selectedMonth &&
+                          b.year == provider.selectedYear);
+
                   final confirmed = await showDialog<bool>(
                     context: context,
                     builder: (dialogCtx) => AlertDialog(
-                      title: const Text("Confirm Budget"),
+                      title: Text(isAlreadyBudgeted ? "Update Existing Budget" : "Confirm Budget"),
                       content: Text(
-                        "Apply suggested budget of ₹${suggestion.estimates.suggestedBudget} for ${suggestion.categoryName}?",
+                        isAlreadyBudgeted
+                            ? "A budget for ${suggestion.categoryName} already exists in this period. Update its limit to ₹${suggestion.estimates.suggestedBudget}?"
+                            : "Apply suggested budget of ₹${suggestion.estimates.suggestedBudget} for ${suggestion.categoryName}?",
                       ),
                       actions: [
                         TextButton(
@@ -322,7 +331,7 @@ class _SuggestionCard extends StatelessWidget {
                         ),
                         ElevatedButton(
                           onPressed: () => Navigator.pop(dialogCtx, true),
-                          child: const Text("CONFIRM"),
+                          child: Text(isAlreadyBudgeted ? "UPDATE" : "CONFIRM"),
                         ),
                       ],
                     ),

@@ -370,10 +370,23 @@ class BudgetProvider extends ChangeNotifier {
     final existingStatus = _budgetStatuses
         .where((b) => b.categoryId == suggestion.categoryId)
         .firstOrNull;
+    final existingProgress = _progress?.categoryBudgets
+        .where((b) => b.categoryId == suggestion.categoryId)
+        .firstOrNull;
+    final existingBudget = _budgets
+        .where((b) =>
+            b.categoryId == suggestion.categoryId &&
+            b.month == _selectedMonth &&
+            b.year == _selectedYear)
+        .firstOrNull;
 
-    if (existingStatus != null) {
+    final existingId = existingStatus?.budgetId ??
+        existingProgress?.budgetId ??
+        existingBudget?.id;
+
+    if (existingId != null) {
       return await editBudget(
-        id: existingStatus.budgetId,
+        id: existingId,
         categoryId: suggestion.categoryId,
         amount: amount,
         month: _selectedMonth,
