@@ -1085,6 +1085,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _buildPlanningSection(bool isDark) {
+    final colors = AppColors.of(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+      onTap: () => context.push('/planning'),
+      child: Container(
+        padding: const EdgeInsets.all(AppDimensions.md),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLG),
+          border: Border.all(
+            color: colors.divider,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMD),
+              ),
+              child: Icon(Icons.savings_rounded, color: colors.primary, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Financial Planning & Goals",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    "Savings targets, deterministic cash-flow forecasts & what-if simulator",
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: colors.primary),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
@@ -1321,6 +1377,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                     // Deterministic Financial Insights
                     _buildInsightsSection(dashboardProvider.insights, isDark),
+                    AppDimensions.hLG,
+
+                    // Financial Planning & Goals
+                    _buildPlanningSection(isDark),
                     AppDimensions.hLG,
 
                     // 6. Recent Transactions Section

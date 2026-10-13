@@ -10,6 +10,7 @@ import '../providers/transaction_provider.dart';
 import '../providers/budget_provider.dart';
 import '../providers/report_provider.dart';
 import '../providers/account_provider.dart';
+import '../providers/goal_provider.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final Widget child;
@@ -66,6 +67,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     context.read<BudgetProvider>().loadBudgetStatus();
     context.read<ReportProvider>().loadAllReports();
     context.read<AccountProvider>().loadAccounts();
+    context.read<GoalProvider>().loadGoals();
   }
 
   int _getSelectedIndex(BuildContext context) {

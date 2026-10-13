@@ -21,6 +21,8 @@ import '../screens/accounts/account_detail_screen.dart';
 import '../screens/accounts/edit_account_screen.dart';
 import '../screens/transfers/transfer_screen.dart';
 import '../screens/analytics/analytics_screen.dart';
+import '../screens/planning/planning_screen.dart';
+import '../screens/planning/goal_detail_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
@@ -97,7 +99,21 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: '/analytics',
-          builder: (context, state) => const AnalyticsScreen(),
+          builder: (context, state) {
+            final q = state.uri.queryParameters['q'];
+            return AnalyticsScreen(initialQuestion: q);
+          },
+        ),
+        GoRoute(
+          path: '/planning',
+          builder: (context, state) => const PlanningScreen(),
+        ),
+        GoRoute(
+          path: '/planning/goals/:id',
+          builder: (context, state) {
+            final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+            return GoalDetailScreen(goalId: id);
+          },
         ),
         GoRoute(
           path: '/profile',

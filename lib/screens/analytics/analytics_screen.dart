@@ -9,7 +9,9 @@ import 'widgets/alert_preferences_sheet.dart';
 import 'widgets/insights_feed_view.dart';
 
 class AnalyticsScreen extends StatefulWidget {
-  const AnalyticsScreen({super.key});
+  final String? initialQuestion;
+
+  const AnalyticsScreen({super.key, this.initialQuestion});
 
   @override
   State<AnalyticsScreen> createState() => _AnalyticsScreenState();
@@ -29,6 +31,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       provider.initializeAlertPreferences().then((_) {
         provider.loadAlerts();
       });
+      if (widget.initialQuestion != null && widget.initialQuestion!.trim().isNotEmpty) {
+        _submitQuestion(widget.initialQuestion!.trim());
+      }
     });
   }
 

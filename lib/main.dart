@@ -10,6 +10,7 @@ import 'providers/sms_provider.dart';
 import 'providers/currency_provider.dart';
 import 'providers/account_provider.dart';
 import 'providers/analytics_provider.dart';
+import 'providers/goal_provider.dart';
 import 'providers/theme_provider.dart';
 import 'core/services/cache_service.dart';
 import 'core/services/connectivity_service.dart';
@@ -31,6 +32,7 @@ Future<void> main() async {
   final smsProvider = SmsProvider();
   final accountProvider = AccountProvider();
   final analyticsProvider = AnalyticsProvider();
+  final goalProvider = GoalProvider();
   final authProvider = AuthProvider(
     onSessionReset: () {
       dashboardProvider.clearSession();
@@ -40,6 +42,7 @@ Future<void> main() async {
       smsProvider.clearSession();
       accountProvider.clearSession();
       analyticsProvider.clearSession();
+      goalProvider.clearSession();
     },
   );
 
@@ -60,6 +63,7 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: smsProvider),
         ChangeNotifierProvider.value(value: accountProvider),
         ChangeNotifierProvider.value(value: analyticsProvider),
+        ChangeNotifierProvider.value(value: goalProvider),
       ],
       child: const PersonalFinanceApp(),
     ),
