@@ -140,6 +140,21 @@ class MockAnalyticsRepository implements AnalyticsRepository {
       },
     );
   }
+
+  @override
+  Future<ApiResponse<List<SmartAlertItem>>> getProactiveAlerts({
+    String? period,
+    String? month,
+    String? startDate,
+    String? endDate,
+    AlertPreferences? preferences,
+  }) async {
+    return const ApiResponse(
+      success: true,
+      message: "Alerts fetched",
+      data: [],
+    );
+  }
 }
 
 void main() {

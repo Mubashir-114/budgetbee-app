@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 
 import '../models/analytics_model.dart';
 import '../repositories/analytics_repository.dart';
+import '../core/services/cache_service.dart';
 
 class AnalyticsProvider extends ChangeNotifier {
   final AnalyticsRepository _repository;
@@ -25,6 +26,13 @@ class AnalyticsProvider extends ChangeNotifier {
   List<ChatMessage> _messages = [];
   ConversationContext? _conversationContext;
 
+  // Phase 5C Proactive Alerts State
+  List<SmartAlertItem> _alerts = [];
+  Set<String> _dismissedAlertIds = {};
+  AlertPreferences _preferences = const AlertPreferences();
+  bool _isLoadingAlerts = false;
+  String? _alertsError;
+
   bool get isLoading => _isLoading;
   bool get isTyping => _isTyping;
   String? get errorMessage => _errorMessage;
@@ -38,6 +46,18 @@ class AnalyticsProvider extends ChangeNotifier {
 
   List<ChatMessage> get messages => _messages;
   ConversationContext? get conversationContext => _conversationContext;
+
+  // Phase 5C Getters
+  List<SmartAlertItem> get alerts => _alerts;
+  Set<String> get dismissedAlertIds => _dismissedAlertIds;
+  AlertPreferences get preferences => _preferences;
+  bool get isLoadingAlerts => _isLoadingAlerts;
+  String? get alertsError => _alertsError;
+
+  List<SmartAlertItem> get activeAlerts {
+    if (!_preferences.enableProactiveInsights) return [];
+    return _alerts.where((a) => !_dismissedAlertIds.contains(a.id)).toList();
+  }
 
   List<SuggestedQuestion> get suggestedQuestions =>
       _capabilities?.suggestedQuestions ?? [];
@@ -54,6 +74,14 @@ class AnalyticsProvider extends ChangeNotifier {
     _currentPeriod = null;
     _messages = [];
     _conversationContext = null;
+
+    // Phase 5C Alert Reset
+    _alerts = [];
+    _dismissedAlertIds = {};
+    _preferences = const AlertPreferences();
+    _isLoadingAlerts = false;
+    _alertsError = null;
+
     notifyListeners();
   }
 
@@ -266,5 +294,105 @@ class AnalyticsProvider extends ChangeNotifier {
     } else {
       _errorMessage = "A secure error occurred while processing analytics. Please retry.";
     }
+  }
+
+  // ==========================================
+  // Phase 5C: Proactive Intelligence & Alerts
+  // ==========================================
+
+  Future<void> initializeAlertPreferences() async {
+    try {
+      final savedPrefs = await CacheService.get('smart_alert_preferences');
+      if (savedPrefs != null && savedPrefs is Map<String, dynamic>) {
+        _preferences = AlertPreferences.fromJson(savedPrefs);
+      }
+      final savedDismissed = await CacheService.get('dismissed_alert_ids');
+      if (savedDismissed != null && savedDismissed is List) {
+        _dismissedAlertIds = savedDismissed.map((e) => e.toString()).toSet();
+      }
+      notifyListeners();
+    } catch (_) {
+      // Graceful fallback to default preferences
+    }
+  }
+
+  Future<void> updatePreferences(AlertPreferences newPreferences) async {
+    _preferences = newPreferences;
+    notifyListeners();
+    await CacheService.save('smart_alert_preferences', _preferences.toJson());
+    await loadAlerts();
+  }
+
+  Future<void> dismissAlert(String alertId) async {
+    _dismissedAlertIds.add(alertId);
+    notifyListeners();
+    await CacheService.save('dismissed_alert_ids', _dismissedAlertIds.toList());
+  }
+
+  Future<void> resetDismissedAlerts() async {
+    _dismissedAlertIds.clear();
+    notifyListeners();
+    await CacheService.save('dismissed_alert_ids', <String>[]);
+  }
+
+  Future<void> loadAlerts({
+    String? period,
+    String? month,
+    String? startDate,
+    String? endDate,
+  }) async {
+    if (!_preferences.enableProactiveInsights) {
+      _alerts = [];
+      _alertsError = null;
+      notifyListeners();
+      return;
+    }
+
+    _isLoadingAlerts = true;
+    _alertsError = null;
+    notifyListeners();
+
+    try {
+      final res = await _repository.getProactiveAlerts(
+        period: period ?? 'current_month',
+        month: month,
+        startDate: startDate,
+        endDate: endDate,
+        preferences: _preferences,
+      );
+
+      if (res.success) {
+        _alerts = res.data;
+        _alertsError = null;
+      } else {
+        _alertsError = res.message;
+      }
+    } on DioException catch (dioErr) {
+      if (dioErr.type == DioExceptionType.connectionTimeout ||
+          dioErr.type == DioExceptionType.connectionError ||
+          dioErr.type == DioExceptionType.receiveTimeout) {
+        _alertsError = "Offline: Unable to evaluate live alerts";
+      } else if (dioErr.response?.statusCode == 429) {
+        _alertsError = "Rate limited: Please wait before refreshing alerts";
+      } else {
+        _alertsError = "Failed to load proactive financial alerts.";
+      }
+    } catch (_) {
+      _alertsError = "An unexpected error occurred while loading alerts.";
+    } finally {
+      _isLoadingAlerts = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> askAlertQuestion(
+    SmartAlertItem alert,
+    String question,
+  ) async {
+    await askQuestion(
+      question,
+      period: alert.period?.label ?? 'current_month',
+      category: alert.category,
+    );
   }
 }

@@ -5,6 +5,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../models/analytics_model.dart';
 import '../../providers/analytics_provider.dart';
+import 'widgets/alert_preferences_sheet.dart';
+import 'widgets/insights_feed_view.dart';
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
@@ -24,6 +26,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       final provider = context.read<AnalyticsProvider>();
       provider.loadCapabilities();
       provider.loadInsights();
+      provider.initializeAlertPreferences().then((_) {
+        provider.loadAlerts();
+      });
     });
   }
 
@@ -201,6 +206,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: "Alert Preferences",
+            icon: Icon(Icons.tune_rounded, color: colors.textSecondary),
+            onPressed: () => AlertPreferencesSheet.show(context),
+          ),
           if (provider.messages.isNotEmpty)
             IconButton(
               tooltip: "Reset Conversation",
@@ -1063,46 +1073,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Widget _buildDefaultInsightsView(dynamic colors, AnalyticsProvider provider) {
-    final insights = provider.insights;
-
-    if (insights.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colors.cardBorder),
-        ),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(Icons.insights_rounded, color: colors.primary, size: 40),
-              const SizedBox(height: 12),
-              Text(
-                "No Saved Financial Records",
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: colors.textPrimary),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "Add your expenses or income to generate private deterministic insights.",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: colors.textSecondary),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Current Month Insights",
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: colors.textPrimary),
-        ),
-        const SizedBox(height: 10),
-        ...insights.map((item) => _buildInsightCard(colors, item)),
+        const InsightsFeedView(),
+        if (provider.insights.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          Text(
+            "Current Month Insights",
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: colors.textPrimary),
+          ),
+          const SizedBox(height: 10),
+          ...provider.insights.map((item) => _buildInsightCard(colors, item)),
+        ],
       ],
     );
   }

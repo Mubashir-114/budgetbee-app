@@ -150,6 +150,12 @@ class AnalyticsPeriod {
       label: json['label'] as String? ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'startDate': startDate,
+    'endDate': endDate,
+    'label': label,
+  };
 }
 
 class AnalyticsProvenance {
@@ -544,4 +550,242 @@ class ChatMessage {
     this.clarificationOptions = const [],
     this.followUpSuggestions = const [],
   });
+}
+
+class SmartAlertProvenance {
+  final String source;
+  final String evaluatedAt;
+  final String? formula;
+  final int? sampleCount;
+  final String privacyGuarantee;
+  final String? period;
+
+  int? get recordCount => sampleCount;
+
+  const SmartAlertProvenance({
+    required this.source,
+    required this.evaluatedAt,
+    this.formula,
+    int? sampleCount,
+    int? recordCount,
+    this.privacyGuarantee = '',
+    this.period,
+  }) : sampleCount = sampleCount ?? recordCount;
+
+  factory SmartAlertProvenance.fromJson(Map<String, dynamic> json) {
+    return SmartAlertProvenance(
+      source: json['source'] as String? ?? 'transactions and budgets',
+      evaluatedAt: json['evaluatedAt'] as String? ?? '',
+      formula: json['formula'] as String?,
+      sampleCount: (json['sampleCount'] ?? json['recordCount'] as num?)?.toInt(),
+      privacyGuarantee: json['privacyGuarantee'] as String? ?? '',
+      period: json['period'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'source': source,
+    'evaluatedAt': evaluatedAt,
+    if (formula != null) 'formula': formula,
+    if (sampleCount != null) 'sampleCount': sampleCount,
+    if (recordCount != null) 'recordCount': recordCount,
+    'privacyGuarantee': privacyGuarantee,
+    if (period != null) 'period': period,
+  };
+}
+
+class SmartAlertItem {
+  final String id;
+  final String type;
+  final String severity; // critical, warning, notice, tip, info
+  final int priority;
+  final String title;
+  final String explanation;
+  final String? category;
+  final int? categoryId;
+  final AnalyticsPeriod? period;
+  final Map<String, dynamic> calculatedValues;
+  final SmartAlertProvenance? provenance;
+  final List<SuggestedQuestion> suggestedQuestions;
+  final bool isDismissed;
+
+  const SmartAlertItem({
+    required this.id,
+    required this.type,
+    required this.severity,
+    this.priority = 1,
+    required this.title,
+    required this.explanation,
+    this.category,
+    this.categoryId,
+    this.period,
+    required this.calculatedValues,
+    this.provenance,
+    this.suggestedQuestions = const [],
+    this.isDismissed = false,
+  });
+
+  factory SmartAlertItem.fromJson(Map<String, dynamic> json) {
+    final rawPeriod = json['period'];
+    AnalyticsPeriod? period;
+    if (rawPeriod is Map<String, dynamic>) {
+      period = AnalyticsPeriod.fromJson(rawPeriod);
+    } else if (rawPeriod is String && rawPeriod.isNotEmpty) {
+      period = AnalyticsPeriod(startDate: '', endDate: '', label: rawPeriod);
+    }
+
+    final provJson = json['provenance'] as Map<String, dynamic>?;
+    final questionsList = (json['suggestedQuestions'] as List<dynamic>? ?? [])
+        .map((q) => SuggestedQuestion.fromJson(q as Map<String, dynamic>))
+        .toList();
+
+    return SmartAlertItem(
+      id: json['id'] as String? ?? '',
+      type: json['type'] as String? ?? '',
+      severity: json['severity'] as String? ?? 'info',
+      priority: (json['priority'] as num?)?.toInt() ?? 1,
+      title: json['title'] as String? ?? '',
+      explanation: json['explanation'] as String? ?? '',
+      category: json['category'] as String?,
+      categoryId: (json['categoryId'] as num?)?.toInt(),
+      period: period,
+      calculatedValues: (json['calculatedValues'] as Map<String, dynamic>?) ?? {},
+      provenance: provJson != null ? SmartAlertProvenance.fromJson(provJson) : null,
+      suggestedQuestions: questionsList,
+      isDismissed: json['isDismissed'] as bool? ?? false,
+    );
+  }
+
+  SmartAlertItem copyWith({
+    bool? isDismissed,
+  }) {
+    return SmartAlertItem(
+      id: id,
+      type: type,
+      severity: severity,
+      priority: priority,
+      title: title,
+      explanation: explanation,
+      category: category,
+      categoryId: categoryId,
+      period: period,
+      calculatedValues: calculatedValues,
+      provenance: provenance,
+      suggestedQuestions: suggestedQuestions,
+      isDismissed: isDismissed ?? this.isDismissed,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'type': type,
+    'severity': severity,
+    'priority': priority,
+    'title': title,
+    'explanation': explanation,
+    if (category != null) 'category': category,
+    if (categoryId != null) 'categoryId': categoryId,
+    if (period != null) 'period': period!.toJson(),
+    'calculatedValues': calculatedValues,
+    if (provenance != null) 'provenance': provenance!.toJson(),
+    'suggestedQuestions': suggestedQuestions.map((q) => q.toJson()).toList(),
+    'isDismissed': isDismissed,
+  };
+}
+
+class AlertPreferences {
+  final bool enableProactiveInsights;
+  final bool enableBudgetAlerts;
+  final bool enableUnusualAlerts;
+  final bool enableSavingsAlerts;
+  final bool enableSpendingTrends;
+  final int budgetWarningThreshold;
+
+  bool get enableAnomalyAlerts => enableUnusualAlerts;
+  double get budgetThreshold => budgetWarningThreshold / 100.0;
+
+  const AlertPreferences({
+    this.enableProactiveInsights = true,
+    this.enableBudgetAlerts = true,
+    this.enableUnusualAlerts = true,
+    this.enableSavingsAlerts = true,
+    this.enableSpendingTrends = true,
+    this.budgetWarningThreshold = 80,
+  });
+
+  factory AlertPreferences.create({
+    bool enableProactiveInsights = true,
+    bool enableBudgetAlerts = true,
+    bool? enableUnusualAlerts,
+    bool? enableAnomalyAlerts,
+    bool enableSavingsAlerts = true,
+    bool enableSpendingTrends = true,
+    int? budgetWarningThreshold,
+    double? budgetThreshold,
+  }) {
+    return AlertPreferences(
+      enableProactiveInsights: enableProactiveInsights,
+      enableBudgetAlerts: enableBudgetAlerts,
+      enableUnusualAlerts: enableUnusualAlerts ?? enableAnomalyAlerts ?? true,
+      enableSavingsAlerts: enableSavingsAlerts,
+      enableSpendingTrends: enableSpendingTrends,
+      budgetWarningThreshold: budgetWarningThreshold ??
+          (budgetThreshold != null ? (budgetThreshold * 100).round() : 80),
+    );
+  }
+
+  factory AlertPreferences.fromJson(Map<String, dynamic> json) {
+    return AlertPreferences(
+      enableProactiveInsights: json['enableProactiveInsights'] as bool? ?? true,
+      enableBudgetAlerts: json['enableBudgetAlerts'] as bool? ?? true,
+      enableUnusualAlerts: (json['enableUnusualAlerts'] ?? json['enableAnomalyAlerts']) as bool? ?? true,
+      enableSavingsAlerts: json['enableSavingsAlerts'] as bool? ?? true,
+      enableSpendingTrends: json['enableSpendingTrends'] as bool? ?? true,
+      budgetWarningThreshold: (json['budgetWarningThreshold'] ??
+          (json['budgetThreshold'] != null
+              ? (json['budgetThreshold'] is double
+                  ? (json['budgetThreshold'] as double) * 100
+                  : json['budgetThreshold'])
+              : null) as num?)?.toInt() ?? 80,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'enableProactiveInsights': enableProactiveInsights,
+    'enableBudgetAlerts': enableBudgetAlerts,
+    'enableUnusualAlerts': enableUnusualAlerts,
+    'enableSavingsAlerts': enableSavingsAlerts,
+    'enableSpendingTrends': enableSpendingTrends,
+    'budgetWarningThreshold': budgetWarningThreshold,
+  };
+
+  Map<String, dynamic> toQueryParams() => {
+    'enableProactiveInsights': enableProactiveInsights.toString(),
+    'enableBudgetAlerts': enableBudgetAlerts.toString(),
+    'enableUnusualAlerts': enableUnusualAlerts.toString(),
+    'enableSavingsAlerts': enableSavingsAlerts.toString(),
+    'enableSpendingTrends': enableSpendingTrends.toString(),
+    'budgetThreshold': budgetWarningThreshold.toString(),
+  };
+
+  AlertPreferences copyWith({
+    bool? enableProactiveInsights,
+    bool? enableBudgetAlerts,
+    bool? enableUnusualAlerts,
+    bool? enableAnomalyAlerts,
+    bool? enableSavingsAlerts,
+    bool? enableSpendingTrends,
+    int? budgetWarningThreshold,
+    double? budgetThreshold,
+  }) {
+    return AlertPreferences(
+      enableProactiveInsights: enableProactiveInsights ?? this.enableProactiveInsights,
+      enableBudgetAlerts: enableBudgetAlerts ?? this.enableBudgetAlerts,
+      enableUnusualAlerts: enableUnusualAlerts ?? enableAnomalyAlerts ?? this.enableUnusualAlerts,
+      enableSavingsAlerts: enableSavingsAlerts ?? this.enableSavingsAlerts,
+      enableSpendingTrends: enableSpendingTrends ?? this.enableSpendingTrends,
+      budgetWarningThreshold: budgetWarningThreshold ??
+          (budgetThreshold != null ? (budgetThreshold * 100).round() : this.budgetWarningThreshold),
+    );
+  }
 }

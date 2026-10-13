@@ -89,4 +89,44 @@ class AnalyticsRepository {
       (json) => json as Map<String, dynamic>,
     );
   }
+
+  /// Fetches deterministic proactive financial alerts for the requested period.
+  Future<ApiResponse<List<SmartAlertItem>>> getProactiveAlerts({
+    String? period,
+    String? month,
+    String? startDate,
+    String? endDate,
+    AlertPreferences? preferences,
+  }) async {
+    final Map<String, dynamic> query = {};
+    if (period != null && period.isNotEmpty) query['period'] = period;
+    if (month != null && month.isNotEmpty) query['month'] = month;
+    if (startDate != null && startDate.isNotEmpty) query['startDate'] = startDate;
+    if (endDate != null && endDate.isNotEmpty) query['endDate'] = endDate;
+
+    if (preferences != null) {
+      query['enableProactiveInsights'] = preferences.enableProactiveInsights;
+      query['enableBudgetAlerts'] = preferences.enableBudgetAlerts;
+      query['enableUnusualAlerts'] = preferences.enableUnusualAlerts;
+      query['enableSavingsAlerts'] = preferences.enableSavingsAlerts;
+      query['enableSpendingTrends'] = preferences.enableSpendingTrends;
+      query['budgetThreshold'] = preferences.budgetWarningThreshold;
+    }
+
+    final response = await _dio.get(
+      "analytics/alerts",
+      queryParameters: query.isNotEmpty ? query : null,
+    );
+
+    return ApiResponse.fromJson(
+      response.data,
+      (json) {
+        final dataMap = json as Map<String, dynamic>;
+        final rawAlerts = dataMap['alerts'] as List<dynamic>? ?? [];
+        return rawAlerts
+            .map((a) => SmartAlertItem.fromJson(a as Map<String, dynamic>))
+            .toList();
+      },
+    );
+  }
 }
