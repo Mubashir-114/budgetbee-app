@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/services/cache_service.dart';
+import '../core/services/launcher_icon_service.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/theme_collection.dart';
 import '../core/theme/fin_track_theme_tokens.dart';
@@ -16,10 +17,6 @@ class ThemeProvider extends ChangeNotifier {
   AppDisplayMode _displayMode = AppDisplayMode.system;
   bool _isInitialized = false;
 
-  ThemeProvider() {
-    _loadPreferences();
-  }
-
   ThemeCollection get collection => _collection;
   AppDisplayMode get displayMode => _displayMode;
   ThemeMode get themeMode => _displayMode.themeMode;
@@ -28,8 +25,7 @@ class ThemeProvider extends ChangeNotifier {
   ThemeData get lightTheme =>
       AppTheme.buildTheme(_collection, Brightness.light);
 
-  ThemeData get darkTheme =>
-      AppTheme.buildTheme(_collection, Brightness.dark);
+  ThemeData get darkTheme => AppTheme.buildTheme(_collection, Brightness.dark);
 
   FinTrackThemeTokens tokensFor(Brightness brightness) =>
       FinTrackThemeTokens.resolve(_collection, brightness);
@@ -37,6 +33,7 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> initialize() async {
     if (_isInitialized) return;
     await _loadPreferences();
+    await LauncherIconService.synchronize(_collection);
   }
 
   Future<void> _loadPreferences() async {
@@ -82,6 +79,8 @@ class ThemeProvider extends ChangeNotifier {
       await prefs.setString(prefThemeCollectionKey, collection.storageKey);
       await CacheService.save('theme_collection', collection.storageKey);
     } catch (_) {}
+
+    await LauncherIconService.synchronize(collection);
   }
 
   Future<void> setDisplayMode(AppDisplayMode mode) async {

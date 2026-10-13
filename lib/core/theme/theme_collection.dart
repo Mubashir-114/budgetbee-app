@@ -33,6 +33,9 @@ enum ThemeCollection {
   final String description;
   final String logoAssetPath;
 
+  /// Stable key shared with the Android launcher activity aliases.
+  String get launcherIconKey => storageKey;
+
   static ThemeCollection fromKey(String? key) {
     if (key == null) return ThemeCollection.graphiteChampagne;
     return ThemeCollection.values.firstWhere(
