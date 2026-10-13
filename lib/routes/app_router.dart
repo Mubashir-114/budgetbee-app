@@ -20,6 +20,7 @@ import '../screens/accounts/add_account_screen.dart';
 import '../screens/accounts/account_detail_screen.dart';
 import '../screens/accounts/edit_account_screen.dart';
 import '../screens/transfers/transfer_screen.dart';
+import '../screens/analytics/analytics_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
@@ -93,6 +94,10 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/reports',
           builder: (context, state) => const ReportsScreen(),
+        ),
+        GoRoute(
+          path: '/analytics',
+          builder: (context, state) => const AnalyticsScreen(),
         ),
         GoRoute(
           path: '/profile',
