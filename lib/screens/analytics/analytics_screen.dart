@@ -24,19 +24,24 @@ class AnalyticsScreen extends StatefulWidget {
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   final TextEditingController _questionController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+  bool _isFinHeroVisible = true;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_updateFinVisibility);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<AnalyticsProvider>();
+      provider.prepareForScreenEntry();
       provider.loadCapabilities();
       provider.loadInsights();
       provider.loadCompanionPreferences();
       provider.initializeAlertPreferences().then((_) {
         provider.loadAlerts();
       });
-      if (widget.initialQuestion != null && widget.initialQuestion!.trim().isNotEmpty) {
+      if (widget.initialQuestion != null &&
+          widget.initialQuestion!.trim().isNotEmpty) {
         _submitQuestion(widget.initialQuestion!.trim());
       }
     });
@@ -46,7 +51,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   void dispose() {
     _questionController.dispose();
     _focusNode.dispose();
+    _scrollController
+      ..removeListener(_updateFinVisibility)
+      ..dispose();
     super.dispose();
+  }
+
+  void _updateFinVisibility() {
+    final visible =
+        !_scrollController.hasClients || _scrollController.offset < 280;
+    if (visible != _isFinHeroVisible && mounted) {
+      setState(() => _isFinHeroVisible = visible);
+    }
   }
 
   void _submitQuestion(String text) {
@@ -64,92 +80,117 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final colors = AppColors.of(context);
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: colors.primary.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
+        final media = MediaQuery.of(context);
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: media.size.height * .9),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              24,
+              24,
+              24 + media.viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: colors.primary.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.shield_outlined,
+                        color: colors.primary,
+                        size: 24,
+                      ),
                     ),
-                    child: Icon(Icons.shield_outlined, color: colors.primary, size: 24),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Privacy & Isolation Guarantee",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: colors.textPrimary,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Privacy & Isolation Guarantee",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: colors.textPrimary,
+                            ),
                           ),
-                        ),
-                        Text(
-                          "FinTrack 2.0 — Phase 5E FIN Companion",
-                          style: TextStyle(fontSize: 12, color: colors.textSecondary),
-                        ),
-                      ],
+                          Text(
+                            "FinTrack 2.0 — Phase 5E FIN Companion",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildPrivacyPoint(
+                  colors,
+                  Icons.check_circle_outline,
+                  "Saved records only",
+                  "Analyzes exclusively transactions explicitly saved and owned by your account.",
+                ),
+                const SizedBox(height: 12),
+                _buildPrivacyPoint(
+                  colors,
+                  Icons.block_outlined,
+                  "No bank connections",
+                  "Zero capability to connect to bank accounts, open-banking APIs, or institutional credentials.",
+                ),
+                const SizedBox(height: 12),
+                _buildPrivacyPoint(
+                  colors,
+                  Icons.speaker_notes_off_outlined,
+                  "No SMS inbox reading",
+                  "Cannot read device messages, SMS permissions, or unsaved staging candidates.",
+                ),
+                const SizedBox(height: 12),
+                _buildPrivacyPoint(
+                  colors,
+                  Icons.lock_outline,
+                  "Deterministic local AI",
+                  "Calculations use exact mathematical formulas and safe templates. No external LLM providers.",
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colors.primary,
+                      foregroundColor: colors.isDark
+                          ? Colors.black
+                          : Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      "Understood",
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _buildPrivacyPoint(
-                colors,
-                Icons.check_circle_outline,
-                "Saved records only",
-                "Analyzes exclusively transactions explicitly saved and owned by your account.",
-              ),
-              const SizedBox(height: 12),
-              _buildPrivacyPoint(
-                colors,
-                Icons.block_outlined,
-                "No bank connections",
-                "Zero capability to connect to bank accounts, open-banking APIs, or institutional credentials.",
-              ),
-              const SizedBox(height: 12),
-              _buildPrivacyPoint(
-                colors,
-                Icons.speaker_notes_off_outlined,
-                "No SMS inbox reading",
-                "Cannot read device messages, SMS permissions, or unsaved staging candidates.",
-              ),
-              const SizedBox(height: 12),
-              _buildPrivacyPoint(
-                colors,
-                Icons.lock_outline,
-                "Deterministic local AI",
-                "Calculations use exact mathematical formulas and safe templates. No external LLM providers.",
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colors.primary,
-                    foregroundColor: colors.isDark ? Colors.black : Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("Understood", style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -205,33 +246,61 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           children: [
             Icon(Icons.auto_awesome_rounded, color: colors.primary, size: 22),
             const SizedBox(width: 8),
-            Text(
-              "AI Financial Insights",
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+            Expanded(
+              child: Text(
+                "AI Financial Insights",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
               ),
             ),
           ],
         ),
         actions: [
-          IconButton(
+          PopupMenuButton<String>(
             tooltip: "FIN Settings & Memory",
-            icon: Icon(Icons.face_retouching_natural_rounded, color: colors.primary),
-            onPressed: () => CompanionPreferencesSheet.show(context),
-          ),
-          IconButton(
-            tooltip: "Alert Preferences",
             icon: Icon(Icons.tune_rounded, color: colors.textSecondary),
-            onPressed: () => AlertPreferencesSheet.show(context),
+            onSelected: (value) {
+              if (value == 'companion') {
+                CompanionPreferencesSheet.show(context);
+              } else if (value == 'alerts') {
+                AlertPreferencesSheet.show(context);
+              } else if (value == 'reset') {
+                provider.clearConversation();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'companion',
+                child: ListTile(
+                  leading: Icon(Icons.face_retouching_natural_rounded),
+                  title: Text('FIN settings'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'alerts',
+                child: ListTile(
+                  leading: Icon(Icons.notifications_active_outlined),
+                  title: Text('Alert preferences'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              if (provider.messages.isNotEmpty)
+                const PopupMenuItem(
+                  value: 'reset',
+                  child: ListTile(
+                    leading: Icon(Icons.refresh_rounded),
+                    title: Text('Reset conversation'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+            ],
           ),
-          if (provider.messages.isNotEmpty)
-            IconButton(
-              tooltip: "Reset Conversation",
-              icon: Icon(Icons.refresh_rounded, color: colors.textSecondary),
-              onPressed: () => provider.clearConversation(),
-            ),
           IconButton(
             tooltip: "Privacy Guarantee",
             icon: Icon(Icons.shield_outlined, color: colors.primary),
@@ -241,6 +310,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
+          controller: _scrollController,
           padding: const EdgeInsets.all(AppDimensions.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -331,7 +401,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -344,63 +415,93 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          FinCharacter(
-            size: 72,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 390;
+          final availableHeight = MediaQuery.sizeOf(context).height;
+          final characterHeight =
+              (compact ? constraints.maxWidth * .52 : availableHeight * .245)
+                  .clamp(150.0, 220.0);
+
+          final character = FinCharacter(
+            size: characterHeight,
             state: state,
             animationsEnabled: prefs.animationsEnabled,
+            animationActive: _isFinHeroVisible,
             onTap: () => CompanionPreferencesSheet.show(context),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      "FIN",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: colors.textPrimary,
-                        letterSpacing: 0.5,
-                      ),
+          );
+          final copy = Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: compact
+                ? CrossAxisAlignment.center
+                : CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                alignment: compact ? WrapAlignment.center : WrapAlignment.start,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  Text(
+                    "FIN",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: colors.textPrimary,
+                      letterSpacing: .7,
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: colors.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        statusText,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: colors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  name != null && name.isNotEmpty
-                      ? "Hey $name! Ready to inspect your spending or plan goals together?"
-                      : "Your private financial companion. Ask about spending, budgets, or plans.",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colors.textSecondary,
-                    height: 1.3,
                   ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.primary.withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      statusText,
+                      maxLines: 2,
+                      textAlign: compact ? TextAlign.center : TextAlign.start,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: colors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 7),
+              Text(
+                name != null && name.isNotEmpty
+                    ? "Hey $name! Ready to inspect your spending or plan goals together?"
+                    : "Your private financial companion. Ask about spending, budgets, or plans.",
+                textAlign: compact ? TextAlign.center : TextAlign.start,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                  height: 1.35,
                 ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+
+          if (compact) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [character, const SizedBox(height: 8), copy],
+            );
+          }
+          return Row(
+            children: [
+              character,
+              const SizedBox(width: 18),
+              Expanded(child: copy),
+            ],
+          );
+        },
       ),
     );
   }
@@ -436,7 +537,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
             child: Text(
               "View Guarantee",
-              style: TextStyle(fontSize: 12, color: colors.primary, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 12,
+                color: colors.primary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -460,11 +565,19 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               textInputAction: TextInputAction.send,
               onSubmitted: _submitQuestion,
               decoration: InputDecoration(
-                hintText: "Ask FIN about your spending, trends, budgets, or goals...",
+                hintText:
+                    "Ask FIN about your spending, trends, budgets, or goals...",
                 hintStyle: TextStyle(fontSize: 13, color: colors.textSecondary),
-                prefixIcon: Icon(Icons.chat_bubble_outline_rounded, color: colors.textSecondary, size: 20),
+                prefixIcon: Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  color: colors.textSecondary,
+                  size: 20,
+                ),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
               ),
             ),
           ),
@@ -476,7 +589,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             backgroundColor: colors.primary,
             foregroundColor: colors.isDark ? Colors.black : Colors.white,
             padding: const EdgeInsets.all(12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
           icon: const Icon(Icons.arrow_upward_rounded, size: 20),
           onPressed: () => _submitQuestion(_questionController.text),
@@ -489,16 +604,56 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final suggestions = provider.suggestedQuestions.isNotEmpty
         ? provider.suggestedQuestions
         : const [
-            SuggestedQuestion(intent: "total_spending", question: "How much did I spend this month?", label: "Total Spending"),
-            SuggestedQuestion(intent: "spending_by_category", question: "Show spending by category", label: "By Category"),
-            SuggestedQuestion(intent: "spending_trend", question: "How does my spending compare to last month?", label: "Spending Trend"),
-            SuggestedQuestion(intent: "category_comparison", question: "Which category increased the most?", label: "Category Comparison"),
-            SuggestedQuestion(intent: "budget_status", question: "Am I exceeding my food budget?", label: "Food Budget"),
-            SuggestedQuestion(intent: "remaining_allowance", question: "How much can I still spend?", label: "Remaining Allowance"),
-            SuggestedQuestion(intent: "fin_greeting", question: "Hey FIN!", label: "Hey FIN!"),
-            SuggestedQuestion(intent: "fin_action_goal", question: "Help me save ₹50,000 for a laptop", label: "Plan Laptop Goal"),
-            SuggestedQuestion(intent: "fin_concern_spending", question: "I'm spending too much lately.", label: "Spending Concern"),
-            SuggestedQuestion(intent: "savings_opportunities", question: "Where can I save money?", label: "Savings Opportunities"),
+            SuggestedQuestion(
+              intent: "total_spending",
+              question: "How much did I spend this month?",
+              label: "Total Spending",
+            ),
+            SuggestedQuestion(
+              intent: "spending_by_category",
+              question: "Show spending by category",
+              label: "By Category",
+            ),
+            SuggestedQuestion(
+              intent: "spending_trend",
+              question: "How does my spending compare to last month?",
+              label: "Spending Trend",
+            ),
+            SuggestedQuestion(
+              intent: "category_comparison",
+              question: "Which category increased the most?",
+              label: "Category Comparison",
+            ),
+            SuggestedQuestion(
+              intent: "budget_status",
+              question: "Am I exceeding my food budget?",
+              label: "Food Budget",
+            ),
+            SuggestedQuestion(
+              intent: "remaining_allowance",
+              question: "How much can I still spend?",
+              label: "Remaining Allowance",
+            ),
+            SuggestedQuestion(
+              intent: "fin_greeting",
+              question: "Hey FIN!",
+              label: "Hey FIN!",
+            ),
+            SuggestedQuestion(
+              intent: "fin_action_goal",
+              question: "Help me save ₹50,000 for a laptop",
+              label: "Plan Laptop Goal",
+            ),
+            SuggestedQuestion(
+              intent: "fin_concern_spending",
+              question: "I'm spending too much lately.",
+              label: "Spending Concern",
+            ),
+            SuggestedQuestion(
+              intent: "savings_opportunities",
+              question: "Where can I save money?",
+              label: "Savings Opportunities",
+            ),
           ];
 
     return Column(
@@ -547,13 +702,24 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Icon(Icons.history_rounded, size: 16, color: colors.textSecondary),
+              Icon(
+                Icons.history_rounded,
+                size: 16,
+                color: colors.textSecondary,
+              ),
               const SizedBox(width: 6),
               Text(
                 "Conversation Context",
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colors.textSecondary),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: colors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -578,7 +744,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const FinCharacter(size: 16, state: FinCharacterState.idle),
+                        const FinCharacter(
+                          size: 16,
+                          state: FinCharacterState.idle,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           "FIN: ",
@@ -618,10 +787,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ),
       child: Column(
         children: [
-          const FinCharacter(
-            size: 68,
-            state: FinCharacterState.thinking,
-          ),
+          const FinCharacter(size: 68, state: FinCharacterState.thinking),
           const SizedBox(height: 14),
           CircularProgressIndicator(color: colors.primary, strokeWidth: 2.5),
           const SizedBox(height: 12),
@@ -652,7 +818,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               children: [
                 Text(
                   "Offline Mode",
-                  style: TextStyle(fontWeight: FontWeight.bold, color: colors.textPrimary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: colors.textPrimary,
+                  ),
                 ),
                 Text(
                   "Unable to connect to local server. Please check your network.",
@@ -684,7 +853,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               children: [
                 Text(
                   "Rate Limit Reached",
-                  style: TextStyle(fontWeight: FontWeight.bold, color: colors.textPrimary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: colors.textPrimary,
+                  ),
                 ),
                 Text(
                   "Too many requests. Please wait a moment before asking FIN another question.",
@@ -739,11 +911,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Badges Row
-          Row(
+          // Responsive badges wrap rather than competing for horizontal space.
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: colors.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
@@ -757,21 +935,30 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   ),
                 ),
               ),
-              const Spacer(),
               if (result.period != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.elevated,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today_rounded, size: 12, color: colors.textSecondary),
+                      Icon(
+                        Icons.calendar_today_rounded,
+                        size: 12,
+                        color: colors.textSecondary,
+                      ),
                       const SizedBox(width: 5),
                       Text(
                         result.period!.label,
-                        style: TextStyle(fontSize: 11, color: colors.textSecondary),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: colors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -788,7 +975,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               FinCharacter(
                 size: 38,
                 state: provider.characterState,
-                animationsEnabled: provider.companionPreferences.animationsEnabled,
+                animationsEnabled:
+                    provider.companionPreferences.animationsEnabled,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -818,17 +1006,23 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ],
 
           // Structured Metrics Details (Categories, Budgets, Comparisons, Indicators)
-          if (result.categories.isNotEmpty && result.intent == "spending_by_category") ...[
+          if (result.categories.isNotEmpty &&
+              result.intent == "spending_by_category") ...[
             const SizedBox(height: 16),
             Text(
               "Category Breakdown",
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colors.textSecondary),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: colors.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
             ...result.categories.map((c) => _buildCategoryTile(colors, c)),
           ],
 
-          if (result.comparisonCategories.isNotEmpty && result.intent == "category_comparison") ...[
+          if (result.comparisonCategories.isNotEmpty &&
+              result.intent == "category_comparison") ...[
             const SizedBox(height: 16),
             _buildCategoryComparisonCard(colors, result),
           ],
@@ -838,11 +1032,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             _buildCategoryBudgetCard(colors, result.categoryBudget!),
           ],
 
-          if (result.budgetItems.isNotEmpty && result.intent == "budget_status" && result.categoryBudget == null) ...[
+          if (result.budgetItems.isNotEmpty &&
+              result.intent == "budget_status" &&
+              result.categoryBudget == null) ...[
             const SizedBox(height: 16),
             Text(
               "BUDGET STATUS",
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colors.textSecondary),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: colors.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
             ...result.budgetItems.map((b) => _buildBudgetTile(colors, b)),
@@ -858,11 +1058,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             _buildSavingsOpportunitiesCard(colors, result.savingsOpportunities),
           ],
 
-          if (result.largestExpenses.isNotEmpty && result.intent == "largest_expenses") ...[
+          if (result.largestExpenses.isNotEmpty &&
+              result.intent == "largest_expenses") ...[
             const SizedBox(height: 16),
             Text(
               "TOP EXPENSES",
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colors.textSecondary),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: colors.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
             ...result.largestExpenses.map((e) => _buildExpenseTile(colors, e)),
@@ -873,7 +1078,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const SizedBox(height: 16),
             Text(
               "Follow-up Questions",
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colors.textSecondary),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: colors.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -931,7 +1140,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           Expanded(
             child: Text(
               nav.label,
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colors.textPrimary),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: colors.textPrimary,
+              ),
             ),
           ),
           ElevatedButton(
@@ -946,12 +1159,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               backgroundColor: colors.primary,
               foregroundColor: colors.isDark ? Colors.black : Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text("Open", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                Text(
+                  "Open",
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
                 SizedBox(width: 4),
                 Icon(Icons.arrow_forward_rounded, size: 14),
               ],
@@ -972,13 +1190,24 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                item.name,
-                style: TextStyle(fontSize: 13, color: colors.textPrimary, fontWeight: FontWeight.w500),
+              Expanded(
+                child: Text(
+                  item.name,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 "₹${item.total.toStringAsFixed(2)} (${item.percentage}%)",
-                style: TextStyle(fontSize: 13, color: colors.textPrimary, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: colors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -995,7 +1224,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildCategoryComparisonCard(dynamic colors, AnalyticsQueryResult result) {
+  Widget _buildCategoryComparisonCard(
+    dynamic colors,
+    AnalyticsQueryResult result,
+  ) {
     final categories = result.comparisonCategories;
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1008,7 +1240,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         children: [
           Text(
             "MONTH-OVER-MONTH CHANGES",
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colors.textSecondary),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: colors.textSecondary,
+            ),
           ),
           const SizedBox(height: 8),
           ...categories.take(4).map((c) {
@@ -1020,15 +1256,27 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   Expanded(
                     child: Text(
                       c.name,
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colors.textPrimary),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: colors.textPrimary,
+                      ),
                     ),
                   ),
-                  Text("₹${c.currentTotal.toStringAsFixed(0)}", style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+                  Text(
+                    "₹${c.currentTotal.toStringAsFixed(0)}",
+                    style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                  ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: isIncrease ? Colors.red.withValues(alpha: 0.15) : Colors.green.withValues(alpha: 0.15),
+                      color: isIncrease
+                          ? Colors.red.withValues(alpha: 0.15)
+                          : Colors.green.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -1066,26 +1314,41 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "${budget.categoryName.toUpperCase()} BUDGET PROGRESS",
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: colors.textSecondary),
+              Expanded(
+                child: Text(
+                  "${budget.categoryName.toUpperCase()} BUDGET PROGRESS",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: colors.textSecondary,
+                  ),
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: isExceeded
                       ? Colors.red.withValues(alpha: 0.15)
                       : isWarning
-                          ? Colors.orange.withValues(alpha: 0.15)
-                          : Colors.green.withValues(alpha: 0.15),
+                      ? Colors.orange.withValues(alpha: 0.15)
+                      : Colors.green.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  isExceeded ? "EXCEEDED" : isWarning ? "WARNING" : "ON TRACK",
+                  isExceeded
+                      ? "EXCEEDED"
+                      : isWarning
+                      ? "WARNING"
+                      : "ON TRACK",
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: isExceeded ? Colors.red : isWarning ? Colors.orange : Colors.green,
+                    color: isExceeded
+                        ? Colors.red
+                        : isWarning
+                        ? Colors.orange
+                        : Colors.green,
                   ),
                 ),
               ),
@@ -1096,7 +1359,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             value: (pct / 100).clamp(0.0, 1.0),
             backgroundColor: colors.elevated,
             valueColor: AlwaysStoppedAnimation<Color>(
-              isExceeded ? Colors.red : isWarning ? Colors.orange : colors.primary,
+              isExceeded
+                  ? Colors.red
+                  : isWarning
+                  ? Colors.orange
+                  : colors.primary,
             ),
             minHeight: 8,
             borderRadius: BorderRadius.circular(4),
@@ -1105,8 +1372,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Spent: ₹${budget.spent.toStringAsFixed(2)}", style: TextStyle(fontSize: 12, color: colors.textSecondary)),
-              Text("Limit: ₹${budget.budgetLimit.toStringAsFixed(2)}", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: colors.textPrimary)),
+              Text(
+                "Spent: ₹${budget.spent.toStringAsFixed(2)}",
+                style: TextStyle(fontSize: 12, color: colors.textSecondary),
+              ),
+              Text(
+                "Limit: ₹${budget.budgetLimit.toStringAsFixed(2)}",
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
+              ),
             ],
           ),
         ],
@@ -1129,7 +1406,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               children: [
                 Text(
                   item.categoryName,
-                  style: TextStyle(fontSize: 13, color: colors.textPrimary, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 Text(
                   "Spent ₹${item.spent.toStringAsFixed(2)} of ₹${item.budgetLimit.toStringAsFixed(2)}",
@@ -1146,7 +1427,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
             child: Text(
               "${item.percentage}%",
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: statusColor,
+              ),
             ),
           ),
         ],
@@ -1154,7 +1439,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildUnusualSpendingCard(dynamic colors, List<UnusualSpendingIndicator> indicators) {
+  Widget _buildUnusualSpendingCard(
+    dynamic colors,
+    List<UnusualSpendingIndicator> indicators,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1167,11 +1455,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, size: 16, color: Colors.amber),
+              const Icon(
+                Icons.warning_amber_rounded,
+                size: 16,
+                color: Colors.amber,
+              ),
               const SizedBox(width: 8),
-              const Text(
-                "UNUSUAL SPENDING INDICATORS",
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber),
+              const Expanded(
+                child: Text(
+                  "UNUSUAL SPENDING INDICATORS",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.amber,
+                  ),
+                ),
               ),
             ],
           ),
@@ -1179,7 +1477,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ...indicators.map((ind) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 6.0),
-              child: Text("• ${ind.description}", style: TextStyle(fontSize: 12, color: colors.textPrimary)),
+              child: Text(
+                "• ${ind.description}",
+                style: TextStyle(fontSize: 12, color: colors.textPrimary),
+              ),
             );
           }),
         ],
@@ -1187,7 +1488,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildSavingsOpportunitiesCard(dynamic colors, List<SavingsOpportunityItem> opportunities) {
+  Widget _buildSavingsOpportunitiesCard(
+    dynamic colors,
+    List<SavingsOpportunityItem> opportunities,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1204,7 +1508,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               const SizedBox(width: 8),
               const Text(
                 "DETERMINISTIC SAVINGS OPPORTUNITIES",
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
               ),
             ],
           ),
@@ -1212,7 +1520,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ...opportunities.map((opp) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 6.0),
-              child: Text("• ${opp.reason}", style: TextStyle(fontSize: 12, color: colors.textPrimary)),
+              child: Text(
+                "• ${opp.reason}",
+                style: TextStyle(fontSize: 12, color: colors.textPrimary),
+              ),
             );
           }),
         ],
@@ -1231,7 +1542,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               children: [
                 Text(
                   item.title,
-                  style: TextStyle(fontSize: 13, color: colors.textPrimary, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 Text(
                   "${item.category} • ${item.date}",
@@ -1242,7 +1557,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ),
           Text(
             "₹${item.amount.toStringAsFixed(2)}",
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: colors.textPrimary),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: colors.textPrimary,
+            ),
           ),
         ],
       ),
@@ -1266,20 +1585,32 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               const SizedBox(width: 10),
               Text(
                 "Policy & Scope Notice",
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: colors.textPrimary),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             result.answer,
-            style: TextStyle(fontSize: 13, color: colors.textPrimary, height: 1.4),
+            style: TextStyle(
+              fontSize: 13,
+              color: colors.textPrimary,
+              height: 1.4,
+            ),
           ),
           if (result.suggestions.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(
               "Try asking one of these supported queries instead:",
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: colors.textSecondary),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: colors.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
@@ -1311,7 +1642,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           const SizedBox(height: 24),
           Text(
             "Current Month Insights",
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: colors.textPrimary),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: colors.textPrimary,
+            ),
           ),
           const SizedBox(height: 10),
           ...provider.insights.map((item) => _buildInsightCard(colors, item)),
@@ -1364,12 +1699,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               children: [
                 Text(
                   item.title,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: colors.textPrimary),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: colors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   item.message,
-                  style: TextStyle(fontSize: 12, color: colors.textSecondary, height: 1.3),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    height: 1.3,
+                  ),
                 ),
               ],
             ),

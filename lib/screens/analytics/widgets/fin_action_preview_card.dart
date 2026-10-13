@@ -43,7 +43,8 @@ class _FinActionPreviewCardState extends State<FinActionPreviewCard> {
       _isConfirming = false;
       _isSuccess = success;
       _executionResult = success
-          ? (provider.actionSuccessMessage ?? "Action confirmed and executed successfully.")
+          ? (provider.actionSuccessMessage ??
+                "Action confirmed and executed successfully.")
           : (provider.errorMessage ?? "Action failed. Please try again.");
     });
   }
@@ -127,7 +128,10 @@ class _FinActionPreviewCardState extends State<FinActionPreviewCard> {
               ),
               if (_isSuccess)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.success.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
@@ -135,7 +139,11 @@ class _FinActionPreviewCardState extends State<FinActionPreviewCard> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle_rounded, size: 12, color: colors.success),
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 12,
+                        color: colors.success,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         "Confirmed",
@@ -178,16 +186,26 @@ class _FinActionPreviewCardState extends State<FinActionPreviewCard> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          _formatParamKey(entry.key),
-                          style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                        Expanded(
+                          child: Text(
+                            _formatParamKey(entry.key),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colors.textSecondary,
+                            ),
+                          ),
                         ),
-                        Text(
-                          entry.value?.toString() ?? "-",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: colors.textPrimary,
+                        const SizedBox(width: 12),
+                        Flexible(
+                          child: Text(
+                            entry.value?.toString() ?? "-",
+                            textAlign: TextAlign.end,
+                            softWrap: true,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: colors.textPrimary,
+                            ),
                           ),
                         ),
                       ],
@@ -204,7 +222,11 @@ class _FinActionPreviewCardState extends State<FinActionPreviewCard> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline_rounded, size: 14, color: colors.primary),
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 14,
+                  color: colors.primary,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -234,7 +256,9 @@ class _FinActionPreviewCardState extends State<FinActionPreviewCard> {
               child: Row(
                 children: [
                   Icon(
-                    _isSuccess ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+                    _isSuccess
+                        ? Icons.check_circle_rounded
+                        : Icons.error_outline_rounded,
                     size: 16,
                     color: _isSuccess ? colors.success : colors.danger,
                   ),
@@ -265,11 +289,16 @@ class _FinActionPreviewCardState extends State<FinActionPreviewCard> {
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       side: BorderSide(color: colors.cardBorder),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     child: Text(
                       "Cancel",
-                      style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                      ),
                     ),
                   ),
                 ),
@@ -280,15 +309,22 @@ class _FinActionPreviewCardState extends State<FinActionPreviewCard> {
                     onPressed: _isConfirming ? null : _handleConfirm,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colors.primary,
-                      foregroundColor: colors.isDark ? Colors.black : Colors.white,
+                      foregroundColor: colors.isDark
+                          ? Colors.black
+                          : Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     child: _isConfirming
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -297,7 +333,10 @@ class _FinActionPreviewCardState extends State<FinActionPreviewCard> {
                               SizedBox(width: 6),
                               Text(
                                 "Confirm & Save",
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ],
                           ),
@@ -315,7 +354,9 @@ class _FinActionPreviewCardState extends State<FinActionPreviewCard> {
     return key
         .replaceAll('_', ' ')
         .split(' ')
-        .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '')
+        .map(
+          (w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '',
+        )
         .join(' ');
   }
 }

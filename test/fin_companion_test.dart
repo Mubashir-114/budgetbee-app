@@ -126,11 +126,7 @@ class MockCompanionRepository extends AnalyticsRepository {
     String? endDate,
     AlertPreferences? preferences,
   }) async {
-    return const ApiResponse(
-      success: true,
-      message: 'Alerts',
-      data: [],
-    );
+    return const ApiResponse(success: true, message: 'Alerts', data: []);
   }
 
   @override
@@ -152,15 +148,39 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('5E.3 — FIN 2.5D Animated Character Widget', () {
-    testWidgets('renders FinCharacter in all 10 character states without throwing', (tester) async {
-      for (final state in FinCharacterState.values) {
+    testWidgets(
+      'renders FinCharacter in all 10 character states without throwing',
+      (tester) async {
+        for (final state in FinCharacterState.values) {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: FinCharacter(
+                    state: state,
+                    size: 100,
+                    animationsEnabled: false,
+                  ),
+                ),
+              ),
+            ),
+          );
+          expect(find.byType(FinCharacter), findsOneWidget);
+          expect(find.byType(CustomPaint), findsWidgets);
+        }
+      },
+    );
+
+    testWidgets(
+      'respects animationsEnabled false without spawning repeating animation timer',
+      (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
+          const MaterialApp(
             home: Scaffold(
               body: Center(
                 child: FinCharacter(
-                  state: state,
-                  size: 100,
+                  state: FinCharacterState.idle,
+                  size: 80,
                   animationsEnabled: false,
                 ),
               ),
@@ -168,30 +188,14 @@ void main() {
           ),
         );
         expect(find.byType(FinCharacter), findsOneWidget);
-        expect(find.byType(CustomPaint), findsWidgets);
-      }
-    });
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(tester.takeException(), isNull);
+      },
+    );
 
-    testWidgets('respects animationsEnabled false without spawning repeating animation timer', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: FinCharacter(
-                state: FinCharacterState.idle,
-                size: 80,
-                animationsEnabled: false,
-              ),
-            ),
-          ),
-        ),
-      );
-      expect(find.byType(FinCharacter), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('cleanly disposes AnimationController when unmounted', (tester) async {
+    testWidgets('cleanly disposes AnimationController when unmounted', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -210,11 +214,7 @@ void main() {
 
       // Unmount the widget by replacing body with empty Container
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: SizedBox.shrink(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: SizedBox.shrink())),
       );
       await tester.pump();
       expect(find.byType(FinCharacter), findsNothing);
@@ -244,10 +244,32 @@ void main() {
       await tester.pump();
       expect(tapped, isTrue);
     });
+
+    testWidgets('renders the requested full character height', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: FinCharacter(
+              state: FinCharacterState.explaining,
+              size: 180,
+              animationsEnabled: false,
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.getSize(find.byType(FinCharacter)).height, 180);
+      expect(
+        find.bySemanticsLabel('FIN financial companion, currently Explaining'),
+        findsOneWidget,
+      );
+    });
   });
 
   group('5E.4 — FIN Action Preview Card & Explicit Confirmation', () {
-    testWidgets('renders action preview parameters and impact note', (tester) async {
+    testWidgets('renders action preview parameters and impact note', (
+      tester,
+    ) async {
       final mockRepo = MockCompanionRepository();
       final provider = AnalyticsProvider(repository: mockRepo);
 
@@ -260,7 +282,8 @@ void main() {
           'target_amount': '₹50,000.00',
           'monthly_contribution': '₹4,166.67',
         },
-        impact: 'This will save a goal in FinTrack. No actual money will be moved.',
+        impact:
+            'This will save a goal in FinTrack. No actual money will be moved.',
         requiresConfirmation: true,
       );
 
@@ -276,46 +299,62 @@ void main() {
       );
 
       expect(find.text('Create Savings Goal'), findsOneWidget);
-      expect(find.text('Prepare a goal of ₹50,000 for Laptop by Dec 2026.'), findsOneWidget);
+      expect(
+        find.text('Prepare a goal of ₹50,000 for Laptop by Dec 2026.'),
+        findsOneWidget,
+      );
       expect(find.text('Laptop Fund'), findsOneWidget);
       expect(find.text('₹50,000.00'), findsOneWidget);
-      expect(find.text('This will save a goal in FinTrack. No actual money will be moved.'), findsOneWidget);
+      expect(
+        find.text(
+          'This will save a goal in FinTrack. No actual money will be moved.',
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Confirm & Save'), findsOneWidget);
       expect(find.text('Cancel'), findsOneWidget);
     });
 
-    testWidgets('tapping Confirm & Save invokes provider.confirmPendingAction and displays success', (tester) async {
-      final mockRepo = MockCompanionRepository();
-      final provider = AnalyticsProvider(repository: mockRepo);
+    testWidgets(
+      'tapping Confirm & Save invokes provider.confirmPendingAction and displays success',
+      (tester) async {
+        final mockRepo = MockCompanionRepository();
+        final provider = AnalyticsProvider(repository: mockRepo);
 
-      const preview = FinActionPreview(
-        capability: 'create_savings_goal',
-        title: 'Create Savings Goal',
-        description: 'Prepare a goal of ₹50,000 for Laptop.',
-        parameters: {'name': 'Laptop Fund', 'target_amount': '50000'},
-        impact: 'No bank transfer will occur.',
-        requiresConfirmation: true,
-      );
+        const preview = FinActionPreview(
+          capability: 'create_savings_goal',
+          title: 'Create Savings Goal',
+          description: 'Prepare a goal of ₹50,000 for Laptop.',
+          parameters: {'name': 'Laptop Fund', 'target_amount': '50000'},
+          impact: 'No bank transfer will occur.',
+          requiresConfirmation: true,
+        );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChangeNotifierProvider<AnalyticsProvider>.value(
-              value: provider,
-              child: const FinActionPreviewCard(actionPreview: preview),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ChangeNotifierProvider<AnalyticsProvider>.value(
+                value: provider,
+                child: const FinActionPreviewCard(actionPreview: preview),
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.tap(find.text('Confirm & Save'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Confirm & Save'));
+        await tester.pumpAndSettle();
 
-      expect(mockRepo.confirmActionCalled, isTrue);
-      expect(mockRepo.lastConfirmedCapability, 'create_savings_goal');
-      expect(find.text('Confirmed'), findsOneWidget);
-      expect(find.text('Savings goal "Emergency Fund" created with target ₹50,000.00.'), findsOneWidget);
-    });
+        expect(mockRepo.confirmActionCalled, isTrue);
+        expect(mockRepo.lastConfirmedCapability, 'create_savings_goal');
+        expect(find.text('Confirmed'), findsOneWidget);
+        expect(
+          find.text(
+            'Savings goal "Emergency Fund" created with target ₹50,000.00.',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
 
     testWidgets('tapping Cancel dismisses the preview card', (tester) async {
       final mockRepo = MockCompanionRepository();
@@ -349,53 +388,58 @@ void main() {
   });
 
   group('5E.2 — Persistent Relationship Preferences Sheet', () {
-    testWidgets('renders preferences sheet controls and allows updating settings', (tester) async {
-      final mockRepo = MockCompanionRepository();
-      final provider = AnalyticsProvider(repository: mockRepo);
-      await provider.loadCompanionPreferences();
+    testWidgets(
+      'renders preferences sheet controls and allows updating settings',
+      (tester) async {
+        final mockRepo = MockCompanionRepository();
+        final provider = AnalyticsProvider(repository: mockRepo);
+        await provider.loadCompanionPreferences();
 
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
-          home: MediaQuery(
-            data: const MediaQueryData(disableAnimations: true),
-            child: Scaffold(
-              body: ChangeNotifierProvider<AnalyticsProvider>.value(
-                value: provider,
-                child: const CompanionPreferencesSheet(),
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData(splashFactory: NoSplash.splashFactory),
+            home: MediaQuery(
+              data: const MediaQueryData(disableAnimations: true),
+              child: Scaffold(
+                body: ChangeNotifierProvider<AnalyticsProvider>.value(
+                  value: provider,
+                  child: const CompanionPreferencesSheet(),
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('FIN Companion Settings'), findsOneWidget);
-      expect(find.text('Preferred Name'), findsOneWidget);
-      expect(find.text('Response Style'), findsOneWidget);
-      expect(find.text('Friendly'), findsOneWidget);
-      expect(find.text('Concise'), findsOneWidget);
-      expect(find.text('Detailed'), findsOneWidget);
-      expect(find.text('Smooth 2.5D Animations'), findsOneWidget);
-      expect(find.text('Personalized Greetings'), findsOneWidget);
+        expect(find.text('FIN Companion Settings'), findsOneWidget);
+        expect(find.text('Preferred Name'), findsOneWidget);
+        expect(find.text('Response Style'), findsOneWidget);
+        expect(find.text('Friendly'), findsOneWidget);
+        expect(find.text('Concise'), findsOneWidget);
+        expect(find.text('Detailed'), findsOneWidget);
+        expect(find.text('Smooth 2.5D Animations'), findsOneWidget);
+        expect(find.text('Personalized Greetings'), findsOneWidget);
 
-      // Select Concise style and enter name
-      await tester.tap(find.text('Concise'));
-      await tester.enterText(find.byType(TextField), 'Alexander');
-      await tester.pumpAndSettle();
+        // Select Concise style and enter name
+        await tester.tap(find.text('Concise'));
+        await tester.enterText(find.byType(TextField), 'Alexander');
+        await tester.pumpAndSettle();
 
-      // Tap Save
-      await tester.ensureVisible(find.text('Save Preferences'));
-      await tester.tap(find.text('Save Preferences'));
-      await tester.pumpAndSettle();
+        // Tap Save
+        await tester.ensureVisible(find.text('Save Preferences'));
+        await tester.tap(find.text('Save Preferences'));
+        await tester.pumpAndSettle();
 
-      expect(mockRepo.updatePreferencesCalled, isTrue);
-      expect(mockRepo.lastUpdatedPrefs?.preferredName, 'Alexander');
-      expect(mockRepo.lastUpdatedPrefs?.responseStyle, 'concise');
-    });
+        expect(mockRepo.updatePreferencesCalled, isTrue);
+        expect(mockRepo.lastUpdatedPrefs?.preferredName, 'Alexander');
+        expect(mockRepo.lastUpdatedPrefs?.responseStyle, 'concise');
+      },
+    );
   });
 
   group('5E.1 & 5E.4 — AnalyticsScreen FIN Integration', () {
-    testWidgets('renders FIN Hero card with status and greeting', (tester) async {
+    testWidgets('renders FIN Hero card with status and greeting', (
+      tester,
+    ) async {
       final mockRepo = MockCompanionRepository();
       final provider = AnalyticsProvider(repository: mockRepo);
 
@@ -419,37 +463,87 @@ void main() {
       expect(find.byTooltip('FIN Settings & Memory'), findsOneWidget);
     });
 
-    testWidgets('renders action preview card and navigation action in assistant response', (tester) async {
-      final mockRepo = MockCompanionRepository();
-      final provider = AnalyticsProvider(repository: mockRepo);
+    testWidgets(
+      'renders action preview card and navigation action in assistant response',
+      (tester) async {
+        final mockRepo = MockCompanionRepository();
+        final provider = AnalyticsProvider(repository: mockRepo);
 
-      mockRepo.mockQueryResult = const ApiResponse(
-        success: true,
-        message: 'OK',
-        data: AnalyticsQueryResult(
-          intent: 'fin_action_goal',
-          isRefusal: false,
-          answer: 'I prepared your Laptop savings goal schedule!',
-          privacyNotice: 'Saved records only.',
-          characterState: 'explaining',
-          actionPreview: FinActionPreview(
-            capability: 'create_savings_goal',
-            title: 'Create Laptop Goal',
-            description: 'Save ₹50,000 for Laptop by Dec 2026.',
-            parameters: {'target_amount': '₹50,000.00'},
-            impact: 'Only updates planned goals in FinTrack.',
+        mockRepo.mockQueryResult = const ApiResponse(
+          success: true,
+          message: 'OK',
+          data: AnalyticsQueryResult(
+            intent: 'fin_action_goal',
+            isRefusal: false,
+            answer: 'I prepared your Laptop savings goal schedule!',
+            privacyNotice: 'Saved records only.',
+            characterState: 'explaining',
+            actionPreview: FinActionPreview(
+              capability: 'create_savings_goal',
+              title: 'Create Laptop Goal',
+              description: 'Save ₹50,000 for Laptop by Dec 2026.',
+              parameters: {'target_amount': '₹50,000.00'},
+              impact: 'Only updates planned goals in FinTrack.',
+            ),
+            navigationAction: FinNavigationAction(
+              route: '/planning',
+              label: 'Open Savings Goals & Planning',
+            ),
+            suggestions: [],
           ),
-          navigationAction: FinNavigationAction(
-            route: '/planning',
-            label: 'Open Savings Goals & Planning',
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData(splashFactory: NoSplash.splashFactory),
+            home: MediaQuery(
+              data: const MediaQueryData(disableAnimations: true),
+              child: ChangeNotifierProvider<AnalyticsProvider>.value(
+                value: provider,
+                child: const AnalyticsScreen(),
+              ),
+            ),
           ),
-          suggestions: [],
-        ),
-      );
+        );
+        await tester.pumpAndSettle();
+
+        await provider.askQuestion('Help me save ₹50,000 for a laptop');
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('I prepared your Laptop savings goal schedule!'),
+          findsOneWidget,
+        );
+        expect(find.text('Create Laptop Goal'), findsOneWidget);
+        expect(find.text('Open Savings Goals & Planning'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'clearSession resets companion state to idle and clears pending context',
+      (tester) async {
+        final mockRepo = MockCompanionRepository();
+        final provider = AnalyticsProvider(repository: mockRepo);
+
+        await provider.askQuestion('Help me save');
+        provider.setCharacterState(FinCharacterState.concerned);
+        expect(provider.characterState, FinCharacterState.concerned);
+
+        provider.clearSession();
+        expect(provider.characterState, FinCharacterState.idle);
+        expect(provider.messages, isEmpty);
+        expect(provider.latestResult, isNull);
+      },
+    );
+
+    testWidgets('normal screen entry clears a stale error pose', (
+      tester,
+    ) async {
+      final provider = AnalyticsProvider(repository: MockCompanionRepository());
+      provider.setCharacterState(FinCharacterState.error);
 
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(splashFactory: NoSplash.splashFactory),
           home: MediaQuery(
             data: const MediaQueryData(disableAnimations: true),
             child: ChangeNotifierProvider<AnalyticsProvider>.value(
@@ -461,26 +555,41 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await provider.askQuestion('Help me save ₹50,000 for a laptop');
-      await tester.pumpAndSettle();
-
-      expect(find.text('I prepared your Laptop savings goal schedule!'), findsOneWidget);
-      expect(find.text('Create Laptop Goal'), findsOneWidget);
-      expect(find.text('Open Savings Goals & Planning'), findsOneWidget);
+      expect(provider.characterState, FinCharacterState.idle);
+      expect(find.text('FIN encountered an issue'), findsNothing);
+      expect(find.text('FIN is ready to help'), findsOneWidget);
     });
 
-    testWidgets('clearSession resets companion state to idle and clears pending context', (tester) async {
-      final mockRepo = MockCompanionRepository();
-      final provider = AnalyticsProvider(repository: mockRepo);
+    testWidgets('small Android layout and privacy sheet do not overflow', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-      await provider.askQuestion('Help me save');
-      provider.setCharacterState(FinCharacterState.concerned);
-      expect(provider.characterState, FinCharacterState.concerned);
+      final provider = AnalyticsProvider(repository: MockCompanionRepository());
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(320, 568),
+              disableAnimations: true,
+            ),
+            child: ChangeNotifierProvider<AnalyticsProvider>.value(
+              value: provider,
+              child: const AnalyticsScreen(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
 
-      provider.clearSession();
-      expect(provider.characterState, FinCharacterState.idle);
-      expect(provider.messages, isEmpty);
-      expect(provider.latestResult, isNull);
+      await tester.tap(find.byTooltip('Privacy Guarantee'));
+      await tester.pumpAndSettle();
+      expect(find.text('Privacy & Isolation Guarantee'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }

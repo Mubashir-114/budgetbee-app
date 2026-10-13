@@ -9,7 +9,7 @@ class AnalyticsProvider extends ChangeNotifier {
   final AnalyticsRepository _repository;
 
   AnalyticsProvider({AnalyticsRepository? repository})
-      : _repository = repository ?? AnalyticsRepository();
+    : _repository = repository ?? AnalyticsRepository();
 
   bool _isLoading = false;
   bool _isTyping = false;
@@ -123,6 +123,18 @@ class AnalyticsProvider extends ChangeNotifier {
     _pendingAction = null;
     _isExecutingAction = false;
     _actionSuccessMessage = null;
+    notifyListeners();
+  }
+
+  /// Starts a normal companion-screen visit without carrying a transient
+  /// operation pose over from the app-scoped provider's previous route visit.
+  /// Conversation/results remain intact; only presentation/error flags reset.
+  void prepareForScreenEntry() {
+    if (_isLoading || _isExecutingAction) return;
+    _characterState = FinCharacterState.idle;
+    _errorMessage = null;
+    _isRateLimited = false;
+    _isOffline = false;
     notifyListeners();
   }
 
@@ -406,7 +418,9 @@ class AnalyticsProvider extends ChangeNotifier {
 
         final rawInsights = res.data['insights'] as List<dynamic>? ?? [];
         _insights = rawInsights
-            .map((i) => AnalyticsInsightItem.fromJson(i as Map<String, dynamic>))
+            .map(
+              (i) => AnalyticsInsightItem.fromJson(i as Map<String, dynamic>),
+            )
             .toList();
       } else {
         _errorMessage = res.message;
@@ -438,7 +452,8 @@ class AnalyticsProvider extends ChangeNotifier {
         _errorMessage = "Invalid query parameters.";
       }
     } else {
-      _errorMessage = "A secure error occurred while processing analytics. Please retry.";
+      _errorMessage =
+          "A secure error occurred while processing analytics. Please retry.";
     }
   }
 
@@ -531,10 +546,7 @@ class AnalyticsProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> askAlertQuestion(
-    SmartAlertItem alert,
-    String question,
-  ) async {
+  Future<void> askAlertQuestion(SmartAlertItem alert, String question) async {
     await askQuestion(
       question,
       period: alert.period?.label ?? 'current_month',
