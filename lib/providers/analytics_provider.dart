@@ -11,6 +11,7 @@ class AnalyticsProvider extends ChangeNotifier {
       : _repository = repository ?? AnalyticsRepository();
 
   bool _isLoading = false;
+  bool _isTyping = false;
   String? _errorMessage;
   bool _isRateLimited = false;
   bool _isOffline = false;
@@ -20,7 +21,12 @@ class AnalyticsProvider extends ChangeNotifier {
   List<AnalyticsInsightItem> _insights = [];
   AnalyticsPeriod? _currentPeriod;
 
+  // Phase 5B Conversation State
+  List<ChatMessage> _messages = [];
+  ConversationContext? _conversationContext;
+
   bool get isLoading => _isLoading;
+  bool get isTyping => _isTyping;
   String? get errorMessage => _errorMessage;
   bool get isRateLimited => _isRateLimited;
   bool get isOffline => _isOffline;
@@ -30,11 +36,15 @@ class AnalyticsProvider extends ChangeNotifier {
   List<AnalyticsInsightItem> get insights => _insights;
   AnalyticsPeriod? get currentPeriod => _currentPeriod;
 
+  List<ChatMessage> get messages => _messages;
+  ConversationContext? get conversationContext => _conversationContext;
+
   List<SuggestedQuestion> get suggestedQuestions =>
       _capabilities?.suggestedQuestions ?? [];
 
   void clearSession() {
     _isLoading = false;
+    _isTyping = false;
     _errorMessage = null;
     _isRateLimited = false;
     _isOffline = false;
@@ -42,12 +52,24 @@ class AnalyticsProvider extends ChangeNotifier {
     _latestResult = null;
     _insights = [];
     _currentPeriod = null;
+    _messages = [];
+    _conversationContext = null;
     notifyListeners();
   }
 
   void clearResult() {
     _latestResult = null;
     _errorMessage = null;
+    notifyListeners();
+  }
+
+  void clearConversation() {
+    _messages = [];
+    _conversationContext = null;
+    _latestResult = null;
+    _errorMessage = null;
+    _isRateLimited = false;
+    _isOffline = false;
     notifyListeners();
   }
 
@@ -64,11 +86,25 @@ class AnalyticsProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> askQuestion(String question, {String? period}) async {
+  Future<void> askQuestion(
+    String question, {
+    String? period,
+    String? category,
+  }) async {
     final trimmed = question.trim();
     if (trimmed.isEmpty) return;
 
+    // Add user message to conversation list
+    final userMsg = ChatMessage(
+      id: "u_${DateTime.now().millisecondsSinceEpoch}",
+      sender: MessageSender.user,
+      text: trimmed,
+      timestamp: DateTime.now(),
+    );
+    _messages.add(userMsg);
+
     _isLoading = true;
+    _isTyping = true;
     _errorMessage = null;
     _isRateLimited = false;
     _isOffline = false;
@@ -77,7 +113,9 @@ class AnalyticsProvider extends ChangeNotifier {
     try {
       final res = await _repository.queryAnalytics(
         question: trimmed,
-        period: period ?? 'current_month',
+        period: period ?? _conversationContext?.activePeriod ?? 'current_month',
+        category: category,
+        conversationContext: _conversationContext,
       );
 
       if (res.success) {
@@ -85,6 +123,22 @@ class AnalyticsProvider extends ChangeNotifier {
         if (res.data.period != null) {
           _currentPeriod = res.data.period;
         }
+        if (res.data.conversationContext != null) {
+          _conversationContext = res.data.conversationContext;
+        }
+
+        // Add assistant response to conversation list
+        final assistantMsg = ChatMessage(
+          id: "a_${DateTime.now().millisecondsSinceEpoch}",
+          sender: MessageSender.assistant,
+          text: res.data.answer,
+          timestamp: DateTime.now(),
+          result: res.data,
+          isRefusal: res.data.isRefusal,
+          clarificationOptions: res.data.clarificationOptions,
+          followUpSuggestions: res.data.followUpSuggestions,
+        );
+        _messages.add(assistantMsg);
       } else {
         _errorMessage = res.message;
       }
@@ -94,12 +148,18 @@ class AnalyticsProvider extends ChangeNotifier {
       _errorMessage = "Unable to process query. Please try again.";
     } finally {
       _isLoading = false;
+      _isTyping = false;
       notifyListeners();
     }
   }
 
-  Future<void> selectIntent(String intent, {String? period}) async {
+  Future<void> selectIntent(
+    String intent, {
+    String? period,
+    String? category,
+  }) async {
     _isLoading = true;
+    _isTyping = true;
     _errorMessage = null;
     _isRateLimited = false;
     _isOffline = false;
@@ -108,7 +168,9 @@ class AnalyticsProvider extends ChangeNotifier {
     try {
       final res = await _repository.queryAnalytics(
         intent: intent,
-        period: period ?? 'current_month',
+        period: period ?? _conversationContext?.activePeriod ?? 'current_month',
+        category: category,
+        conversationContext: _conversationContext,
       );
 
       if (res.success) {
@@ -116,6 +178,21 @@ class AnalyticsProvider extends ChangeNotifier {
         if (res.data.period != null) {
           _currentPeriod = res.data.period;
         }
+        if (res.data.conversationContext != null) {
+          _conversationContext = res.data.conversationContext;
+        }
+
+        final assistantMsg = ChatMessage(
+          id: "a_${DateTime.now().millisecondsSinceEpoch}",
+          sender: MessageSender.assistant,
+          text: res.data.answer,
+          timestamp: DateTime.now(),
+          result: res.data,
+          isRefusal: res.data.isRefusal,
+          clarificationOptions: res.data.clarificationOptions,
+          followUpSuggestions: res.data.followUpSuggestions,
+        );
+        _messages.add(assistantMsg);
       } else {
         _errorMessage = res.message;
       }
@@ -125,8 +202,13 @@ class AnalyticsProvider extends ChangeNotifier {
       _errorMessage = "Unable to process intent. Please try again.";
     } finally {
       _isLoading = false;
+      _isTyping = false;
       notifyListeners();
     }
+  }
+
+  Future<void> selectClarification(ClarificationOption option) async {
+    await askQuestion(option.question);
   }
 
   Future<void> loadInsights({String? period, String? month}) async {
@@ -168,12 +250,12 @@ class AnalyticsProvider extends ChangeNotifier {
   void _handleDioError(DioException error) {
     if (error.response?.statusCode == 429) {
       _isRateLimited = true;
-      _errorMessage = "Query rate limit reached. Please wait a moment before trying again.";
+      _errorMessage = "Too many requests, please try again later";
     } else if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.connectionError ||
         error.type == DioExceptionType.receiveTimeout) {
       _isOffline = true;
-      _errorMessage = "Unable to reach server. Please check your network connection.";
+      _errorMessage = "Offline Mode: Unable to connect to server";
     } else if (error.response?.statusCode == 400) {
       final data = error.response?.data;
       if (data is Map && data['message'] != null) {

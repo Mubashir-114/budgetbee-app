@@ -26,6 +26,8 @@ class AnalyticsRepository {
     String? startDate,
     String? endDate,
     String? month,
+    String? category,
+    ConversationContext? conversationContext,
   }) async {
     final Map<String, dynamic> body = {};
     if (question != null && question.trim().isNotEmpty) {
@@ -45,6 +47,12 @@ class AnalyticsRepository {
     }
     if (month != null && month.isNotEmpty) {
       body['month'] = month;
+    }
+    if (category != null && category.trim().isNotEmpty) {
+      body['category'] = category.trim();
+    }
+    if (conversationContext != null) {
+      body['conversationContext'] = conversationContext.toJson();
     }
 
     final response = await _dio.post(

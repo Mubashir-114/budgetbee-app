@@ -62,6 +62,8 @@ class MockAnalyticsRepository implements AnalyticsRepository {
     String? startDate,
     String? endDate,
     String? month,
+    String? category,
+    ConversationContext? conversationContext,
   }) async {
     if (shouldThrowRateLimit) {
       throw DioException(
