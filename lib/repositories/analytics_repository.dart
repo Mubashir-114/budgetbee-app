@@ -129,4 +129,54 @@ class AnalyticsRepository {
       },
     );
   }
+
+  /// Fetches persistent companion relationship preferences.
+  Future<ApiResponse<CompanionPreferences>> getCompanionPreferences() async {
+    final response = await _dio.get("analytics/companion/preferences");
+    return ApiResponse.fromJson(
+      response.data,
+      (json) => CompanionPreferences.fromJson(json as Map<String, dynamic>),
+    );
+  }
+
+  /// Updates persistent companion relationship preferences.
+  Future<ApiResponse<CompanionPreferences>> updateCompanionPreferences(
+    CompanionPreferences preferences,
+  ) async {
+    final response = await _dio.put(
+      "analytics/companion/preferences",
+      data: preferences.toJson(),
+    );
+    return ApiResponse.fromJson(
+      response.data,
+      (json) => CompanionPreferences.fromJson(json as Map<String, dynamic>),
+    );
+  }
+
+  /// Resets persistent companion relationship preferences to default.
+  Future<ApiResponse<CompanionPreferences>> resetCompanionPreferences() async {
+    final response = await _dio.delete("analytics/companion/preferences");
+    return ApiResponse.fromJson(
+      response.data,
+      (json) => CompanionPreferences.fromJson(json as Map<String, dynamic>),
+    );
+  }
+
+  /// Confirms and executes an authorized write action via existing authenticated write services.
+  Future<ApiResponse<Map<String, dynamic>>> confirmAction(
+    String capabilityId,
+    Map<String, dynamic> parameters,
+  ) async {
+    final response = await _dio.post(
+      "analytics/companion/action/confirm",
+      data: {
+        'capabilityId': capabilityId,
+        'parameters': parameters,
+      },
+    );
+    return ApiResponse.fromJson(
+      response.data,
+      (json) => json as Map<String, dynamic>,
+    );
+  }
 }

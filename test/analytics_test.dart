@@ -155,6 +155,47 @@ class MockAnalyticsRepository implements AnalyticsRepository {
       data: [],
     );
   }
+
+  @override
+  Future<ApiResponse<CompanionPreferences>> getCompanionPreferences() async {
+    return const ApiResponse(
+      success: true,
+      message: "Preferences fetched",
+      data: CompanionPreferences(),
+    );
+  }
+
+  @override
+  Future<ApiResponse<CompanionPreferences>> updateCompanionPreferences(
+    CompanionPreferences preferences,
+  ) async {
+    return ApiResponse(
+      success: true,
+      message: "Preferences updated",
+      data: preferences,
+    );
+  }
+
+  @override
+  Future<ApiResponse<CompanionPreferences>> resetCompanionPreferences() async {
+    return const ApiResponse(
+      success: true,
+      message: "Preferences reset",
+      data: CompanionPreferences(),
+    );
+  }
+
+  @override
+  Future<ApiResponse<Map<String, dynamic>>> confirmAction(
+    String capabilityId,
+    Map<String, dynamic> parameters,
+  ) async {
+    return const ApiResponse(
+      success: true,
+      message: "Action confirmed",
+      data: {"status": "confirmed"},
+    );
+  }
 }
 
 void main() {

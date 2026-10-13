@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../models/companion_model.dart';
 import '../../models/goal_model.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/goal_provider.dart';
+import '../analytics/widgets/fin_character.dart';
 import 'widgets/add_edit_goal_sheet.dart';
 import 'widgets/forecast_view.dart';
 import 'widgets/goal_card.dart';
@@ -342,10 +344,9 @@ class _PlanningScreenState extends State<PlanningScreen> with SingleTickerProvid
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.flag_outlined,
-                      size: 52,
-                      color: colors.textSecondary.withValues(alpha: 0.6),
+                    const FinCharacter(
+                      size: 56,
+                      state: FinCharacterState.greeting,
                     ),
                     const SizedBox(height: 14),
                     Text(

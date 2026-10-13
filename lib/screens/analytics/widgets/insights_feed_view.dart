@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../models/analytics_model.dart';
 import '../../../providers/analytics_provider.dart';
 import 'alert_preferences_sheet.dart';
+import 'fin_character.dart';
 
 class InsightsFeedView extends StatelessWidget {
   const InsightsFeedView({super.key});
@@ -130,7 +131,7 @@ class InsightsFeedView extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(Icons.verified_outlined, color: colors.success, size: 44),
+            const FinCharacter(size: 48, state: FinCharacterState.happy),
             const SizedBox(height: 12),
             Text(
               "All Clear! No Active Alerts",

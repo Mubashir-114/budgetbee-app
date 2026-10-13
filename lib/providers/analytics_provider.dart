@@ -33,6 +33,13 @@ class AnalyticsProvider extends ChangeNotifier {
   bool _isLoadingAlerts = false;
   String? _alertsError;
 
+  // Phase 5E FIN Living Companion State
+  CompanionPreferences _companionPreferences = const CompanionPreferences();
+  FinCharacterState _characterState = FinCharacterState.idle;
+  FinActionPreview? _pendingAction;
+  bool _isExecutingAction = false;
+  String? _actionSuccessMessage;
+
   bool get isLoading => _isLoading;
   bool get isTyping => _isTyping;
   String? get errorMessage => _errorMessage;
@@ -53,6 +60,13 @@ class AnalyticsProvider extends ChangeNotifier {
   AlertPreferences get preferences => _preferences;
   bool get isLoadingAlerts => _isLoadingAlerts;
   String? get alertsError => _alertsError;
+
+  // Phase 5E Getters
+  CompanionPreferences get companionPreferences => _companionPreferences;
+  FinCharacterState get characterState => _characterState;
+  FinActionPreview? get pendingAction => _pendingAction;
+  bool get isExecutingAction => _isExecutingAction;
+  String? get actionSuccessMessage => _actionSuccessMessage;
 
   List<SmartAlertItem> get activeAlerts {
     if (!_preferences.enableProactiveInsights) return [];
@@ -82,6 +96,13 @@ class AnalyticsProvider extends ChangeNotifier {
     _isLoadingAlerts = false;
     _alertsError = null;
 
+    // Phase 5E Companion Reset
+    _companionPreferences = const CompanionPreferences();
+    _characterState = FinCharacterState.idle;
+    _pendingAction = null;
+    _isExecutingAction = false;
+    _actionSuccessMessage = null;
+
     notifyListeners();
   }
 
@@ -98,7 +119,108 @@ class AnalyticsProvider extends ChangeNotifier {
     _errorMessage = null;
     _isRateLimited = false;
     _isOffline = false;
+    _characterState = FinCharacterState.idle;
+    _pendingAction = null;
+    _isExecutingAction = false;
+    _actionSuccessMessage = null;
     notifyListeners();
+  }
+
+  void setCharacterState(FinCharacterState state) {
+    _characterState = state;
+    notifyListeners();
+  }
+
+  void setPendingAction(FinActionPreview? action) {
+    _pendingAction = action;
+    notifyListeners();
+  }
+
+  void clearPendingAction() {
+    _pendingAction = null;
+    notifyListeners();
+  }
+
+  Future<void> loadCompanionPreferences() async {
+    try {
+      final res = await _repository.getCompanionPreferences();
+      if (res.success) {
+        _companionPreferences = res.data;
+        notifyListeners();
+      }
+    } catch (_) {
+      // Non-critical background fetch failure
+    }
+  }
+
+  Future<bool> updateCompanionPreferences(CompanionPreferences prefs) async {
+    try {
+      final res = await _repository.updateCompanionPreferences(prefs);
+      if (res.success) {
+        _companionPreferences = res.data;
+        notifyListeners();
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  Future<bool> resetCompanionPreferences() async {
+    try {
+      final res = await _repository.resetCompanionPreferences();
+      if (res.success) {
+        _companionPreferences = res.data;
+        notifyListeners();
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  Future<bool> confirmPendingAction(FinActionPreview action) async {
+    _isExecutingAction = true;
+    _characterState = FinCharacterState.thinking;
+    _errorMessage = null;
+    _actionSuccessMessage = null;
+    notifyListeners();
+
+    try {
+      final res = await _repository.confirmAction(
+        action.capability,
+        action.parameters,
+      );
+
+      if (res.success) {
+        _pendingAction = null;
+        _characterState = FinCharacterState.celebrating;
+        _actionSuccessMessage = res.message;
+
+        final confirmationMsg = ChatMessage(
+          id: "a_conf_${DateTime.now().millisecondsSinceEpoch}",
+          sender: MessageSender.assistant,
+          text: res.message,
+          timestamp: DateTime.now(),
+          characterState: 'celebrating',
+        );
+        _messages.add(confirmationMsg);
+        return true;
+      } else {
+        _characterState = FinCharacterState.error;
+        _errorMessage = res.message;
+        return false;
+      }
+    } on DioException catch (dioErr) {
+      _characterState = FinCharacterState.error;
+      _handleDioError(dioErr);
+      return false;
+    } catch (e) {
+      _characterState = FinCharacterState.error;
+      _errorMessage = "Failed to execute action. Please try again.";
+      return false;
+    } finally {
+      _isExecutingAction = false;
+      notifyListeners();
+    }
   }
 
   Future<void> loadCapabilities() async {
@@ -133,6 +255,7 @@ class AnalyticsProvider extends ChangeNotifier {
 
     _isLoading = true;
     _isTyping = true;
+    _characterState = FinCharacterState.thinking;
     _errorMessage = null;
     _isRateLimited = false;
     _isOffline = false;
@@ -154,6 +277,11 @@ class AnalyticsProvider extends ChangeNotifier {
         if (res.data.conversationContext != null) {
           _conversationContext = res.data.conversationContext;
         }
+        if (res.data.actionPreview != null) {
+          _pendingAction = res.data.actionPreview;
+        }
+
+        _characterState = FinCharacterState.fromString(res.data.characterState);
 
         // Add assistant response to conversation list
         final assistantMsg = ChatMessage(
@@ -165,14 +293,20 @@ class AnalyticsProvider extends ChangeNotifier {
           isRefusal: res.data.isRefusal,
           clarificationOptions: res.data.clarificationOptions,
           followUpSuggestions: res.data.followUpSuggestions,
+          characterState: res.data.characterState,
+          actionPreview: res.data.actionPreview,
+          navigationAction: res.data.navigationAction,
         );
         _messages.add(assistantMsg);
       } else {
+        _characterState = FinCharacterState.error;
         _errorMessage = res.message;
       }
     } on DioException catch (dioErr) {
+      _characterState = FinCharacterState.error;
       _handleDioError(dioErr);
     } catch (e) {
+      _characterState = FinCharacterState.error;
       _errorMessage = "Unable to process query. Please try again.";
     } finally {
       _isLoading = false;
@@ -188,6 +322,7 @@ class AnalyticsProvider extends ChangeNotifier {
   }) async {
     _isLoading = true;
     _isTyping = true;
+    _characterState = FinCharacterState.thinking;
     _errorMessage = null;
     _isRateLimited = false;
     _isOffline = false;
@@ -209,6 +344,11 @@ class AnalyticsProvider extends ChangeNotifier {
         if (res.data.conversationContext != null) {
           _conversationContext = res.data.conversationContext;
         }
+        if (res.data.actionPreview != null) {
+          _pendingAction = res.data.actionPreview;
+        }
+
+        _characterState = FinCharacterState.fromString(res.data.characterState);
 
         final assistantMsg = ChatMessage(
           id: "a_${DateTime.now().millisecondsSinceEpoch}",
@@ -219,14 +359,20 @@ class AnalyticsProvider extends ChangeNotifier {
           isRefusal: res.data.isRefusal,
           clarificationOptions: res.data.clarificationOptions,
           followUpSuggestions: res.data.followUpSuggestions,
+          characterState: res.data.characterState,
+          actionPreview: res.data.actionPreview,
+          navigationAction: res.data.navigationAction,
         );
         _messages.add(assistantMsg);
       } else {
+        _characterState = FinCharacterState.error;
         _errorMessage = res.message;
       }
     } on DioException catch (dioErr) {
+      _characterState = FinCharacterState.error;
       _handleDioError(dioErr);
     } catch (e) {
+      _characterState = FinCharacterState.error;
       _errorMessage = "Unable to process intent. Please try again.";
     } finally {
       _isLoading = false;

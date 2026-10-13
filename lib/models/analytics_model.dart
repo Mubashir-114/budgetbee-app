@@ -1,3 +1,6 @@
+import 'companion_model.dart';
+export 'companion_model.dart';
+
 class SuggestedQuestion {
   final String intent;
   final String question;
@@ -424,6 +427,10 @@ class AnalyticsQueryResult {
   final List<ClarificationOption> clarificationOptions;
   final String? confidence;
   final ConversationContext? conversationContext;
+  final String characterState;
+  final FinActionPreview? actionPreview;
+  final FinNavigationAction? navigationAction;
+  final String responseStyle;
 
   const AnalyticsQueryResult({
     required this.intent,
@@ -439,6 +446,10 @@ class AnalyticsQueryResult {
     this.clarificationOptions = const [],
     this.confidence,
     this.conversationContext,
+    this.characterState = 'idle',
+    this.actionPreview,
+    this.navigationAction,
+    this.responseStyle = 'friendly',
   });
 
   factory AnalyticsQueryResult.fromJson(Map<String, dynamic> json) {
@@ -455,6 +466,9 @@ class AnalyticsQueryResult {
         .toList();
     final contextJson = json['conversationContext'] as Map<String, dynamic>?;
 
+    final actionPreviewJson = json['actionPreview'] as Map<String, dynamic>?;
+    final navigationActionJson = json['navigationAction'] as Map<String, dynamic>?;
+
     return AnalyticsQueryResult(
       intent: json['intent'] as String? ?? 'unsupported',
       isRefusal: json['isRefusal'] as bool? ?? false,
@@ -469,6 +483,10 @@ class AnalyticsQueryResult {
       clarificationOptions: clarificationList,
       confidence: json['confidence'] as String?,
       conversationContext: contextJson != null ? ConversationContext.fromJson(contextJson) : null,
+      characterState: json['characterState'] as String? ?? 'idle',
+      actionPreview: actionPreviewJson != null ? FinActionPreview.fromJson(actionPreviewJson) : null,
+      navigationAction: navigationActionJson != null ? FinNavigationAction.fromJson(navigationActionJson) : null,
+      responseStyle: json['responseStyle'] as String? ?? 'friendly',
     );
   }
 
@@ -539,6 +557,9 @@ class ChatMessage {
   final bool isRefusal;
   final List<ClarificationOption> clarificationOptions;
   final List<SuggestedQuestion> followUpSuggestions;
+  final String characterState;
+  final FinActionPreview? actionPreview;
+  final FinNavigationAction? navigationAction;
 
   const ChatMessage({
     required this.id,
@@ -549,6 +570,9 @@ class ChatMessage {
     this.isRefusal = false,
     this.clarificationOptions = const [],
     this.followUpSuggestions = const [],
+    this.characterState = 'idle',
+    this.actionPreview,
+    this.navigationAction,
   });
 }
 

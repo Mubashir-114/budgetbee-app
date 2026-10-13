@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -6,6 +7,9 @@ import '../../core/constants/app_dimensions.dart';
 import '../../models/analytics_model.dart';
 import '../../providers/analytics_provider.dart';
 import 'widgets/alert_preferences_sheet.dart';
+import 'widgets/companion_preferences_sheet.dart';
+import 'widgets/fin_action_preview_card.dart';
+import 'widgets/fin_character.dart';
 import 'widgets/insights_feed_view.dart';
 
 class AnalyticsScreen extends StatefulWidget {
@@ -28,6 +32,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       final provider = context.read<AnalyticsProvider>();
       provider.loadCapabilities();
       provider.loadInsights();
+      provider.loadCompanionPreferences();
       provider.initializeAlertPreferences().then((_) {
         provider.loadAlerts();
       });
@@ -94,7 +99,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                           ),
                         ),
                         Text(
-                          "FinTrack 2.0 — Phase 5B Private Assistant",
+                          "FinTrack 2.0 — Phase 5E FIN Companion",
                           style: TextStyle(fontSize: 12, color: colors.textSecondary),
                         ),
                       ],
@@ -212,6 +217,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: "FIN Settings & Memory",
+            icon: Icon(Icons.face_retouching_natural_rounded, color: colors.primary),
+            onPressed: () => CompanionPreferencesSheet.show(context),
+          ),
+          IconButton(
             tooltip: "Alert Preferences",
             icon: Icon(Icons.tune_rounded, color: colors.textSecondary),
             onPressed: () => AlertPreferencesSheet.show(context),
@@ -235,28 +245,33 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Privacy Banner
+              // 1. FIN 2.5D Animated Companion Hero Card
+              _buildFinHero(colors, provider),
+
+              const SizedBox(height: 14),
+
+              // 2. Privacy Banner
               _buildPrivacyBanner(colors),
 
               const SizedBox(height: 16),
 
-              // 2. Question Input Field
+              // 3. Question Input Field
               _buildQuestionInput(colors, provider),
 
               const SizedBox(height: 16),
 
-              // 3. Suggested Questions Chips
+              // 4. Suggested Questions Chips
               _buildSuggestedChips(colors, provider),
 
               const SizedBox(height: 20),
 
-              // 4. Conversation History (if multi-turn messages exist)
+              // 5. Conversation History (if multi-turn messages exist)
               if (provider.messages.length > 1) ...[
                 _buildConversationHistory(colors, provider),
                 const SizedBox(height: 20),
               ],
 
-              // 5. Active Result / State Views
+              // 6. Active Result / State Views
               if (provider.isLoading)
                 _buildLoadingState(colors)
               else if (provider.isOffline)
@@ -272,6 +287,120 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFinHero(dynamic colors, AnalyticsProvider provider) {
+    final prefs = provider.companionPreferences;
+    final name = prefs.preferredName;
+    final state = provider.characterState;
+
+    String statusText;
+    switch (state) {
+      case FinCharacterState.greeting:
+        statusText = "FIN is welcoming you";
+        break;
+      case FinCharacterState.listening:
+        statusText = "FIN is listening attentively";
+        break;
+      case FinCharacterState.thinking:
+        statusText = "FIN is analyzing verified records";
+        break;
+      case FinCharacterState.explaining:
+        statusText = "FIN is explaining the figures";
+        break;
+      case FinCharacterState.happy:
+        statusText = "FIN is pleased with your progress";
+        break;
+      case FinCharacterState.celebrating:
+        statusText = "FIN is celebrating your goal!";
+        break;
+      case FinCharacterState.concerned:
+        statusText = "FIN noticed spending pressure";
+        break;
+      case FinCharacterState.confused:
+        statusText = "FIN needs clarification";
+        break;
+      case FinCharacterState.error:
+        statusText = "FIN encountered an issue";
+        break;
+      case FinCharacterState.idle:
+        statusText = "FIN is ready to help";
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.primary.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: colors.primary.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          FinCharacter(
+            size: 72,
+            state: state,
+            animationsEnabled: prefs.animationsEnabled,
+            onTap: () => CompanionPreferencesSheet.show(context),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      "FIN",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: colors.textPrimary,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: colors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        statusText,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: colors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  name != null && name.isNotEmpty
+                      ? "Hey $name! Ready to inspect your spending or plan goals together?"
+                      : "Your private financial companion. Ask about spending, budgets, or plans.",
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -331,9 +460,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               textInputAction: TextInputAction.send,
               onSubmitted: _submitQuestion,
               decoration: InputDecoration(
-                hintText: "Ask about your spending, trends, budgets...",
+                hintText: "Ask FIN about your spending, trends, budgets, or goals...",
                 hintStyle: TextStyle(fontSize: 13, color: colors.textSecondary),
-                prefixIcon: Icon(Icons.search_rounded, color: colors.textSecondary, size: 20),
+                prefixIcon: Icon(Icons.chat_bubble_outline_rounded, color: colors.textSecondary, size: 20),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
@@ -366,7 +495,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             SuggestedQuestion(intent: "category_comparison", question: "Which category increased the most?", label: "Category Comparison"),
             SuggestedQuestion(intent: "budget_status", question: "Am I exceeding my food budget?", label: "Food Budget"),
             SuggestedQuestion(intent: "remaining_allowance", question: "How much can I still spend?", label: "Remaining Allowance"),
-            SuggestedQuestion(intent: "unusual_spending", question: "Any unusual spending this month?", label: "Unusual Spending"),
+            SuggestedQuestion(intent: "fin_greeting", question: "Hey FIN!", label: "Hey FIN!"),
+            SuggestedQuestion(intent: "fin_action_goal", question: "Help me save ₹50,000 for a laptop", label: "Plan Laptop Goal"),
+            SuggestedQuestion(intent: "fin_concern_spending", question: "I'm spending too much lately.", label: "Spending Concern"),
             SuggestedQuestion(intent: "savings_opportunities", question: "Where can I save money?", label: "Savings Opportunities"),
           ];
 
@@ -402,7 +533,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Widget _buildConversationHistory(dynamic colors, AnalyticsProvider provider) {
-    // Show previous turns (excluding the latest assistant answer which is displayed in ResultView)
     final previousMessages = provider.messages.length > 2
         ? provider.messages.sublist(0, provider.messages.length - 1)
         : provider.messages.take(1).toList();
@@ -431,18 +561,35 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           ...previousMessages.map((m) {
             final isUser = m.sender == MessageSender.user;
             return Padding(
-              padding: const EdgeInsets.only(bottom: 6.0),
+              padding: const EdgeInsets.only(bottom: 8.0),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    isUser ? "You: " : "Assistant: ",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: isUser ? colors.primary : colors.textSecondary,
+                  if (isUser)
+                    Text(
+                      "You: ",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: colors.primary,
+                      ),
+                    )
+                  else
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const FinCharacter(size: 16, state: FinCharacterState.idle),
+                        const SizedBox(width: 4),
+                        Text(
+                          "FIN: ",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
                   Expanded(
                     child: Text(
                       m.text,
@@ -463,7 +610,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget _buildLoadingState(dynamic colors) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(16),
@@ -471,8 +618,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ),
       child: Column(
         children: [
-          CircularProgressIndicator(color: colors.primary),
-          const SizedBox(height: 16),
+          const FinCharacter(
+            size: 68,
+            state: FinCharacterState.thinking,
+          ),
+          const SizedBox(height: 14),
+          CircularProgressIndicator(color: colors.primary, strokeWidth: 2.5),
+          const SizedBox(height: 12),
           Text(
             "Analyzing saved FinTrack records locally...",
             style: TextStyle(color: colors.textSecondary, fontSize: 13),
@@ -492,7 +644,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.wifi_off_rounded, color: colors.warning, size: 28),
+          const FinCharacter(size: 48, state: FinCharacterState.error),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -524,7 +676,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.hourglass_empty_rounded, color: colors.warning, size: 28),
+          const FinCharacter(size: 48, state: FinCharacterState.concerned),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -535,7 +687,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   style: TextStyle(fontWeight: FontWeight.bold, color: colors.textPrimary),
                 ),
                 Text(
-                  "Too many requests. Please wait a moment before asking another question.",
+                  "Too many requests. Please wait a moment before asking FIN another question.",
                   style: TextStyle(fontSize: 12, color: colors.textSecondary),
                 ),
               ],
@@ -556,7 +708,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline_rounded, color: colors.danger, size: 28),
+          const FinCharacter(size: 48, state: FinCharacterState.error),
           const SizedBox(width: 14),
           Expanded(
             child: Text(
@@ -573,6 +725,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     if (result.isRefusal || result.intent == "unsupported") {
       return _buildRefusalCard(colors, result);
     }
+
+    final provider = context.watch<AnalyticsProvider>();
 
     return Container(
       width: double.infinity,
@@ -627,16 +781,41 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
           const SizedBox(height: 14),
 
-          // Natural Language Answer
-          Text(
-            result.answer,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: colors.textPrimary,
-              height: 1.4,
-            ),
+          // FIN Response Row with character
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FinCharacter(
+                size: 38,
+                state: provider.characterState,
+                animationsEnabled: provider.companionPreferences.animationsEnabled,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  result.answer,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
           ),
+
+          // 5E.4 Action Preview Card (if an action was prepared)
+          if (result.actionPreview != null) ...[
+            const SizedBox(height: 16),
+            FinActionPreviewCard(actionPreview: result.actionPreview!),
+          ],
+
+          // 5E.4 Navigation Action Card (if a feature navigation was suggested)
+          if (result.navigationAction != null) ...[
+            const SizedBox(height: 12),
+            _buildNavigationCard(colors, result.navigationAction!),
+          ],
 
           // Structured Metrics Details (Categories, Budgets, Comparisons, Indicators)
           if (result.categories.isNotEmpty && result.intent == "spending_by_category") ...[
@@ -732,6 +911,52 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ],
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavigationCard(dynamic colors, FinNavigationAction nav) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.cardBorder),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.explore_rounded, size: 20, color: colors.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              nav.label,
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: colors.textPrimary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              try {
+                context.push(nav.route);
+              } catch (_) {
+                context.go(nav.route);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colors.primary,
+              foregroundColor: colors.isDark ? Colors.black : Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Open", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                SizedBox(width: 4),
+                Icon(Icons.arrow_forward_rounded, size: 14),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -1037,7 +1262,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.privacy_tip_outlined, color: colors.warning, size: 24),
+              const FinCharacter(size: 40, state: FinCharacterState.confused),
               const SizedBox(width: 10),
               Text(
                 "Policy & Scope Notice",
