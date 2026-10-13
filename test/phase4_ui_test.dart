@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:frontend/core/constants/app_colors.dart';
+import 'package:frontend/core/theme/app_theme.dart';
+import 'package:frontend/core/theme/theme_collection.dart';
 import 'package:frontend/core/widgets/animated_progress_bar.dart';
 import 'package:frontend/core/widgets/app_text_field.dart';
 import 'package:frontend/core/widgets/living_wallet.dart';
@@ -27,6 +29,77 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  test('Living Wallet maps every collection to its brand accent', () {
+    const accents = {
+      ThemeCollection.graphiteChampagne: Color(0xFFD6A668),
+      ThemeCollection.obsidianJade: Color(0xFF38D5B0),
+      ThemeCollection.arcticBlue: Color(0xFF4FA3F7),
+    };
+
+    for (final entry in accents.entries) {
+      expect(
+        LivingWallet.brandAccentFor(entry.key),
+        entry.value,
+        reason: '${entry.key.displayName} should use ${entry.value}',
+      );
+    }
+  });
+
+  testWidgets('Living Wallet repaints in place when collection changes', (
+    tester,
+  ) async {
+    final collection = ValueNotifier(ThemeCollection.graphiteChampagne);
+    addTearDown(collection.dispose);
+
+    await tester.pumpWidget(
+      ValueListenableBuilder<ThemeCollection>(
+        valueListenable: collection,
+        builder: (context, value, child) => MaterialApp(
+          theme: AppTheme.buildTheme(value, Brightness.dark),
+          themeAnimationDuration: Duration.zero,
+          home: child,
+        ),
+        child: const MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: Scaffold(body: LivingWallet()),
+        ),
+      ),
+    );
+
+    final originalState = tester.state(find.byType(LivingWallet));
+    final originalPainter = tester
+        .widget<CustomPaint>(
+          find.descendant(
+            of: find.byType(LivingWallet),
+            matching: find.byType(CustomPaint),
+          ),
+        )
+        .painter!;
+    expect(
+      LivingWallet.brandAccentFor(collection.value),
+      const Color(0xFFD6A668),
+    );
+
+    collection.value = ThemeCollection.obsidianJade;
+    await tester.pump();
+
+    expect(tester.state(find.byType(LivingWallet)), same(originalState));
+    final jadePainter = tester
+        .widget<CustomPaint>(
+          find.descendant(
+            of: find.byType(LivingWallet),
+            matching: find.byType(CustomPaint),
+          ),
+        )
+        .painter!;
+    expect(
+      LivingWallet.brandAccentFor(collection.value),
+      const Color(0xFF38D5B0),
+    );
+    expect(jadePainter, isNot(same(originalPainter)));
+    expect(jadePainter.shouldRepaint(originalPainter), isTrue);
   });
 
   testWidgets('password visibility control remains accessible', (tester) async {
