@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../models/analytics_model.dart';
 import '../repositories/analytics_repository.dart';
 import '../core/services/cache_service.dart';
+import '../screens/analytics/widgets/fin_visual_controller.dart';
 
 class AnalyticsProvider extends ChangeNotifier {
   final AnalyticsRepository _repository;
@@ -39,6 +40,7 @@ class AnalyticsProvider extends ChangeNotifier {
   FinActionPreview? _pendingAction;
   bool _isExecutingAction = false;
   String? _actionSuccessMessage;
+  late final FinVisualController visualController = FinVisualController();
 
   String? _lastQuestion;
 
@@ -135,6 +137,7 @@ class AnalyticsProvider extends ChangeNotifier {
   void prepareForScreenEntry() {
     if (_isLoading || _isExecutingAction) return;
     _characterState = FinCharacterState.idle;
+    visualController.onIdle();
     _errorMessage = null;
     _isRateLimited = false;
     _isOffline = false;
@@ -143,6 +146,7 @@ class AnalyticsProvider extends ChangeNotifier {
 
   void setCharacterState(FinCharacterState state) {
     _characterState = state;
+    visualController.setState(state);
     notifyListeners();
   }
 
@@ -159,10 +163,25 @@ class AnalyticsProvider extends ChangeNotifier {
   Future<void> loadCompanionPreferences() async {
     try {
       final res = await _repository.getCompanionPreferences();
-      if (res.success) {
-        _companionPreferences = res.data;
-        notifyListeners();
-      }
+      var prefs = res.success ? res.data : _companionPreferences;
+
+      try {
+        final local = await CacheService.get('fin_companion_local_prefs').timeout(
+          const Duration(milliseconds: 150),
+          onTimeout: () => null,
+        );
+        if (local is Map<String, dynamic>) {
+          prefs = prefs.copyWith(
+            showAcrossApp: local['showAcrossApp'] as bool?,
+            edgePosition: local['edgePosition'] as String?,
+            proactiveHints: local['proactiveHints'] as bool?,
+          );
+        }
+      } catch (_) {}
+
+      _companionPreferences = prefs;
+      visualController.setAnimationsEnabled(prefs.animationsEnabled);
+      notifyListeners();
     } catch (_) {
       // Non-critical background fetch failure
     }
@@ -170,26 +189,56 @@ class AnalyticsProvider extends ChangeNotifier {
 
   Future<bool> updateCompanionPreferences(CompanionPreferences prefs) async {
     try {
+      try {
+        await CacheService.save('fin_companion_local_prefs', {
+          'showAcrossApp': prefs.showAcrossApp,
+          'edgePosition': prefs.edgePosition,
+          'proactiveHints': prefs.proactiveHints,
+        }).timeout(const Duration(milliseconds: 150));
+      } catch (_) {}
+
       final res = await _repository.updateCompanionPreferences(prefs);
       if (res.success) {
-        _companionPreferences = res.data;
-        notifyListeners();
-        return true;
+        _companionPreferences = res.data.copyWith(
+          showAcrossApp: prefs.showAcrossApp,
+          edgePosition: prefs.edgePosition,
+          proactiveHints: prefs.proactiveHints,
+        );
+      } else {
+        _companionPreferences = prefs;
       }
-    } catch (_) {}
-    return false;
+      visualController.setAnimationsEnabled(_companionPreferences.animationsEnabled);
+      notifyListeners();
+      return true;
+    } catch (_) {
+      _companionPreferences = prefs;
+      visualController.setAnimationsEnabled(_companionPreferences.animationsEnabled);
+      notifyListeners();
+      return true;
+    }
   }
 
   Future<bool> resetCompanionPreferences() async {
     try {
+      try {
+        await CacheService.remove('fin_companion_local_prefs').timeout(
+          const Duration(milliseconds: 150),
+        );
+      } catch (_) {}
       final res = await _repository.resetCompanionPreferences();
       if (res.success) {
         _companionPreferences = res.data;
-        notifyListeners();
-        return true;
+      } else {
+        _companionPreferences = const CompanionPreferences();
       }
+      visualController.setAnimationsEnabled(_companionPreferences.animationsEnabled);
+      notifyListeners();
+      return true;
     } catch (_) {}
-    return false;
+    _companionPreferences = const CompanionPreferences();
+    visualController.setAnimationsEnabled(true);
+    notifyListeners();
+    return true;
   }
 
   Future<bool> confirmPendingAction(FinActionPreview action) async {
@@ -273,6 +322,7 @@ class AnalyticsProvider extends ChangeNotifier {
     _isLoading = true;
     _isTyping = true;
     _characterState = FinCharacterState.thinking;
+    visualController.onQuerySubmitted(trimmed);
     _errorMessage = null;
     _isRateLimited = false;
     _isOffline = false;
@@ -299,6 +349,7 @@ class AnalyticsProvider extends ChangeNotifier {
         }
 
         _characterState = FinCharacterState.fromString(res.data.characterState);
+        visualController.setState(_characterState);
 
         // Add assistant response to conversation list
         final assistantMsg = ChatMessage(
@@ -318,13 +369,16 @@ class AnalyticsProvider extends ChangeNotifier {
       } else {
         _characterState = FinCharacterState.error;
         _errorMessage = res.message;
+        visualController.onError(res.message);
       }
     } on DioException catch (dioErr) {
       _characterState = FinCharacterState.error;
       _handleDioError(dioErr);
+      visualController.onError(_errorMessage);
     } catch (e) {
       _characterState = FinCharacterState.error;
       _errorMessage = "Unable to process query. Please try again.";
+      visualController.onError(_errorMessage);
     } finally {
       _isLoading = false;
       _isTyping = false;

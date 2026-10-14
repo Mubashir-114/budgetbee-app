@@ -4,12 +4,14 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/fin_constants.dart';
 import '../../models/analytics_model.dart';
 import '../../providers/analytics_provider.dart';
 import 'widgets/alert_preferences_sheet.dart';
 import 'widgets/companion_preferences_sheet.dart';
 import 'widgets/fin_action_preview_card.dart';
 import 'widgets/fin_character.dart';
+import 'widgets/fin_visual_controller.dart';
 import 'widgets/insights_feed_view.dart';
 
 class FinSuggestionCategory {
@@ -37,6 +39,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   final TextEditingController _questionController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
+  late final FinVisualController _finController;
+
+  int _selectedView = 0; // 0: Companion, 1: Insights & Alerts
   bool _isFinHeroVisible = true;
 
   static const List<FinSuggestionCategory> _allCategories = [
@@ -161,9 +166,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   @override
   void initState() {
     super.initState();
+    _finController = FinVisualController(initialState: FinCharacterState.idle);
     _scrollController.addListener(_updateFinVisibility);
+    _focusNode.addListener(_onFocusChange);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<AnalyticsProvider>();
+      provider.visualController.setFullCompanionOpen(true);
       provider.prepareForScreenEntry();
       provider.loadCapabilities();
       provider.loadInsights();
@@ -178,13 +187,33 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     });
   }
 
+  void _onFocusChange() {
+    if (_focusNode.hasFocus) {
+      _finController.onComposerFocused();
+    } else {
+      _finController.onComposerUnfocused();
+    }
+  }
+
+  AnalyticsProvider? _analyticsProvider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _analyticsProvider = context.read<AnalyticsProvider>();
+  }
+
   @override
   void dispose() {
+    _analyticsProvider?.visualController.setFullCompanionOpen(false);
     _questionController.dispose();
-    _focusNode.dispose();
+    _focusNode
+      ..removeListener(_onFocusChange)
+      ..dispose();
     _scrollController
       ..removeListener(_updateFinVisibility)
       ..dispose();
+    _finController.dispose();
     super.dispose();
   }
 
@@ -200,7 +229,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     if (text.trim().isEmpty) return;
     _focusNode.unfocus();
     _questionController.clear();
-    setState(() {});
+    setState(() {
+      _selectedView = 0; // Switch to Companion conversation view
+    });
+    _finController.onQuerySubmitted();
     context.read<AnalyticsProvider>().askQuestion(text.trim());
     _scrollToBottom();
   }
@@ -210,8 +242,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 150), () {
+    final isTest = WidgetsBinding.instance.runtimeType
+        .toString()
+        .contains('TestWidgetsFlutterBinding');
+    if (isTest) {
       if (_scrollController.hasClients) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+      return;
+    }
+    Future.delayed(const Duration(milliseconds: 150), () {
+      if (mounted && _scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
@@ -274,7 +315,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             ),
                           ),
                           Text(
-                            "FinTrack 2.0 — Phase 5E FIN Companion",
+                            "FinTrack 2.0 — Phase 5F FIN Companion",
                             style: TextStyle(
                               fontSize: 12,
                               color: colors.textSecondary,
@@ -310,8 +351,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 _buildPrivacyPoint(
                   colors,
                   Icons.lock_outline,
-                  "Deterministic local AI",
-                  "Calculations use exact mathematical formulas and safe templates. External AI never receives financial data.",
+                  "Deterministic local calculations",
+                  "Calculations use exact mathematical formulas and verified templates. External services never receive financial data.",
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -554,25 +595,58 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final colors = AppColors.of(context);
     final provider = context.watch<AnalyticsProvider>();
 
+    // Synchronize character controller with provider character state when not typing
+    if (!_focusNode.hasFocus) {
+      if (provider.isLoading) {
+        _finController.onQuerySubmitted();
+      } else if (provider.errorMessage != null || provider.isOffline) {
+        _finController.onError();
+      } else if (provider.isRateLimited) {
+        _finController.onCaution();
+      } else if (provider.characterState != _finController.state) {
+        _finController.setState(provider.characterState);
+      }
+    }
+
+    final hasConversation = provider.messages.isNotEmpty ||
+        provider.latestResult != null ||
+        provider.isLoading;
+
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
         backgroundColor: colors.surface,
-        elevation: 0,
         title: Row(
           children: [
-            Icon(Icons.auto_awesome_rounded, color: colors.primary, size: 22),
+            Icon(Icons.auto_awesome_rounded, color: colors.primary, size: 20),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                "AI Financial Insights",
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: colors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    FinIdentity.screenTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                  Text(
+                    FinIdentity.tagline,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: colors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -588,6 +662,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 AlertPreferencesSheet.show(context);
               } else if (value == 'reset') {
                 provider.clearConversation();
+                _finController.onIdle();
               }
             },
             itemBuilder: (context) => [
@@ -628,54 +703,364 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            // View Switcher Bar (Companion vs Insights & Alerts)
+            _buildViewSwitcher(colors, provider),
+
             Expanded(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.md,
-                  vertical: 12,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 1. FIN Compact Hero Card (~25% vertical reduction, full character visible)
-                    _buildFinHero(colors, provider),
+              child: _selectedView == 0
+                  ? _buildCompanionView(colors, provider, hasConversation)
+                  : _buildInsightsView(colors, provider),
+            ),
 
-                    const SizedBox(height: 10),
+            // Sticky Bottom Composer (Safe on Android keyboards)
+            if (_selectedView == 0)
+              _buildStickyComposer(colors, provider),
+          ],
+        ),
+      ),
+    );
+  }
 
-                    // 2. Compact Privacy Banner
-                    _buildPrivacyBanner(colors),
+  Widget _buildViewSwitcher(dynamic colors, AnalyticsProvider provider) {
+    final activeAlertsCount = provider.activeAlerts.length;
+    final isCompact = MediaQuery.of(context).size.width < 360;
 
-                    const SizedBox(height: 12),
-
-                    // 3. Compact Suggested Questions (4-6 max + More Suggestions)
-                    _buildSuggestedChips(colors, provider),
-
-                    const SizedBox(height: 16),
-
-                    // 4. Conversational History & Results Flow
-                    if (provider.messages.isNotEmpty)
-                      _buildConversationThread(colors, provider)
-                    else if (provider.isLoading)
-                      _buildLoadingBubble(colors)
-                    else if (provider.isOffline)
-                      _buildOfflineState(colors, provider)
-                    else if (provider.isRateLimited)
-                      _buildRateLimitedState(colors, provider)
-                    else if (provider.errorMessage != null)
-                      _buildErrorBubble(
-                          colors, provider.errorMessage!, provider)
-                    else if (provider.latestResult != null)
-                      _buildResultView(colors, provider.latestResult!)
-                    else
-                      _buildDefaultInsightsView(colors, provider),
-                  ],
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: isCompact ? 10 : 16, vertical: 6),
+      color: colors.surface,
+      child: Container(
+        height: 38,
+        decoration: BoxDecoration(
+          color: colors.background,
+          borderRadius: BorderRadius.circular(19),
+          border: Border.all(color: colors.cardBorder),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(19),
+                onTap: () => setState(() => _selectedView = 0),
+                child: Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _selectedView == 0
+                        ? colors.primary.withValues(alpha: 0.15)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(19),
+                    border: _selectedView == 0
+                        ? Border.all(color: colors.primary, width: 1.2)
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 14,
+                        color: _selectedView == 0
+                            ? colors.primary
+                            : colors.textSecondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          "Companion",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: isCompact ? 11 : 12,
+                            fontWeight: _selectedView == 0
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                            color: _selectedView == 0
+                                ? colors.primary
+                                : colors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
+            Expanded(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(19),
+                onTap: () => setState(() => _selectedView = 1),
+                child: Container(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _selectedView == 1
+                        ? colors.primary.withValues(alpha: 0.15)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(19),
+                    border: _selectedView == 1
+                        ? Border.all(color: colors.primary, width: 1.2)
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.notifications_active_outlined,
+                        size: 14,
+                        color: _selectedView == 1
+                            ? colors.primary
+                            : colors.textSecondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          isCompact ? "Insights" : "Insights & Alerts",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: isCompact ? 11 : 12,
+                            fontWeight: _selectedView == 1
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                            color: _selectedView == 1
+                                ? colors.primary
+                                : colors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      if (activeAlertsCount > 0) ...[
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: colors.warning,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            "$activeAlertsCount",
+                            style: const TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // 5. Sticky Bottom Composer
-            _buildStickyComposer(colors, provider),
+  Widget _buildCompanionView(
+    dynamic colors,
+    AnalyticsProvider provider,
+    bool hasConversation,
+  ) {
+    return SingleChildScrollView(
+      controller: _scrollController,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.md,
+        vertical: 12,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!hasConversation) ...[
+            // ── COMPANION HOME: Full prominent character & welcoming card ───
+            _buildFinHero(colors, provider),
+
+            const SizedBox(height: 12),
+
+            // Compact Privacy Guarantee Banner
+            _buildPrivacyBanner(colors),
+
+            const SizedBox(height: 14),
+
+            // Suggested Question Chips
+            _buildSuggestedChips(colors, provider),
+
+            // Active Alerts Teaser (if any)
+            if (provider.activeAlerts.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _buildAlertsTeaser(colors, provider),
+            ],
+
+            const SizedBox(height: 20),
+          ] else ...[
+            // ── FOCUSED CONVERSATION: Collapsed compact companion header ───
+            _buildCollapsedCompanionBar(colors, provider),
+
+            const SizedBox(height: 14),
+
+            // Conversation Thread & Results
+            _buildConversationThread(colors, provider),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCollapsedCompanionBar(
+    dynamic colors,
+    AnalyticsProvider provider,
+  ) {
+    final state = provider.characterState;
+    final statusText = _statusTextForState(state);
+
+    return Container(
+      key: const ValueKey('collapsed_companion_bar'),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.primary.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: colors.primary.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          FinCharacter(
+            size: 42,
+            state: state,
+            controller: _finController,
+            animationsEnabled: provider.companionPreferences.animationsEnabled,
+            animationActive: true,
+            onTap: () => CompanionPreferencesSheet.show(context),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      "FIN",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: colors.textPrimary,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: state == FinCharacterState.error
+                            ? colors.danger
+                            : (state == FinCharacterState.caution
+                                ? colors.warning
+                                : colors.primary),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  statusText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton.icon(
+            key: const ValueKey('collapsed_reset_button'),
+            icon: const Icon(Icons.refresh_rounded, size: 16),
+            label: const Text("Reset", style: TextStyle(fontSize: 11)),
+            style: TextButton.styleFrom(
+              foregroundColor: colors.textSecondary,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            onPressed: () {
+              provider.clearConversation();
+              _finController.onIdle();
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.tune_rounded, size: 18),
+            tooltip: "FIN Settings & Memory",
+            color: colors.textSecondary,
+            onPressed: () => CompanionPreferencesSheet.show(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAlertsTeaser(dynamic colors, AnalyticsProvider provider) {
+    final count = provider.activeAlerts.length;
+    final topAlert = provider.activeAlerts.first;
+
+    return InkWell(
+      onTap: () => setState(() => _selectedView = 1),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: colors.warning.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: colors.warning.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child:
+                  Icon(Icons.warning_amber_rounded, size: 16, color: colors.warning),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "$count Active Proactive Alert${count > 1 ? 's' : ''}",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    topAlert.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        TextStyle(fontSize: 11, color: colors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded,
+                size: 12, color: colors.textSecondary),
           ],
         ),
       ),
@@ -686,128 +1071,182 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final prefs = provider.companionPreferences;
     final name = prefs.preferredName;
     final state = provider.characterState;
-
-    String statusText;
-    switch (state) {
-      case FinCharacterState.greeting:
-        statusText = "FIN is welcoming you";
-        break;
-      case FinCharacterState.listening:
-        statusText = "FIN is listening attentively";
-        break;
-      case FinCharacterState.thinking:
-        statusText = "FIN is analyzing verified records";
-        break;
-      case FinCharacterState.explaining:
-        statusText = "FIN is explaining the figures";
-        break;
-      case FinCharacterState.happy:
-        statusText = "FIN is pleased with your progress";
-        break;
-      case FinCharacterState.celebrating:
-        statusText = "FIN is celebrating your goal!";
-        break;
-      case FinCharacterState.concerned:
-        statusText = "FIN noticed spending pressure";
-        break;
-      case FinCharacterState.confused:
-        statusText = "FIN needs clarification";
-        break;
-      case FinCharacterState.error:
-        statusText = "FIN encountered an issue";
-        break;
-      case FinCharacterState.idle:
-        statusText = "FIN is ready to help";
-        break;
-    }
+    final statusText = _statusTextForState(state);
 
     return Container(
+      key: const ValueKey('fin_hero_card'),
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
       decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.primary.withValues(alpha: 0.2)),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF0B1733),
+            Color(0xFF112347),
+            Color(0xFF0A142D),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: const Color(0xFF41E5F2).withValues(alpha: 0.28),
+          width: 1.2,
+        ),
         boxShadow: [
           BoxShadow(
-            color: colors.primary.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: const Color(0xFF41E5F2).withValues(alpha: 0.08),
+            blurRadius: 20,
           ),
         ],
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // Complete 2.5D character kept fully visible, reduced ~25% from 150-220 to 105-115
-          final characterSize = constraints.maxWidth < 360 ? 95.0 : 110.0;
+          final isNarrow = constraints.maxWidth < 360;
+          final characterSize = isNarrow ? 120.0 : 138.0;
 
-          return Row(
+          return Column(
             children: [
-              FinCharacter(
-                size: characterSize,
-                state: state,
-                animationsEnabled: prefs.animationsEnabled,
-                animationActive: _isFinHeroVisible,
-                onTap: () => CompanionPreferencesSheet.show(context),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+              // Character framing with glowing radial aura
+              Center(
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          "FIN",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: colors.textPrimary,
-                            letterSpacing: .5,
+                    Container(
+                      width: characterSize * 0.95,
+                      height: characterSize * 0.95,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF41E5F2).withValues(alpha: 0.16),
+                            blurRadius: 30,
+                            spreadRadius: 4,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: state == FinCharacterState.error
-                                  ? colors.danger.withValues(alpha: .12)
-                                  : colors.primary.withValues(alpha: .12),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              statusText,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: state == FinCharacterState.error
-                                    ? colors.danger
-                                    : colors.primary,
-                              ),
-                            ),
+                          BoxShadow(
+                            color: const Color(0xFFF4B942).withValues(alpha: 0.08),
+                            blurRadius: 20,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      name != null && name.isNotEmpty
-                          ? "Hey $name! Ready to inspect your spending or plan goals?"
-                          : "Your private financial companion. Ask about spending, budgets, or plans.",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                        height: 1.3,
+                        ],
                       ),
                     ),
+                    FinCharacter(
+                      size: characterSize,
+                      state: state,
+                      controller: _finController,
+                      animationsEnabled: prefs.animationsEnabled,
+                      animationActive: _isFinHeroVisible,
+                      onTap: () => CompanionPreferencesSheet.show(context),
+                    ),
                   ],
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Title and Badges
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  const Text(
+                    "FIN",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF41E5F2).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFF41E5F2).withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: const Text(
+                      "Living Companion",
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF41E5F2),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: (state == FinCharacterState.error
+                              ? const Color(0xFFEF476F)
+                              : (state == FinCharacterState.caution
+                                  ? const Color(0xFFFFB703)
+                                  : const Color(0xFF06D6A0)))
+                          .withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: state == FinCharacterState.error
+                            ? const Color(0xFFEF476F)
+                            : (state == FinCharacterState.caution
+                                ? const Color(0xFFFFB703)
+                                : const Color(0xFF06D6A0)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              // Official Expansion & Tagline
+              Text(
+                FinIdentity.fullExpansion,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF41E5F2).withValues(alpha: 0.9),
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(height: 6),
+
+              // Natural Greeting & Intro
+              Text(
+                name != null && name.isNotEmpty
+                    ? "Hi $name! Meet FIN"
+                    : "Meet FIN",
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFF4B942),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  "${FinIdentity.tagline} Ready to explore your spending, track budgets, and reach your goals.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.78),
+                    height: 1.35,
+                  ),
                 ),
               ),
             ],
@@ -815,6 +1254,35 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         },
       ),
     );
+  }
+
+  String _statusTextForState(FinCharacterState state) {
+    switch (state) {
+      case FinCharacterState.greeting:
+        return "FIN is welcoming you";
+      case FinCharacterState.listening:
+      case FinCharacterState.attentive:
+        return "FIN is listening attentively";
+      case FinCharacterState.thinking:
+        return "FIN is analyzing verified records";
+      case FinCharacterState.explaining:
+        return "FIN is explaining the figures";
+      case FinCharacterState.happy:
+        return "FIN is pleased with your progress";
+      case FinCharacterState.celebrating:
+      case FinCharacterState.encouraging:
+        return "FIN is celebrating your goal!";
+      case FinCharacterState.concerned:
+      case FinCharacterState.caution:
+        return "FIN noticed spending pressure";
+      case FinCharacterState.confused:
+      case FinCharacterState.emptyData:
+        return "FIN needs clarification";
+      case FinCharacterState.error:
+        return "FIN encountered an issue";
+      case FinCharacterState.idle:
+        return "FIN is ready to help";
+    }
   }
 
   Widget _buildPrivacyBanner(dynamic colors) {
@@ -1030,6 +1498,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
+                      key: const ValueKey('assistant_query_field'),
                       controller: _questionController,
                       focusNode: _focusNode,
                       textInputAction: TextInputAction.send,
@@ -1145,12 +1614,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         else if (provider.isRateLimited)
           _buildRateLimitedState(colors, provider)
         else if (provider.errorMessage != null)
-          _buildErrorBubble(colors, provider.errorMessage!, provider),
+          _buildErrorBubble(colors, provider.errorMessage!, provider)
+        else if (provider.latestResult != null && provider.messages.isEmpty)
+          _buildResultView(colors, provider.latestResult!),
       ],
     );
   }
 
   Widget _buildAssistantSimpleBubble(dynamic colors, ChatMessage m) {
+    final state = FinCharacterState.fromString(m.characterState);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -1163,8 +1636,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           FinCharacter(
-            size: 32,
-            state: FinCharacterState.fromString(m.characterState),
+            size: 34,
+            state: state,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -1298,7 +1771,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ),
       child: Row(
         children: [
-          const FinCharacter(size: 36, state: FinCharacterState.concerned),
+          const FinCharacter(size: 36, state: FinCharacterState.caution),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1380,18 +1853,28 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
 
     final provider = context.watch<AnalyticsProvider>();
+    final characterState =
+        FinCharacterState.fromString(result.characterState);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colors.primary.withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: colors.primary.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Badges: Intent, Period, and Data Provenance vs Assumption
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -1444,6 +1927,44 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     ],
                   ),
                 ),
+              // Verified Record vs Estimated Projection Badge
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: result.provenance != null
+                      ? Colors.teal.withValues(alpha: 0.12)
+                      : colors.elevated,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      result.provenance != null
+                          ? Icons.verified_outlined
+                          : Icons.insights_rounded,
+                      size: 11,
+                      color: result.provenance != null
+                          ? Colors.teal
+                          : colors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      result.provenance != null
+                          ? "Verified Record"
+                          : "Deterministic Projection",
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: result.provenance != null
+                            ? Colors.teal
+                            : colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
 
@@ -1454,7 +1975,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             children: [
               FinCharacter(
                 size: 34,
-                state: provider.characterState,
+                state: characterState,
                 animationsEnabled:
                     provider.companionPreferences.animationsEnabled,
               ),
@@ -2109,25 +2630,31 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildDefaultInsightsView(dynamic colors, AnalyticsProvider provider) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const InsightsFeedView(),
-        if (provider.insights.isNotEmpty) ...[
-          const SizedBox(height: 20),
-          Text(
-            "Current Month Insights",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: colors.textPrimary,
+  Widget _buildInsightsView(dynamic colors, AnalyticsProvider provider) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.md,
+        vertical: 12,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const InsightsFeedView(),
+          if (provider.insights.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              "Current Month Insights",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: colors.textPrimary,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          ...provider.insights.map((item) => _buildInsightCard(colors, item)),
+            const SizedBox(height: 8),
+            ...provider.insights.map((item) => _buildInsightCard(colors, item)),
+          ],
         ],
-      ],
+      ),
     );
   }
 

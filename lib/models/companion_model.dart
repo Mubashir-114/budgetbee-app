@@ -8,21 +8,27 @@ enum FinCharacterState {
   idle,
   greeting,
   listening,
+  attentive,
   thinking,
   explaining,
   happy,
   celebrating,
+  encouraging,
   concerned,
+  caution,
   confused,
+  emptyData,
   error;
 
   static FinCharacterState fromString(String? value) {
     if (value == null) return FinCharacterState.idle;
-    switch (value.toLowerCase().trim()) {
+    switch (value.toLowerCase().trim().replaceAll('-', '_')) {
       case 'greeting':
         return FinCharacterState.greeting;
       case 'listening':
         return FinCharacterState.listening;
+      case 'attentive':
+        return FinCharacterState.attentive;
       case 'thinking':
         return FinCharacterState.thinking;
       case 'explaining':
@@ -31,10 +37,17 @@ enum FinCharacterState {
         return FinCharacterState.happy;
       case 'celebrating':
         return FinCharacterState.celebrating;
+      case 'encouraging':
+        return FinCharacterState.encouraging;
       case 'concerned':
         return FinCharacterState.concerned;
+      case 'caution':
+        return FinCharacterState.caution;
       case 'confused':
         return FinCharacterState.confused;
+      case 'empty_data':
+      case 'emptydata':
+        return FinCharacterState.emptyData;
       case 'error':
         return FinCharacterState.error;
       case 'idle':
@@ -47,6 +60,7 @@ enum FinCharacterState {
 
   String get label {
     if (name.isEmpty) return '';
+    if (name == 'emptyData') return 'Empty Data';
     return '${name[0].toUpperCase()}${name.substring(1)}';
   }
 }
