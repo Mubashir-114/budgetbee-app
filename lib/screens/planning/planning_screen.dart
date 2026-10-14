@@ -85,7 +85,7 @@ class _PlanningScreenState extends State<PlanningScreen> with SingleTickerProvid
             const SizedBox(height: 12),
             Text(
               '• All financial planning projections and goals are deterministic mathematical models computed entirely within FinTrack.\n'
-              '• No financial data, account balances, or goal targets are ever shared with third-party AI or external services.\n'
+              '• No financial data, account balances, or goal targets are ever shared with third-party model providers or external services.\n'
               '• Savings goal allocations are planning trackers only: they do not transfer funds or debit bank accounts.\n'
               '• What-if simulations are isolated scenario calculations and never modify your actual financial history.',
               style: TextStyle(fontSize: 12, color: colors.textSecondary, height: 1.5),

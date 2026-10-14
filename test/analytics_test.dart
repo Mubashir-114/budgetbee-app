@@ -380,7 +380,7 @@ void main() {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text("AI Financial Insights"), findsOneWidget);
+      expect(find.text("Your personal financial companion."), findsOneWidget);
       expect(find.byIcon(Icons.shield_outlined), findsWidgets);
     });
 
@@ -571,6 +571,8 @@ void main() {
       final moreFinder = find.text("More Suggestions");
       expect(moreFinder, findsOneWidget);
 
+      await tester.ensureVisible(moreFinder);
+      await tester.pumpAndSettle();
       await tester.tap(moreFinder);
       await tester.pumpAndSettle();
 

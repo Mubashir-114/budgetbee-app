@@ -28,6 +28,7 @@ FinTrack is designed to be sleek, intuitive, and highly functional. Here are the
 | **💰 Smarter Budgets** | Establish budget limits per category and track your spending progress with real-time indicators. | ✅ Done |
 | **🏷️ Category Management** | Classify transaction streams using colorful categories tailored to your lifestyle. | ✅ Done |
 | **📈 Visual Reports** | Analyze cash flow and category breakdown using dynamic charts powered by `fl_chart`. | ✅ Done |
+| **✨ FIN Living Companion** | **F.I.N. — Financial Intelligence Navigator** (*"Your personal financial companion."*): An attentive, expressive 2.5D character companion with proactive guidance, conversational financial insights, and persistent edge presence. | ✅ Done |
 | **🔌 Connectivity Awareness** | Monitors network connectivity and displays cached data where available; financial writes require a connection. | ✅ Done |
 
 ---

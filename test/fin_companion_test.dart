@@ -459,7 +459,7 @@ void main() {
 
       expect(find.text('FIN'), findsOneWidget);
       expect(find.textContaining('FIN is ready to help'), findsOneWidget);
-      expect(find.text('AI Financial Insights'), findsOneWidget);
+      expect(find.text('Your personal financial companion.'), findsOneWidget);
       expect(find.byTooltip('FIN Settings & Memory'), findsOneWidget);
     });
 

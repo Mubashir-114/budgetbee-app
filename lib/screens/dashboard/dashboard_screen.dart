@@ -1006,7 +1006,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: () => context.push('/analytics'),
               icon: Icon(Icons.auto_awesome_rounded, size: 16, color: colors.primary),
               label: Text(
-                "Ask AI",
+                "Ask FIN",
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,

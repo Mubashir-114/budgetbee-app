@@ -407,9 +407,9 @@ class InsightsFeedView extends StatelessWidget {
 
             const SizedBox(height: 14),
 
-            // Contextual AI Assistant Quick Actions (Feature 5C.5)
+            // Contextual FIN Quick Actions
             Text(
-              "Ask AI Assistant about this:",
+              "Ask FIN about this:",
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
