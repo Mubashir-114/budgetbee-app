@@ -25,7 +25,13 @@ class CacheService {
   }
 
   static Future<void> initialize() async {
-    _prefs = await SharedPreferences.getInstance();
+    try {
+      _prefs = await SharedPreferences.getInstance().timeout(
+        const Duration(milliseconds: 200),
+      );
+    } catch (_) {
+      // Platform channels may be absent or uninitialized in mock widget tests
+    }
   }
 
   static Future<void> save(String key, dynamic data) async {

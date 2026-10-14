@@ -11,6 +11,8 @@ import '../providers/budget_provider.dart';
 import '../providers/report_provider.dart';
 import '../providers/account_provider.dart';
 import '../providers/goal_provider.dart';
+import '../providers/analytics_provider.dart';
+import 'analytics/widgets/global_fin_overlay.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final Widget child;
@@ -81,23 +83,28 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   void _onItemTapped(int index, BuildContext context) {
+    String route;
     switch (index) {
       case 0:
-        context.go('/dashboard');
+        route = '/dashboard';
         break;
       case 1:
-        context.go('/transactions');
+        route = '/transactions';
         break;
       case 2:
-        context.go('/budgets');
+        route = '/budgets';
         break;
       case 3:
-        context.go('/reports');
+        route = '/reports';
         break;
       case 4:
-        context.go('/profile');
+        route = '/profile';
         break;
+      default:
+        route = '/dashboard';
     }
+    context.read<AnalyticsProvider>().visualController.onNavigation(route);
+    context.go(route);
   }
 
   @override
@@ -163,40 +170,45 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     return Scaffold(
-      body: Column(
+      body: Stack(
         children: [
-          StreamBuilder<bool>(
-            stream: ConnectivityService.connectionStream,
-            initialData: ConnectivityService.isOnline,
-            builder: (context, snapshot) {
-              final isOnline = snapshot.data ?? true;
-              if (isOnline) return const SizedBox.shrink();
-              return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 12),
-                color: AppColors.danger.withValues(alpha: .94),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.wifi_off_rounded, color: Colors.white, size: 14),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        "Offline · Showing saved data. Changes need a connection.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+          Column(
+            children: [
+              StreamBuilder<bool>(
+                stream: ConnectivityService.connectionStream,
+                initialData: ConnectivityService.isOnline,
+                builder: (context, snapshot) {
+                  final isOnline = snapshot.data ?? true;
+                  if (isOnline) return const SizedBox.shrink();
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 12),
+                    color: AppColors.danger.withValues(alpha: .94),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.wifi_off_rounded, color: Colors.white, size: 14),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            "Offline · Showing saved data. Changes need a connection.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            },
+                  );
+                },
+              ),
+              Expanded(child: mainLayout),
+            ],
           ),
-          Expanded(child: mainLayout),
+          const GlobalFinOverlay(),
         ],
       ),
       bottomNavigationBar: !isTablet

@@ -159,6 +159,9 @@ class CompanionPreferences {
 
   bool get animationsEnabled => enableCharacterAnimations;
   bool get personalizedGreetings => enablePersonalizedGreetings;
+  final bool showAcrossApp;
+  final String edgePosition; // 'right' | 'left'
+  final bool proactiveHints;
 
   const CompanionPreferences({
     this.preferredName,
@@ -167,6 +170,9 @@ class CompanionPreferences {
     bool? enableCharacterAnimations,
     bool? personalizedGreetings,
     bool? animationsEnabled,
+    this.showAcrossApp = true,
+    this.edgePosition = 'right',
+    this.proactiveHints = true,
     this.priorityGoalId,
     this.focusCategory,
   })  : enablePersonalizedGreetings =
@@ -186,6 +192,9 @@ class CompanionPreferences {
           json['enableCharacterAnimations'] as bool? ??
           json['animationsEnabled'] as bool? ??
           true,
+      showAcrossApp: json['showAcrossApp'] as bool? ?? true,
+      edgePosition: json['edgePosition'] as String? ?? 'right',
+      proactiveHints: json['proactiveHints'] as bool? ?? true,
       priorityGoalId: (json['priorityGoalId'] as num?)?.toInt(),
       focusCategory: json['focusCategory'] as String?,
     );
@@ -200,6 +209,13 @@ class CompanionPreferences {
     if (focusCategory != null) 'focusCategory': focusCategory,
   };
 
+  Map<String, dynamic> toJsonWithLocal() => {
+    ...toJson(),
+    'showAcrossApp': showAcrossApp,
+    'edgePosition': edgePosition,
+    'proactiveHints': proactiveHints,
+  };
+
   CompanionPreferences copyWith({
     String? preferredName,
     String? responseStyle,
@@ -207,6 +223,9 @@ class CompanionPreferences {
     bool? enableCharacterAnimations,
     bool? personalizedGreetings,
     bool? animationsEnabled,
+    bool? showAcrossApp,
+    String? edgePosition,
+    bool? proactiveHints,
     int? priorityGoalId,
     String? focusCategory,
   }) {
@@ -219,6 +238,9 @@ class CompanionPreferences {
       enableCharacterAnimations: animationsEnabled ??
           enableCharacterAnimations ??
           this.enableCharacterAnimations,
+      showAcrossApp: showAcrossApp ?? this.showAcrossApp,
+      edgePosition: edgePosition ?? this.edgePosition,
+      proactiveHints: proactiveHints ?? this.proactiveHints,
       priorityGoalId: priorityGoalId ?? this.priorityGoalId,
       focusCategory: focusCategory ?? this.focusCategory,
     );
