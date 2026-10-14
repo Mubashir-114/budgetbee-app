@@ -40,11 +40,14 @@ class AnalyticsProvider extends ChangeNotifier {
   bool _isExecutingAction = false;
   String? _actionSuccessMessage;
 
+  String? _lastQuestion;
+
   bool get isLoading => _isLoading;
   bool get isTyping => _isTyping;
   String? get errorMessage => _errorMessage;
   bool get isRateLimited => _isRateLimited;
   bool get isOffline => _isOffline;
+  String? get lastQuestion => _lastQuestion;
 
   AnalyticsCapability? get capabilities => _capabilities;
   AnalyticsQueryResult? get latestResult => _latestResult;
@@ -256,6 +259,8 @@ class AnalyticsProvider extends ChangeNotifier {
     final trimmed = question.trim();
     if (trimmed.isEmpty) return;
 
+    _lastQuestion = trimmed;
+
     // Add user message to conversation list
     final userMsg = ChatMessage(
       id: "u_${DateTime.now().millisecondsSinceEpoch}",
@@ -324,6 +329,18 @@ class AnalyticsProvider extends ChangeNotifier {
       _isLoading = false;
       _isTyping = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> retryLastQuestion() async {
+    if (_lastQuestion != null && _lastQuestion!.isNotEmpty) {
+      final q = _lastQuestion!;
+      if (_messages.isNotEmpty &&
+          _messages.last.sender == MessageSender.user &&
+          _messages.last.text == q) {
+        _messages.removeLast();
+      }
+      await askQuestion(q);
     }
   }
 
@@ -440,10 +457,17 @@ class AnalyticsProvider extends ChangeNotifier {
       _isRateLimited = true;
       _errorMessage = "Too many requests, please try again later";
     } else if (error.type == DioExceptionType.connectionTimeout ||
-        error.type == DioExceptionType.connectionError ||
+        error.type == DioExceptionType.sendTimeout ||
         error.type == DioExceptionType.receiveTimeout) {
       _isOffline = true;
-      _errorMessage = "Offline Mode: Unable to connect to server";
+      _errorMessage = "Request timed out. Please check your connection and retry.";
+    } else if (error.type == DioExceptionType.connectionError) {
+      _isOffline = true;
+      _errorMessage = "Offline Mode: Unable to connect to local server";
+    } else if (error.response?.statusCode == 401) {
+      _errorMessage = "Your session has expired. Please sign in again.";
+    } else if (error.response?.statusCode == 403) {
+      _errorMessage = "This question couldn't be processed due to privacy limits.";
     } else if (error.response?.statusCode == 400) {
       final data = error.response?.data;
       if (data is Map && data['message'] != null) {
@@ -452,8 +476,7 @@ class AnalyticsProvider extends ChangeNotifier {
         _errorMessage = "Invalid query parameters.";
       }
     } else {
-      _errorMessage =
-          "A secure error occurred while processing analytics. Please retry.";
+      _errorMessage = "I couldn't complete that analysis right now.";
     }
   }
 

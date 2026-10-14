@@ -541,5 +541,75 @@ void main() {
         findsOneWidget,
       );
     });
+
+    // ── Phase 5E.1 Mobile UX Cleanup & Reliability Widget Tests ──────────────
+
+    testWidgets('renders sticky composer with 48px touch target and clear button', (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final inputFinder = find.byType(TextField);
+      expect(inputFinder, findsOneWidget);
+      expect(find.byTooltip("Ask Question"), findsOneWidget);
+
+      await tester.enterText(inputFinder, "What are my savings opportunities?");
+      await tester.pumpAndSettle();
+
+      // Clear button appears when text is entered
+      expect(find.byTooltip("Clear"), findsOneWidget);
+
+      await tester.tap(find.byTooltip("Clear"));
+      await tester.pumpAndSettle();
+
+      expect(find.text("What are my savings opportunities?"), findsNothing);
+    });
+
+    testWidgets('tapping More Suggestions opens bottom sheet with categorized library', (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final moreFinder = find.text("More Suggestions");
+      expect(moreFinder, findsOneWidget);
+
+      await tester.tap(moreFinder);
+      await tester.pumpAndSettle();
+
+      // Verify bottom sheet title and categories
+      expect(find.text("More suggestions"), findsOneWidget);
+      expect(find.text("OVERVIEW"), findsOneWidget);
+      expect(find.text("SPENDING"), findsOneWidget);
+
+      // Verify top-level questions inside bottom sheet
+      expect(find.text("Income vs Expenses"), findsOneWidget);
+      expect(find.text("Financial Insights"), findsOneWidget);
+
+      // Tapping a question closes the sheet and triggers query
+      await tester.tap(find.text("Financial Insights"));
+      await tester.pumpAndSettle();
+
+      expect(find.text("More suggestions"), findsNothing);
+    });
+
+    testWidgets('renders contextual error with Retry button on failure', (tester) async {
+      mockRepo.shouldThrowConnectionError = true;
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      await provider.askQuestion("How much did I spend this month?");
+      await tester.pumpAndSettle();
+
+      expect(find.text("Offline Mode"), findsOneWidget);
+      expect(find.text("Retry"), findsOneWidget);
+
+      // Fix repo connection error and tap Retry
+      mockRepo.shouldThrowConnectionError = false;
+      await tester.tap(find.text("Retry"));
+      await tester.pumpAndSettle();
+
+      // Result appears after successful retry
+      expect(find.text("TOTAL SPENDING"), findsOneWidget);
+      expect(find.textContaining("12,500.00"), findsOneWidget);
+    });
   });
 }

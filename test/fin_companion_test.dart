@@ -567,7 +567,6 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-
       final provider = AnalyticsProvider(repository: MockCompanionRepository());
       await tester.pumpWidget(
         MaterialApp(
